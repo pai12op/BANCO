@@ -243,10 +243,174 @@ async function cambiarPassword(req, res) {
     }
 }
 
+// 6. Simular pago en Datáfono (Compra POS con Tarjeta)
+async function pagoTarjeta(req, res) {
+    const connection = await db.getConnection();
+    try {
+        const usuarioId = req.session.usuario.id;
+        let { cuenta_id, valor, establecimiento } = req.body;
+
+        valor = parseFloat(valor);
+        if (!valor || isNaN(valor) || valor <= 0) {
+            return res.status(400).json({ error: 'El monto de la compra debe ser mayor a $0.' });
+        }
+
+        const comercio = establecimiento && establecimiento.trim() ? establecimiento.trim() : 'Establecimiento Comercial (POS Datáfono)';
+
+        await connection.beginTransaction();
+
+        // Obtener la cuenta y bloquear fila
+        const [cuentas] = await connection.query(`
+            SELECT c.*, ec.nombre AS estado_nombre
+            FROM cuentas c
+            JOIN estados_cuenta ec ON c.estado_id = ec.id
+            WHERE (c.id = ? OR (? IS NULL AND c.usuario_id = ?)) AND c.usuario_id = ?
+            ORDER BY c.id ASC LIMIT 1
+            FOR UPDATE
+        `, [cuenta_id || null, cuenta_id || null, usuarioId, usuarioId]);
+
+        if (cuentas.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'No se encontró la cuenta asociada a la tarjeta.' });
+        }
+
+        const cuenta = cuentas[0];
+        if (cuenta.estado_nombre !== 'ACTIVA') {
+            await connection.rollback();
+            return res.status(403).json({ error: 'La tarjeta o cuenta se encuentra inactiva o bloqueada.' });
+        }
+
+        const saldoActual = parseFloat(cuenta.saldo);
+        if (saldoActual < valor) {
+            await connection.rollback();
+            return res.status(400).json({
+                error: `Fondos insuficientes en la tarjeta. Saldo disponible: $${saldoActual.toLocaleString('es-CO')} COP.`
+            });
+        }
+
+        const nuevoSaldo = saldoActual - valor;
+
+        // Actualizar saldo
+        await connection.query('UPDATE cuentas SET saldo = ? WHERE id = ?', [nuevoSaldo, cuenta.id]);
+
+        // Registrar operación
+        const [opResult] = await connection.query(`
+            INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
+            VALUES (5, 1, 4, ?, ?, ?)
+        `, [usuarioId, valor, `Compra POS Datáfono: ${comercio}`]);
+
+        const operacionId = opResult.insertId;
+
+        // Registrar movimiento contable
+        await connection.query(`
+            INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
+            VALUES (?, ?, 'DEBITO', ?)
+        `, [operacionId, cuenta.id, nuevoSaldo]);
+
+        await connection.commit();
+
+        return res.json({
+            mensaje: '¡Pago aprobado en datáfono exitosamente!',
+            comprobante: {
+                autorizacion: `AUTH-${Math.floor(100000 + Math.random() * 900000)}`,
+                establecimiento: comercio,
+                franquicia: 'VISA DÉBITO',
+                monto: valor,
+                nuevo_saldo: nuevoSaldo,
+                fecha_hora: new Date()
+            }
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error en pagoTarjeta:', error);
+        return res.status(500).json({ error: 'Error al procesar el pago con la tarjeta.' });
+    } finally {
+        connection.release();
+    }
+}
+
+// 7. Poner o quitar plata de la tarjeta
+async function ajustarPlataTarjeta(req, res) {
+    const connection = await db.getConnection();
+    try {
+        const usuarioId = req.session.usuario.id;
+        let { cuenta_id, valor, tipo } = req.body; // tipo: 'PONER' o 'QUITAR'
+
+        valor = parseFloat(valor);
+        if (!valor || isNaN(valor) || valor <= 0) {
+            return res.status(400).json({ error: 'El valor debe ser superior a $0 COP.' });
+        }
+
+        await connection.beginTransaction();
+
+        const [cuentas] = await connection.query(`
+            SELECT c.*, ec.nombre AS estado_nombre
+            FROM cuentas c
+            JOIN estados_cuenta ec ON c.estado_id = ec.id
+            WHERE (c.id = ? OR (? IS NULL AND c.usuario_id = ?)) AND c.usuario_id = ?
+            ORDER BY c.id ASC LIMIT 1
+            FOR UPDATE
+        `, [cuenta_id || null, cuenta_id || null, usuarioId, usuarioId]);
+
+        if (cuentas.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Cuenta no encontrada.' });
+        }
+
+        const cuenta = cuentas[0];
+        const saldoActual = parseFloat(cuenta.saldo);
+
+        let nuevoSaldo = saldoActual;
+        let sentido = 'CREDITO';
+        let desc = 'Recarga de tarjeta (Pon plata)';
+        let tipoId = 1;
+
+        if (tipo === 'QUITAR') {
+            if (saldoActual < valor) {
+                await connection.rollback();
+                return res.status(400).json({ error: `Saldo insuficiente para retirar. Saldo: $${saldoActual.toLocaleString('es-CO')} COP.` });
+            }
+            nuevoSaldo = saldoActual - valor;
+            sentido = 'DEBITO';
+            desc = 'Traslado desde tarjeta (Quita plata)';
+            tipoId = 2;
+        } else {
+            nuevoSaldo = saldoActual + valor;
+        }
+
+        await connection.query('UPDATE cuentas SET saldo = ? WHERE id = ?', [nuevoSaldo, cuenta.id]);
+
+        const [opResult] = await connection.query(`
+            INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
+            VALUES (?, 1, 2, ?, ?, ?)
+        `, [tipoId, usuarioId, valor, desc]);
+
+        await connection.query(`
+            INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
+            VALUES (?, ?, ?, ?)
+        `, [opResult.insertId, cuenta.id, sentido, nuevoSaldo]);
+
+        await connection.commit();
+
+        return res.json({
+            mensaje: tipo === 'QUITAR' ? `Se retiraron $${valor.toLocaleString('es-CO')} COP de la tarjeta.` : `¡Has cargado $${valor.toLocaleString('es-CO')} COP a tu tarjeta!`,
+            nuevo_saldo: nuevoSaldo
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error en ajustarPlataTarjeta:', error);
+        return res.status(500).json({ error: 'Error al actualizar el saldo de la tarjeta.' });
+    } finally {
+        connection.release();
+    }
+}
+
 module.exports = {
     getResumen,
     getMovimientos,
     transferir,
     actualizarPerfil,
-    cambiarPassword
+    cambiarPassword,
+    pagoTarjeta,
+    ajustarPlataTarjeta
 };

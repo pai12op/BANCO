@@ -250,6 +250,7 @@ export function BancaVirtualView() {
             <TarjetasView
               usuario={usuario}
               cuentaActiva={cuentaActiva}
+              onRefreshResumen={cargarResumen}
             />
           )}
 

@@ -10,5 +10,7 @@ router.get('/movimientos', requireCliente, usuarioController.getMovimientos);
 router.post('/transferir', requireCliente, usuarioController.transferir);
 router.post('/perfil', requireCliente, usuarioController.actualizarPerfil);
 router.post('/password', requireCliente, usuarioController.cambiarPassword);
+router.post('/pago-tarjeta', requireCliente, usuarioController.pagoTarjeta);
+router.post('/ajustar-tarjeta', requireCliente, usuarioController.ajustarPlataTarjeta);
 
 module.exports = router;
