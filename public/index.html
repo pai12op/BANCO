@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco Digital Andino — Sistema Bancario Integrado</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <style>
+        .hero {
+            background: linear-gradient(135deg, #0a2540 0%, #091e42 100%);
+            color: #ffffff;
+            padding: 50px 20px;
+            text-align: center;
+            border-bottom: 3px solid #0066cc;
+        }
+        .hero h1 {
+            color: #ffffff;
+            font-size: 32px;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+        .hero p {
+            color: #b3cce6;
+            font-size: 16px;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+        .container {
+            max-width: 1100px;
+            margin: -30px auto 50px auto;
+            padding: 0 20px;
+        }
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        .module-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(9, 30, 66, 0.06);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .module-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+        }
+        .module-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        .icon-banca { background: #e6f0fa; color: #0066cc; }
+        .icon-cajero { background: #e3fcef; color: #00875a; }
+        .icon-admin { background: #eae6ff; color: #5243aa; }
+        
+        .credentials-box {
+            background: var(--bg-muted);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+        .credentials-box code {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .flow-guide {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 28px;
+        }
+        .flow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+        .flow-step-item {
+            background: var(--bg-muted);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            font-size: 13px;
+        }
+        .flow-step-number {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            background: var(--primary);
+            color: #ffffff;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 22px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<header class="hero">
+    <h1>🏦 BANCO DIGITAL ANDINO</h1>
+    <p>Proyecto Integrador — Simulador Bancario Web Multi-Módulo (MySQL + Node.js + Express)</p>
+</header>
+
+<main class="container">
+    <div class="modules-grid">
+        <!-- Módulo 1: Banca Virtual -->
+        <div class="module-card">
+            <div>
+                <div class="module-icon icon-banca">🌐</div>
+                <h2>Banca Virtual Clientes</h2>
+                <p style="margin-top: 6px;">Portal web para clientes. Consulta de saldo, historial de movimientos, transferencias a otras cuentas y cambio de contraseña.</p>
+                <div class="credentials-box">
+                    <strong>Credenciales de Prueba:</strong><br>
+                    Correo: <code>andres@cliente.com</code><br>
+                    Clave: <code>Banco123*</code><br>
+                    Cuenta: <code>400110203040</code> (Saldo: $1.000.000)
+                </div>
+            </div>
+            <a href="/banca" class="btn btn-primary btn-block">Ingresar a Banca Virtual →</a>
+        </div>
+
+        <!-- Módulo 2: Cajero Automático -->
+        <div class="module-card">
+            <div>
+                <div class="module-icon icon-cajero">🏧</div>
+                <h2>Cajero Automático (ATM)</h2>
+                <p style="margin-top: 6px;">Terminal de autoservicio con simulación de hardware bancario. Retiros en efectivo con validación de saldo, PIN y comprobante térmico.</p>
+                <div class="credentials-box">
+                    <strong>Credenciales de Prueba:</strong><br>
+                    Número Cuenta: <code>400110203040</code><br>
+                    PIN de Seguridad: <code>1234</code><br>
+                    (Validación con múltiplos de $10.000 COP)
+                </div>
+            </div>
+            <a href="/cajero" class="btn btn-success btn-block">Abrir Terminal Cajero ATM →</a>
+        </div>
+
+        <!-- Módulo 3: Módulo Administrativo -->
+        <div class="module-card">
+            <div>
+                <div class="module-icon icon-admin">🛡️</div>
+                <h2>Portal Administrativo</h2>
+                <p style="margin-top: 6px;">Consola bancaria interna. Dashboard con métricas globales, creación de clientes, bloqueo de cuentas y consignaciones en ventanilla.</p>
+                <div class="credentials-box">
+                    <strong>Credenciales de Prueba:</strong><br>
+                    Correo Admin: <code>admin@banco.com</code><br>
+                    Clave Admin: <code>Banco123*</code><br>
+                    Rol: Administrador General
+                </div>
+            </div>
+            <a href="/admin" class="btn btn-accent btn-block">Ingresar a Administración →</a>
+        </div>
+    </div>
+
+    <!-- Guía de Prueba para Sustentación ante el Docente -->
+    <div class="flow-guide">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h3>📋 Flujo de Prueba Mínima Oficial (Exigido en Páginas 9-10 de la Guía)</h3>
+                <p>Verificación de sincronización en tiempo real entre los tres módulos sobre la misma base de datos MySQL.</p>
+            </div>
+            <span class="badge badge-primary">Sustentación en Vivo</span>
+        </div>
+
+        <div class="flow-steps">
+            <div class="flow-step-item">
+                <span class="flow-step-number">1</span>
+                <strong>Consulta en Banca</strong>
+                <p>Cliente Andrés ingresa a Banca Virtual y observa su saldo: <strong>$1.000.000 COP</strong>.</p>
+            </div>
+            <div class="flow-step-item">
+                <span class="flow-step-number">2</span>
+                <strong>Retiro en Cajero</strong>
+                <p>Ingresa al Cajero con cuenta y PIN. Retira <strong>$200.000 COP</strong>. El saldo baja a <strong>$800.000 COP</strong>.</p>
+            </div>
+            <div class="flow-step-item">
+                <span class="flow-step-number">3</span>
+                <strong>Verificación Cliente</strong>
+                <p>Regresa a la Banca Virtual: Saldo actualizado en <strong>$800.000 COP</strong> y nuevo movimiento de retiro.</p>
+            </div>
+            <div class="flow-step-item">
+                <span class="flow-step-number">4</span>
+                <strong>Consignación Admin</strong>
+                <p>Admin consigna <strong>$100.000 COP</strong> en ventanilla. Saldo sube en vivo a <strong>$900.000 COP</strong>.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer style="text-align: center; padding: 24px; color: var(--text-light); font-size: 13px;">
+    Banco Digital Andino &copy; 2026 — Proyecto Integrador de Programación Web | Jairo Andrés Pai Guanga
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banca Virtual — Banco Digital Andino</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <style>
+        .topbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar-brand {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .user-info {
+            text-align: right;
+            font-size: 13px;
+        }
+        .user-name {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .banca-container {
+            max-width: 1050px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        /* Login Card */
+        .login-wrapper {
+            max-width: 420px;
+            margin: 60px auto;
+        }
+        
+        /* Grid de la Banca */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 850px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Tarjeta de Débito Bancaria */
+        .bank-card {
+            background: linear-gradient(135deg, #0a2540 0%, #1e3a5f 100%);
+            color: #ffffff;
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: 0 8px 20px rgba(10, 37, 64, 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+        .bank-card::after {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+        .card-chip {
+            width: 42px;
+            height: 32px;
+            background: linear-gradient(135deg, #d4af37 0%, #aa8010 100%);
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .card-number {
+            font-family: var(--font-mono);
+            font-size: 17px;
+            letter-spacing: 2px;
+            margin-bottom: 14px;
+        }
+        .card-balance-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #9bb7d4;
+        }
+        .card-balance-val {
+            font-size: 26px;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: var(--font-mono);
+        }
+        
+        .quick-actions {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <a href="/" class="topbar-brand">
+        🏦 <span>Banco Digital Andino</span>
+        <span class="badge badge-primary">Banca Virtual</span>
+    </a>
+    <div class="user-nav" id="topbarUserNav" style="display: none;">
+        <div class="user-info">
+            <div class="user-name" id="userNameNav">Cargando...</div>
+            <div id="userDocNav" style="color: var(--text-muted); font-size: 11px;"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="logoutBanca()">Cerrar Sesión</button>
+    </div>
+</header>
+
+<main class="banca-container">
+
+    <!-- SECCIÓN DE LOGIN (Visible si no hay sesión activa) -->
+    <div class="login-wrapper" id="loginSection">
+        <div class="card">
+            <h2 style="margin-bottom: 8px;">Ingreso a Banca Virtual</h2>
+            <p style="margin-bottom: 20px; font-size: 13px;">Ingrese con su correo o número de documento y contraseña.</p>
+            
+            <div id="loginAlert" style="display: none; padding: 10px; margin-bottom: 16px; border-radius: var(--radius-sm); font-size: 13px;"></div>
+
+            <form id="formLoginBanca" onsubmit="handleLoginBanca(event)">
+                <div class="form-group">
+                    <label class="form-label">Correo Electrónico o Documento:</label>
+                    <input type="text" id="loginIdentificador" class="form-control" placeholder="Ej: andres@cliente.com o 1001234567" required value="andres@cliente.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contraseña:</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required value="Banco123*">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">Ingresar Seguramente →</button>
+            </form>
+
+            <div style="margin-top: 20px; font-size: 12px; text-align: center; color: var(--text-light); border-top: 1px solid var(--border-color); padding-top: 14px;">
+                Demo: <strong>andres@cliente.com</strong> / <strong>Banco123*</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN DE DASHBOARD (Visible con sesión activa) -->
+    <div id="dashboardSection" style="display: none;">
+        <div class="dashboard-grid">
+            <!-- Columna Izquierda: Tarjeta y Acciones -->
+            <div>
+                <div class="bank-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div class="card-chip"></div>
+                        <span class="badge badge-success" id="accountBadge">ACTIVA</span>
+                    </div>
+                    <div>
+                        <div class="card-number" id="accountNumberCard">**** **** **** 0000</div>
+                        <div class="card-balance-label">Saldo Disponible en Cuenta:</div>
+                        <div class="card-balance-val" id="accountBalanceCard">$0 COP</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
+                        <div>
+                            <div style="font-size: 10px; color: #9bb7d4;">TITULAR</div>
+                            <div style="font-size: 13px; font-weight: 700;" id="accountHolderCard">Nombre Titular</div>
+                        </div>
+                        <div style="font-size: 11px; color: #9bb7d4;" id="accountTypeCard">Ahorros</div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn btn-primary btn-block" onclick="abrirModalTransferencia()">
+                        📤 Realizar Transferencia
+                    </button>
+                    <button class="btn btn-outline btn-block" onclick="abrirModalPerfil()">
+                        ⚙️ Perfil y Seguridad
+                    </button>
+                    <button class="btn btn-outline btn-block" onclick="recargarDatosBanca()">
+                        🔄 Actualizar Saldos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Historial de Movimientos -->
+            <div class="card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3>Historial de Movimientos Financieros</h3>
+                        <p style="font-size: 13px;">Trazabilidad completa de operaciones en tiempo real.</p>
+                    </div>
+                    <span class="badge badge-primary" id="movimientosCountBadge">0 movimientos</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table" id="tablaMovimientos">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Operación / Concepto</th>
+                                <th>Canal</th>
+                                <th style="text-align: right;">Valor</th>
+                                <th style="text-align: right;">Saldo Resultante</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movimientosBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-light); padding: 30px;">Cargando movimientos...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- MODAL: REALIZAR TRANSFERENCIA -->
+<div class="modal-overlay" id="modalTransferencia">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Nueva Transferencia Bancaria</h3>
+            <button class="modal-close" onclick="cerrarModal('modalTransferencia')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="transferAlert" style="display: none; padding: 10px; margin-bottom: 14px; border-radius: var(--radius-sm); font-size: 13px;"></div>
+
+            <form id="formTransferir" onsubmit="handleTransferir(event)">
+                <div class="form-group">
+                    <label class="form-label">Cuenta de Origen:</label>
+                    <select id="transferCuentaOrigen" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cuenta Destino (12 dígitos):</label>
+                    <input type="text" id="transferCuentaDestino" class="form-control" placeholder="Ej: 500190807060" required value="500190807060">
+                    <small style="color: var(--text-muted); font-size: 11px;">Cuenta prueba Valentina: 500190807060</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor a Transferir ($ COP):</label>
+                    <input type="number" id="transferValor" class="form-control" placeholder="Ej: 50000" min="1000" step="1000" required value="50000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Concepto (Opcional):</label>
+                    <input type="text" id="transferConcepto" class="form-control" placeholder="Ej: Pago arriendo, cuota, etc.">
+                </div>
+                <div class="modal-footer" style="margin-top: 10px; padding-right: 0; padding-bottom: 0;">
+                    <button type="button" class="btn btn-outline" onclick="cerrarModal('modalTransferencia')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitTransfer">Confirmar Transferencia</button>
+                </div>
+            </form>
+
+            <!-- Comprobante Exitoso -->
+            <div id="voucherTransferencia" class="voucher" style="display: none;">
+                <div class="voucher-header">
+                    <strong>BANCO DIGITAL ANDINO</strong><br>
+                    COMPROBANTE DE TRANSFERENCIA ELECTRÓNICA
+                </div>
+                <div class="voucher-row"><span>No. Operación:</span><strong id="vOp"></strong></div>
+                <div class="voucher-row"><span>Fecha:</span><span id="vFecha"></span></div>
+                <div class="voucher-row"><span>Cuenta Origen:</span><span id="vOrigen"></span></div>
+                <div class="voucher-row"><span>Cuenta Destino:</span><span id="vDestino"></span></div>
+                <div class="voucher-row"><span>Titular Destino:</span><span id="vTitular"></span></div>
+                <div class="voucher-row voucher-total"><span>Monto Debitador:</span><span id="vMonto" class="amount-debit"></span></div>
+                <div class="voucher-row"><span>Nuevo Saldo Disponible:</span><strong id="vSaldo"></strong></div>
+                <button class="btn btn-outline btn-sm btn-block" style="margin-top: 12px;" onclick="cerrarModal('modalTransferencia'); recargarDatosBanca();">Listo / Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: PERFIL Y SEGURIDAD -->
+<div class="modal-overlay" id="modalPerfil">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Perfil y Cambio de Contraseña</h3>
+            <button class="modal-close" onclick="cerrarModal('modalPerfil')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="perfilAlert" style="display: none; padding: 10px; margin-bottom: 14px; border-radius: var(--radius-sm); font-size: 13px;"></div>
+
+            <!-- Actualizar Teléfono -->
+            <form id="formPerfil" onsubmit="handleActualizarPerfil(event)" style="margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+                <h4 style="font-size: 14px; margin-bottom: 12px;">Datos de Contacto</h4>
+                <div class="form-group">
+                    <label class="form-label">Teléfono / Celular:</label>
+                    <input type="text" id="perfilTelefono" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-outline btn-sm">Guardar Teléfono</button>
+            </form>
+
+            <!-- Cambiar Clave -->
+            <form id="formClave" onsubmit="handleCambiarClave(event)">
+                <h4 style="font-size: 14px; margin-bottom: 12px;">Modificar Contraseña</h4>
+                <div class="form-group">
+                    <label class="form-label">Contraseña Actual:</label>
+                    <input type="password" id="claveActual" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nueva Contraseña (mínimo 6 carácteres):</label>
+                    <input type="password" id="claveNueva" class="form-control" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Actualizar Contraseña</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/banca.js"></script>
+</body>
+</html>
