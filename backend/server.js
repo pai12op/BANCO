@@ -5,7 +5,7 @@ const path = require('path');
 require('dotenv').config();
 
 const authRoutes = require('./src/routes/authRoutes');
-const bancaRoutes = require('./src/routes/bancaRoutes');
+const usuarioRoutes = require('./src/routes/usuarioRoutes');
 const cajeroRoutes = require('./src/routes/cajeroRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 
@@ -33,7 +33,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Rutas API REST
 app.use('/api/auth', authRoutes);
-app.use('/api/banca', bancaRoutes);
+app.use('/api/usuario', usuarioRoutes);
+app.use('/api/banca', usuarioRoutes); // Alias retrocompatible
 app.use('/api/cajero', cajeroRoutes);
 app.use('/api/admin', adminRoutes);
 
