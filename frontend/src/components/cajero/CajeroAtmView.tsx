@@ -13,10 +13,11 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
 interface CajeroAtmProps {
+  activeModule?: string;
   onSwitchModule?: (mod: string) => void;
 }
 
-export function CajeroAtmView({ onSwitchModule }: CajeroAtmProps) {
+export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: CajeroAtmProps) {
   const [autenticado, setAutenticado] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cuentaNumero, setCuentaNumero] = useState("400110203040");
@@ -145,35 +146,39 @@ export function CajeroAtmView({ onSwitchModule }: CajeroAtmProps) {
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
       {/* HEADER ATM */}
-      <header className="border-b bg-card/60 backdrop-blur sticky top-0 z-30">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground">
-              <Receipt className="h-6 w-6" />
+      <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 lg:px-8">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-600 text-white">
+              <Receipt className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-display text-lg font-bold">Cajero Automático ATM</h1>
+              <h1 className="font-display text-lg font-bold leading-tight">Cajero Automático ATM</h1>
               <p className="text-xs text-muted-foreground">Terminal Red Los Andes · ATM-BOG-004</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onSwitchModule?.("banca")}
-              className="gap-1.5 text-xs border-border"
-            >
-              <Landmark className="h-3.5 w-3.5" /> Ir a Banca Virtual
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onSwitchModule?.("admin")}
-              className="gap-1.5 text-xs border-border"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" /> Ir a Panel Admin
-            </Button>
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-card p-1">
+              <button
+                onClick={() => onSwitchModule?.("banca")}
+                className="rounded-lg px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                🏦 Banca
+              </button>
+              <button
+                onClick={() => onSwitchModule?.("cajero")}
+                className="rounded-lg px-2.5 py-1 text-xs font-semibold bg-cyan-600 text-white shadow"
+              >
+                🏧 Cajero ATM
+              </button>
+              <button
+                onClick={() => onSwitchModule?.("admin")}
+                className="rounded-lg px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                🛡️ Admin
+              </button>
+            </div>
           </div>
         </div>
       </header>

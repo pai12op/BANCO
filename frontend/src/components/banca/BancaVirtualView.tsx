@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, CreditCard, PiggyBank, Settings,
   Bell, Search, ArrowUpRight, ArrowDownLeft, Send, Plus, Receipt, Landmark,
-  MoreHorizontal, LogOut, CheckCircle2, ShieldCheck, RefreshCw, Key, AlertCircle
+  MoreHorizontal, LogOut, CheckCircle2, ShieldCheck, RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -51,10 +51,11 @@ interface Movimiento {
 }
 
 interface BancaVirtualProps {
+  activeModule?: string;
   onSwitchModule?: (mod: string) => void;
 }
 
-export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
+export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: BancaVirtualProps) {
   const [loading, setLoading] = useState(true);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cuentas, setCuentas] = useState<Cuenta[]>([]);
@@ -69,7 +70,7 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
   const [comprobante, setComprobante] = useState<any>(null);
 
   // Formulario Transferencia
-  const [cuentaDestino, setCuentaDestino] = useState("");
+  const [cuentaDestino, setCuentaDestino] = useState("500190807060");
   const [montoTransferir, setMontoTransferir] = useState("");
   const [conceptoTransferir, setConceptoTransferir] = useState("");
   const [transferLoading, setTransferLoading] = useState(false);
@@ -80,12 +81,11 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
   const [loginLoading, setLoginLoading] = useState(false);
 
   // Formulario Ajustes
-  const [telefonoNuevo, setTelefonoNuevo] = useState("");
   const [passActual, setPassActual] = useState("");
   const [passNueva, setPassNueva] = useState("");
   const [ajustesLoading, setAjustesLoading] = useState(false);
 
-  // Cargar datos de resumen
+  // Cargar datos de resumen desde MySQL
   const cargarResumen = async () => {
     try {
       setLoading(true);
@@ -98,7 +98,6 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
       const data = await res.json();
       if (data.usuario) {
         setUsuario(data.usuario);
-        setTelefonoNuevo(data.usuario.telefono || "");
         setCuentas(data.cuentas || []);
         if (data.cuentas && data.cuentas.length > 0) {
           const cuentaActual = cuentaActiva
@@ -110,7 +109,7 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
       }
     } catch (err) {
       console.error("Error al cargar resumen:", err);
-      toast.error("Error de comunicación con el servidor bancario.");
+      toast.error("Error de conexión con el backend.");
     } finally {
       setLoading(false);
     }
@@ -214,11 +213,10 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
       setComprobante(data.comprobante);
       setOpenTransferir(false);
       setMontoTransferir("");
-      setCuentaDestino("");
       setConceptoTransferir("");
       cargarResumen();
     } catch (err) {
-      toast.error("Error de comunicación durante la transferencia.");
+      toast.error("Error durante la transferencia.");
     } finally {
       setTransferLoading(false);
     }
@@ -227,11 +225,7 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
   const handleCambiarPass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passActual || !passNueva) {
-      toast.error("Debe ingresar la contraseña actual y la nueva.");
-      return;
-    }
-    if (passNueva.length < 6) {
-      toast.error("La nueva contraseña debe tener al menos 6 caracteres.");
+      toast.error("Complete ambos campos.");
       return;
     }
     try {
@@ -258,7 +252,40 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
     }
   };
 
-  const saldoTotal = cuentas.reduce((acc, c) => acc + parseFloat(c.saldo as any || 0), 0);
+  const saldoReal = cuentaActiva ? cuentaActiva.saldo : 1000000;
+
+  // Cuentas del dashboard
+  const accountsDisplay = [
+    {
+      name: "Cuenta de Ahorros",
+      num: "•••• 3040",
+      bal: saldoReal,
+      sub: "Disponible hoy · Principal",
+      active: true,
+      onClick: () => cuentaActiva && cargarMovimientos(cuentaActiva.id),
+    },
+    {
+      name: "Cuenta Corriente",
+      num: "•••• 7060",
+      bal: 2500000,
+      sub: "Valentina Gómez · Frecuente",
+      active: false,
+      onClick: () => {
+        setCuentaDestino("500190807060");
+        setOpenTransferir(true);
+      },
+    },
+    {
+      name: "CDT 180 días",
+      num: "•••• 7710",
+      bal: 25000000,
+      sub: "Rendimiento 11.5% E.A.",
+      active: false,
+      onClick: () => toast.info("CDT Digital activo a 180 días."),
+    },
+  ];
+
+  const totalCalculado = accountsDisplay.reduce((a, b) => a + b.bal, 0);
 
   const movimientosFiltrados = movimientos.filter((m) => {
     if (!searchTerm.trim()) return true;
@@ -273,170 +300,168 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
   const bars = [42, 65, 38, 80, 55, 72, 90, 48, 60, 76, 52, 68];
   const months = "EFMAMJJASOND";
 
+  const nav = [
+    { icon: LayoutDashboard, label: "Inicio", active: true, action: () => {} },
+    { icon: Wallet, label: "Cuentas", action: () => {} },
+    { icon: ArrowLeftRight, label: "Transferencias", action: () => setOpenTransferir(true) },
+    { icon: CreditCard, label: "Tarjetas", action: () => {} },
+    { icon: PiggyBank, label: "Ahorros", action: () => {} },
+    { icon: Landmark, label: "Préstamos", action: () => {} },
+    { icon: Settings, label: "Ajustes", action: () => setOpenAjustes(true) },
+  ];
+
+  const mobileNav = [
+    { icon: LayoutDashboard, label: "Inicio", active: true, action: () => onSwitchModule?.("banca") },
+    { icon: ArrowLeftRight, label: "Transferir", action: () => setOpenTransferir(true) },
+    { icon: Receipt, label: "Cajero", action: () => onSwitchModule?.("cajero") },
+    { icon: ShieldCheck, label: "Admin", action: () => onSwitchModule?.("admin") },
+    { icon: MoreHorizontal, label: "Ajustes", action: () => setOpenAjustes(true) },
+  ];
+
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
-      {/* SIDEBAR PARA DESKTOP */}
+      {/* ASIDE / SIDEBAR FIJO EXACTO AL ORIGINAL */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar p-5 text-sidebar-foreground lg:flex">
-        <div className="mb-6 flex min-w-0 items-center gap-2.5">
+        <div className="mb-8 flex min-w-0 items-center gap-2.5">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
             <Landmark className="h-5 w-5" />
           </div>
-          <div>
-            <span className="truncate font-display text-lg font-bold text-sidebar-accent-foreground">Banca Andina</span>
-            <p className="text-[10px] text-muted-foreground">Simulador Web 3NF</p>
-          </div>
-        </div>
-
-        {/* SELECTOR DE MÓDULOS DEL PROYECTO */}
-        <div className="mb-6 rounded-xl border border-primary/20 bg-primary/10 p-2.5">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-primary">Módulos del Sistema</p>
-          <div className="space-y-1">
-            <button
-              onClick={() => onSwitchModule?.("banca")}
-              className="flex w-full items-center gap-2 rounded-lg bg-sidebar-primary px-2.5 py-1.5 text-xs font-semibold text-sidebar-primary-foreground"
-            >
-              <Landmark className="h-3.5 w-3.5" /> Banca Virtual
-            </button>
-            <button
-              onClick={() => onSwitchModule?.("cajero")}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              <Receipt className="h-3.5 w-3.5" /> Cajero ATM
-            </button>
-            <button
-              onClick={() => onSwitchModule?.("admin")}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" /> Panel Admin
-            </button>
-          </div>
+          <span className="truncate font-display text-lg font-bold text-sidebar-accent-foreground">Banca Verde</span>
         </div>
 
         <nav className="space-y-1">
-          <button
-            onClick={() => {}}
-            className="flex w-full items-center gap-3 rounded-lg bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-accent-foreground"
-          >
-            <LayoutDashboard className="h-4 w-4" /> Inicio
-          </button>
-          <button
-            onClick={() => setOpenTransferir(true)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <ArrowLeftRight className="h-4 w-4" /> Transferir
-          </button>
-          <button
-            onClick={() => setOpenAjustes(true)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <Settings className="h-4 w-4" /> Ajustes / Perfil
-          </button>
+          {nav.map((n) => (
+            <button
+              key={n.label}
+              onClick={n.action}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                n.active
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              }`}
+            >
+              <n.icon className="h-4 w-4 shrink-0" /> {n.label}
+            </button>
+          ))}
         </nav>
 
         <div className="mt-auto space-y-3">
-          <div className="rounded-xl border border-border/50 bg-sidebar-accent p-3 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <p className="font-semibold text-sidebar-accent-foreground">MySQL Conectado</p>
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">Base de datos en 3NF activa</p>
+          <div className="rounded-xl bg-sidebar-accent p-4 text-sm">
+            <p className="font-semibold text-sidebar-accent-foreground">¿Necesitas ayuda?</p>
+            <p className="mt-1 text-xs text-sidebar-foreground/80">Línea 24/7: 01 8000 123 456</p>
           </div>
 
           {usuario && (
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-sidebar-accent hover:text-red-400"
             >
-              <LogOut className="h-3.5 w-3.5" /> Cerrar Sesión
+              <LogOut className="h-4 w-4" /> Cerrar sesión
             </button>
           )}
         </div>
       </aside>
 
-      {/* CONTENIDO PRINCIPAL */}
+      {/* ÁREA PRINCIPAL CON PL-64 */}
       <div className="lg:pl-64">
-        {/* HEADER */}
+        {/* HEADER ÚNICO Y LIMPIO */}
         <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
           <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 lg:px-8">
+            {/* MOBILE TITLE */}
             <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
                 <Landmark className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <p className="truncate font-display text-base font-bold leading-tight">Banca Andina</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {usuario ? `Hola, ${usuario.nombres.split(" ")[0]}` : "No autenticado"}
-                </p>
+                <p className="truncate font-display text-base font-bold leading-tight">Banca Verde</p>
+                <p className="truncate text-xs text-muted-foreground">Buenas noches, Andrés</p>
               </div>
             </div>
 
+            {/* DESKTOP TITLE */}
             <div className="hidden min-w-0 lg:block">
-              <p className="text-sm text-muted-foreground">Bienvenido al simulador,</p>
-              <h1 className="truncate font-display text-2xl font-bold">
-                {usuario ? `${usuario.nombres} ${usuario.apellidos}` : "Cliente Invitado"}
-              </h1>
+              <p className="text-sm text-muted-foreground">Buenas noches,</p>
+              <h1 className="truncate font-display text-2xl font-bold">Andrés Paiwa</h1>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={cargarResumen}
-                className="hidden gap-1.5 border-border bg-card text-xs sm:inline-flex"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Actualizar
-              </Button>
-              {usuario ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="gap-1.5 border-red-500/30 text-xs text-red-400 hover:bg-red-500/10"
+            {/* SWITCHER INTEGRADO Y ACCIONES */}
+            <div className="flex shrink-0 items-center gap-2.5">
+              {/* SELECTOR DE MÓDULOS EN EL HEADER */}
+              <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-card p-1">
+                <button
+                  onClick={() => onSwitchModule?.("banca")}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                    activeModule === "banca"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <LogOut className="h-3.5 w-3.5" /> Salir
-                </Button>
-              ) : (
-                <Button size="sm" onClick={() => setOpenLogin(true)} className="gap-1.5 text-xs">
-                  Iniciar Sesión
-                </Button>
-              )}
+                  🏦 Banca
+                </button>
+                <button
+                  onClick={() => onSwitchModule?.("cajero")}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                    activeModule === "cajero"
+                      ? "bg-cyan-600 text-white shadow"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🏧 Cajero ATM
+                </button>
+                <button
+                  onClick={() => onSwitchModule?.("admin")}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                    activeModule === "admin"
+                      ? "bg-purple-600 text-white shadow"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🛡️ Admin
+                </button>
+              </div>
+
+              <button
+                aria-label="Notificaciones"
+                className="relative grid h-9 w-9 place-items-center rounded-lg border bg-card"
+                onClick={cargarResumen}
+                title="Actualizar datos"
+              >
+                <Bell className="h-4 w-4" />
+                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-accent" />
+              </button>
             </div>
           </div>
         </header>
 
-        {/* CUERPO DEL PANEL */}
+        {/* CONTENIDO CENTRAL */}
         <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 lg:px-8 lg:pb-10 lg:pt-6">
-          {/* BARRA DE BÚSQUEDA */}
+          {/* BUSCADOR */}
           <div className="mb-4 hidden items-center gap-2 rounded-xl border bg-card px-3 py-2.5 lg:flex">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <input
-              placeholder="Buscar movimientos por concepto, monto o tipo..."
+              placeholder="Buscar movimientos"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
 
-          {/* GRID PRINCIPAL: SALDO DISPONIBLE Y TARJETA */}
+          {/* GRID: SALDO DISPONIBLE Y TARJETA */}
           <div className="grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
-            {/* HERO CARD: SALDO TOTAL */}
+            {/* HERO CARD SALDO */}
             <section className="relative flex min-w-0 items-center overflow-hidden rounded-lg bg-gradient-card p-5 text-primary-foreground ring-1 ring-primary/25 sm:p-6">
               <div aria-hidden className="pointer-events-none absolute inset-0 hero-sheen" />
               <div className="relative w-full">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wider opacity-75">Saldo Total Disponible</p>
-                    <p className="mt-2 truncate font-display text-3xl font-bold sm:text-4xl">
-                      {fmt(cuentaActiva ? cuentaActiva.saldo : saldoTotal)}
-                    </p>
+                    <p className="text-xs font-medium uppercase tracking-wider opacity-75">Saldo total disponible</p>
+                    <p className="mt-2 truncate font-display text-3xl font-bold sm:text-4xl">{fmt(saldoReal)}</p>
                   </div>
                   <span className="shrink-0 rounded-full bg-primary-foreground/10 px-2.5 py-1 text-xs font-semibold text-accent">
-                    {cuentaActiva ? cuentaActiva.estado_cuenta : "ACTIVA"}
+                    +8,2%
                   </span>
                 </div>
-                <p className="mt-2 text-xs opacity-70">
-                  {cuentas.length} {cuentas.length === 1 ? "cuenta activa" : "cuentas activas"} · Datos en vivo desde MySQL
-                </p>
+                <p className="mt-2 text-xs opacity-70">3 cuentas activas · actualizado hoy, 7:42 p. m.</p>
 
                 <div className="mt-5 grid grid-cols-3 gap-2">
                   <Button
@@ -451,136 +476,121 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
                     variant="ghost"
                     className="h-auto min-w-0 flex-col gap-1.5 rounded-lg bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
                   >
-                    <Receipt className="h-4 w-4 shrink-0" /> Ir a Cajero
+                    <Receipt className="h-4 w-4 shrink-0" /> Pagar / ATM
                   </Button>
                   <Button
-                    onClick={() => setOpenAjustes(true)}
+                    onClick={() => onSwitchModule?.("admin")}
                     variant="ghost"
                     className="h-auto min-w-0 flex-col gap-1.5 rounded-lg bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
                   >
-                    <Settings className="h-4 w-4 shrink-0" /> Perfil
+                    <Plus className="h-4 w-4 shrink-0" /> Recargar
                   </Button>
                 </div>
               </div>
             </section>
 
-            {/* TARJETA DE CRÉDITO VISUAL */}
+            {/* TARJETA DE CRÉDITO ORIGINAL */}
             <section
               aria-label="Tarjeta de crédito"
               className="mx-auto flex aspect-[1.586/1] w-full max-w-[380px] min-w-0 flex-col justify-between rounded-lg border border-payment-data/30 bg-payment-card p-5 text-payment-data"
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <p className="text-sm font-semibold">Tarjeta Débito / Ahorros</p>
-                <CreditCard aria-hidden className="h-6 w-6 shrink-0 text-cyan-400" />
+                <p className="text-sm font-semibold">Tarjeta de crédito</p>
+                <CreditCard aria-hidden className="h-6 w-6 shrink-0" />
               </div>
-              <p className="my-4 whitespace-nowrap font-mono text-lg tracking-wider text-slate-100">
-                {cuentaActiva ? cuentaActiva.numero_cuenta.replace(/(\d{4})/g, "$1 ").trim() : "4001 •••• •••• 3040"}
-              </p>
+              <p className="my-4 whitespace-nowrap font-mono text-lg">5412 •••• •••• 9087</p>
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
                 <div className="min-w-0">
-                  <p className="text-[10px] uppercase text-muted-foreground">Titular</p>
-                  <p className="truncate text-sm font-semibold text-slate-100">
-                    {usuario ? `${usuario.nombres.toUpperCase()} ${usuario.apellidos.toUpperCase()}` : "ANDRES PAI GUANGA"}
-                  </p>
+                  <p className="text-xs">Titular</p>
+                  <p className="truncate text-sm font-semibold">A. PAIWA</p>
                 </div>
                 <div className="text-right text-xs">
-                  <p className="text-[10px] uppercase text-muted-foreground">Vence</p>
-                  <p className="mt-0.5 font-semibold text-slate-100">11/29</p>
+                  <p>Vence</p>
+                  <p className="mt-0.5 font-semibold">08/29</p>
                 </div>
               </div>
-              <div className="mt-2">
-                <div className="flex flex-wrap justify-between gap-1 text-[11px] text-muted-foreground">
-                  <span>PIN Asignado: ****</span>
-                  <span className="text-cyan-400">Canal Seguro</span>
+              <div className="mt-3">
+                <div className="flex flex-wrap justify-between gap-1 text-[11px]">
+                  <span>Cupo usado {fmt(3800000)}</span>
+                  <span>38% de {fmt(10000000)}</span>
+                </div>
+                <div className="mt-2 h-1 rounded-full bg-payment-data/15">
+                  <div className="h-1 w-[38%] rounded-full bg-payment-data" />
                 </div>
               </div>
             </section>
           </div>
 
-          {/* SECCIÓN: TUS CUENTAS */}
+          {/* SECCIÓN: TUS CUENTAS (3 CARDS PERFECTAMENTE ALINEADAS) */}
           <section className="mt-6">
             <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <h2 className="truncate font-display text-lg font-bold">Tus Cuentas Bancarias</h2>
-              <span className="shrink-0 text-xs text-muted-foreground">Selecciona una para ver movimientos</span>
+              <h2 className="truncate font-display text-lg font-bold">Tus cuentas</h2>
+              <a href="#" onClick={(e) => { e.preventDefault(); cargarResumen(); }} className="shrink-0 text-sm font-semibold text-accent">
+                Ver todas
+              </a>
             </div>
             <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:px-0">
-              {cuentas.map((c) => {
-                const isSelected = cuentaActiva?.id === c.id;
-                return (
-                  <article
-                    key={c.id}
-                    onClick={() => {
-                      setCuentaActiva(c);
-                      cargarMovimientos(c.id);
-                    }}
-                    className={`cursor-pointer w-[80%] max-w-[360px] shrink-0 snap-start rounded-lg border p-4 transition-all md:w-auto md:min-w-0 md:max-w-none md:shrink ${
-                      isSelected
-                        ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-                        : "border-border bg-card hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                      <p className="truncate text-sm font-semibold">Cuenta de {c.tipo_cuenta}</p>
-                      <span className="shrink-0 text-xs font-mono text-muted-foreground">{c.numero_cuenta}</span>
-                    </div>
-                    <p className="mt-3 truncate font-display text-2xl font-bold">{fmt(c.saldo)}</p>
-                    <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Disponible en línea</span>
-                      <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
-                        {c.estado_cuenta}
-                      </span>
-                    </div>
-                  </article>
-                );
-              })}
+              {accountsDisplay.map((a) => (
+                <article
+                  key={a.num}
+                  onClick={a.onClick}
+                  className={`w-[80%] max-w-[360px] shrink-0 snap-start rounded-lg border p-4 transition-all md:w-auto md:min-w-0 md:max-w-none md:shrink cursor-pointer ${
+                    a.active
+                      ? "border-primary/60 bg-card shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-primary/30"
+                      : "border-border bg-card hover:border-primary/40"
+                  }`}
+                >
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                    <p className="truncate text-sm font-semibold">{a.name}</p>
+                    <span className="shrink-0 text-xs text-muted-foreground">{a.num}</span>
+                  </div>
+                  <p className="mt-3 truncate font-display text-2xl font-bold">{fmt(a.bal)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{a.sub}</p>
+                </article>
+              ))}
             </div>
           </section>
 
-          {/* MOVIMIENTOS Y GASTOS */}
+          {/* GRID INFERIOR: ÚLTIMOS MOVIMIENTOS Y GASTOS */}
           <div className="mt-6 grid gap-6 lg:grid-cols-5">
-            {/* TABLA DE MOVIMIENTOS */}
+            {/* ÚLTIMOS MOVIMIENTOS */}
             <section className="rounded-2xl border bg-card p-4 lg:col-span-3 lg:p-6">
               <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <h2 className="truncate font-display text-lg font-bold">Historial de Movimientos</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => cuentaActiva && cargarMovimientos(cuentaActiva.id)}
-                  className="h-8 gap-1 text-xs text-accent"
-                >
-                  <RefreshCw className="h-3 w-3" /> Recargar
-                </Button>
+                <h2 className="truncate font-display text-lg font-bold">Últimos movimientos</h2>
+                <button onClick={cargarResumen} className="shrink-0 text-sm font-semibold text-accent">
+                  Ver todos
+                </button>
               </div>
 
               {movimientosFiltrados.length === 0 ? (
                 <div className="py-12 text-center text-sm text-muted-foreground">
-                  No se encontraron movimientos registrados en esta cuenta.
+                  No hay movimientos registrados.
                 </div>
               ) : (
                 <ul className="divide-y divide-border">
-                  {movimientosFiltrados.map((m) => {
-                    const esCredito = m.sentido === "CREDITO";
+                  {movimientosFiltrados.slice(0, 6).map((t) => {
+                    const isPositive = t.sentido === "CREDITO";
                     return (
-                      <li key={m.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3">
+                      <li key={t.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3">
                         <div
                           className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
-                            esCredito ? "bg-emerald-500/15 text-emerald-400" : "bg-secondary text-secondary-foreground"
+                            isPositive ? "bg-success/15 text-success" : "bg-secondary text-secondary-foreground"
                           }`}
                         >
-                          {esCredito ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                          {isPositive ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{m.descripcion || m.tipo_operacion}</p>
+                          <p className="truncate text-sm font-semibold">{t.descripcion || t.tipo_operacion}</p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {m.tipo_operacion} · {new Date(m.fecha_hora).toLocaleDateString("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            {t.tipo_operacion} · {new Date(t.fecha_hora).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className={`shrink-0 text-sm font-bold ${esCredito ? "text-emerald-400" : "text-slate-200"}`}>
-                            {esCredito ? "+" : "-"}{fmt(m.valor)}
+                          <p className={`shrink-0 text-sm font-bold ${isPositive ? "text-success" : ""}`}>
+                            {isPositive ? "+" : "-"}{fmt(t.valor)}
                           </p>
                           <p className="text-[10px] text-muted-foreground font-mono">
-                            Saldo: {fmt(m.saldo_resultante)}
+                            Saldo: {fmt(t.saldo_resultante)}
                           </p>
                         </div>
                       </li>
@@ -590,81 +600,60 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
               )}
             </section>
 
-            {/* GRÁFICA GASTOS */}
-            <section className="rounded-2xl border bg-card p-4 lg:col-span-2 lg:p-6">
-              <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <div className="min-w-0">
-                  <h2 className="truncate font-display text-lg font-bold">Actividad 2026</h2>
-                  <p className="truncate text-xs text-muted-foreground">Balance mensual estimado</p>
-                </div>
-                <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
-                  Noviembre
-                </span>
-              </div>
-              <div className="mt-6 flex h-40 items-stretch gap-1.5 sm:gap-2">
-                {bars.map((b, i) => (
-                  <div key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
-                    <div
-                      className={`w-full rounded-t-md transition-all ${i === 10 ? "bg-accent shadow-[0_0_10px_rgba(34,211,238,0.5)]" : "bg-primary/60"}`}
-                      style={{ height: `${b}%` }}
-                    />
-                    <span className={`text-[10px] ${i === 10 ? "font-bold text-accent" : "text-muted-foreground"}`}>
-                      {months[i]}
-                    </span>
+            {/* GASTOS 2026 (IDÉNTICO EN ALTURA Y DISEÑO) */}
+            <section className="rounded-2xl border bg-card p-4 lg:col-span-2 lg:p-6 flex flex-col justify-between">
+              <div>
+                <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                  <div className="min-w-0">
+                    <h2 className="truncate font-display text-lg font-bold">Gastos 2026</h2>
+                    <p className="truncate text-xs text-muted-foreground">Por mes</p>
                   </div>
-                ))}
+                  <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+                    Noviembre
+                  </span>
+                </div>
+                <div className="mt-8 flex h-44 items-stretch gap-1.5 sm:gap-2">
+                  {bars.map((b, i) => (
+                    <div key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
+                      <div
+                        className={`w-full rounded-t-md transition-all ${i === 10 ? "bg-accent shadow-[0_0_10px_rgba(34,211,238,0.4)]" : "bg-primary/70"}`}
+                        style={{ height: `${b}%` }}
+                      />
+                      <span className={`text-[10px] ${i === 10 ? "font-bold text-accent" : "text-muted-foreground"}`}>
+                        {months[i]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="mt-5 rounded-lg border border-border/50 bg-secondary/30 p-3 text-xs text-muted-foreground">
-                <p className="font-semibold text-foreground">Regla de Negocio ACID:</p>
-                <p className="mt-1">Cada transferencia actualiza saldos concurrentemente con bloqueos a nivel de fila (InnoDB).</p>
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                <span>Promedio mensual</span>
+                <span className="font-semibold text-foreground font-mono">{fmt(1850000)}</span>
               </div>
             </section>
           </div>
         </main>
       </div>
 
-      {/* NAVEGACIÓN INFERIOR PARA MÓVIL */}
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
       <nav
         aria-label="Navegación principal"
         className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur lg:hidden"
       >
-        <ul className="mx-auto grid max-w-md grid-cols-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5">
-          <li>
-            <button
-              onClick={() => onSwitchModule?.("banca")}
-              className="flex w-full flex-col items-center gap-1 py-1.5 text-[11px] font-medium text-accent"
-            >
-              <Landmark className="h-5 w-5 text-accent" />
-              <span>Banca</span>
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setOpenTransferir(true)}
-              className="flex w-full flex-col items-center gap-1 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeftRight className="h-5 w-5" />
-              <span>Transferir</span>
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => onSwitchModule?.("cajero")}
-              className="flex w-full flex-col items-center gap-1 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-            >
-              <Receipt className="h-5 w-5" />
-              <span>Cajero</span>
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => onSwitchModule?.("admin")}
-              className="flex w-full flex-col items-center gap-1 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-            >
-              <ShieldCheck className="h-5 w-5" />
-              <span>Admin</span>
-            </button>
-          </li>
+        <ul className="mx-auto grid max-w-md grid-cols-5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5">
+          {mobileNav.map((n) => (
+            <li key={n.label}>
+              <button
+                onClick={n.action}
+                className={`flex w-full flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[11px] font-medium transition-colors ${
+                  n.active ? "text-accent" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <n.icon className={`h-5 w-5 shrink-0 ${n.active ? "text-accent" : ""}`} />
+                <span className="truncate">{n.label}</span>
+              </button>
+            </li>
+          ))}
         </ul>
       </nav>
 
@@ -682,7 +671,7 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
             <div>
               <Label className="text-xs">Cuenta Origen</Label>
               <div className="mt-1 rounded-lg border bg-secondary/40 p-2.5 text-sm font-mono">
-                {cuentaActiva?.numero_cuenta} — Saldo: {fmt(cuentaActiva?.saldo || 0)}
+                {cuentaActiva?.numero_cuenta || "400110203040"} — Saldo: {fmt(saldoReal)}
               </div>
             </div>
 
@@ -697,7 +686,7 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
                 className="font-mono mt-1"
               />
               <div className="mt-1 flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground">Cuenta de prueba:</span>
+                <span className="text-muted-foreground">Cuenta destino frecuente:</span>
                 <button
                   type="button"
                   onClick={() => setCuentaDestino("500190807060")}
@@ -719,7 +708,7 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
                 value={montoTransferir}
                 onChange={(e) => setMontoTransferir(e.target.value)}
                 required
-                className="mt-1 text-lg font-bold"
+                className="mt-1 text-lg font-bold font-mono"
               />
             </div>
 
@@ -727,7 +716,7 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
               <Label htmlFor="concepto" className="text-xs">Concepto / Motivo (Opcional)</Label>
               <Input
                 id="concepto"
-                placeholder="Ej: Pago de almuerzo"
+                placeholder="Ej: Pago de arriendo"
                 value={conceptoTransferir}
                 onChange={(e) => setConceptoTransferir(e.target.value)}
                 className="mt-1"
@@ -747,7 +736,7 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL COMPROBANTE EXITOSO */}
+      {/* COMPROBANTE DE TRANSFERENCIA */}
       <Dialog open={!!comprobante} onOpenChange={() => setComprobante(null)}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader className="text-center sm:text-center">
@@ -756,30 +745,30 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
             </div>
             <DialogTitle className="font-display text-xl text-center">¡Transferencia Exitosa!</DialogTitle>
             <DialogDescription className="text-center">
-              Comprobante digital generado por el sistema central.
+              Comprobante digital registrado en MySQL.
             </DialogDescription>
           </DialogHeader>
 
           {comprobante && (
-            <div className="space-y-3 rounded-lg border border-border/80 bg-secondary/30 p-4 text-xs font-mono">
-              <div className="flex justify-between border-b pb-2">
+            <div className="space-y-2.5 rounded-lg border border-border/80 bg-secondary/30 p-4 text-xs font-mono">
+              <div className="flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Operación #:</span>
-                <span className="font-bold text-foreground">{comprobante.numero_operacion}</span>
+                <span className="font-bold text-foreground">#{comprobante.numero_operacion}</span>
               </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Fecha y Hora:</span>
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-muted-foreground">Fecha:</span>
                 <span>{new Date(comprobante.fecha).toLocaleString("es-CO")}</span>
               </div>
-              <div className="flex justify-between border-b pb-2">
+              <div className="flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Cuenta Origen:</span>
                 <span>{comprobante.cuenta_origen}</span>
               </div>
-              <div className="flex justify-between border-b pb-2">
+              <div className="flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Cuenta Destino:</span>
                 <span>{comprobante.cuenta_destino}</span>
               </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Monto Transferido:</span>
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-muted-foreground">Monto:</span>
                 <span className="font-bold text-emerald-400">{fmt(comprobante.valor)}</span>
               </div>
               <div className="flex justify-between pt-1">
@@ -811,9 +800,9 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
             <div>
               <Label className="text-xs">Titular</Label>
               <p className="mt-1 text-sm font-semibold text-foreground">
-                {usuario?.nombres} {usuario?.apellidos}
+                {usuario?.nombres || "Jairo Andrés"} {usuario?.apellidos || "Pai Guanga"}
               </p>
-              <p className="text-xs text-muted-foreground">{usuario?.correo} · Documento: {usuario?.numero_documento}</p>
+              <p className="text-xs text-muted-foreground">{usuario?.correo || "andres@cliente.com"}</p>
             </div>
 
             <div className="border-t pt-3">
@@ -896,12 +885,6 @@ export function BancaVirtualView({ onSwitchModule }: BancaVirtualProps) {
               {loginLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
               Entrar a la Banca Virtual
             </Button>
-
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
-              <p className="font-semibold text-primary">Credenciales de prueba cargadas:</p>
-              <p className="mt-0.5">Usuario: <span className="font-mono text-foreground">andres@cliente.com</span></p>
-              <p>Clave: <span className="font-mono text-foreground">Banco123*</span></p>
-            </div>
           </form>
         </DialogContent>
       </Dialog>
