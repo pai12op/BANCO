@@ -1,6 +1,6 @@
 # 🏦 Proyecto Integrador — Simulador Bancario Web
 
-Sistema web multi-módulo que simula las operaciones fundamentales de una entidad bancaria comercial, integrado sobre una base de datos centralizada en MySQL y un backend transaccional en Node.js y Express.
+Sistema web multi-módulo que simula las operaciones fundamentales de una entidad bancaria comercial, integrado sobre una base de datos centralizada en MySQL (diseñada estrictamente en **Tercera Forma Normal - 3NF**), un backend transaccional en **Node.js + Express** y una interfaz moderna con estética *obsidian black* en **React 19, Tailwind CSS v4 y Radix UI**.
 
 ---
 
@@ -9,23 +9,53 @@ Sistema web multi-módulo que simula las operaciones fundamentales de una entida
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Stack Tecnológico
 
 ### Backend
 * **Node.js** (v24+)
 * **Express.js** (Servidor HTTP y API REST)
-* **mysql2/promise** (Pool de conexiones y transacciones ACID en MySQL)
-* **express-session** (Manejo de sesiones autenticadas HTTP-Only)
-* **bcryptjs** (Cifrado unidireccional de contraseñas y PINs con salt rounds)
+* **mysql2/promise** (Pool de conexiones y transacciones ACID en MySQL con bloqueo `FOR UPDATE`)
+* **express-session** (Manejo de sesiones autenticadas HTTP-Only con control estricto de roles)
+* **bcryptjs** (Cifrado unidireccional de contraseñas y PINs con 10 salt rounds)
 * **dotenv** (Gestión de variables de entorno seguras)
 
 ### Base de Datos
 * **MySQL / MariaDB** (Motor InnoDB para garantizar propiedades ACID de consistencia transaccional y claves foráneas).
-* **Diseño en Tercera Forma Normal (3NF)**: Cumplimiento estricto para evitar redundancias de almacenamiento y anomalías de actualización.
+* **Diseño en Tercera Forma Normal (3NF)**: 13 tablas relacionales normalizadas que eliminan anomalías de redundancia y actualización.
 
 ### Frontend
-* **HTML5 semántico** y **CSS3 nativo corporativo** (Diseño Fintech institucional con microinteracciones sobrias, sin clichés ni plantillas genéricas de IA).
-* **JavaScript nativo (ES6+)** con Fetch API reactiva para consumo de servicios REST.
+* **React 19** con **Vite 8**
+* **Tailwind CSS v4** (Sistema de diseño *Obsidian Black* con azul zafiro y acentos cyan/esmeralda)
+* **Radix UI & Lucide Icons** (Modales, formularios, diálogos accesibles)
+* **Sonner** (Notificaciones toast en tiempo real)
+* **Diseño Responsivo Total**: Adaptado para PC (Desktop), Tablet y Celular (Mobile First con barra de navegación inferior táctil).
+
+---
+
+## 📊 Modelo Entidad-Relación (Tercera Forma Normal - 3NF)
+
+```mermaid
+erDiagram
+    TIPOS_DOCUMENTO ||--o{ USUARIOS : identifica
+    ROLES ||--o{ USUARIOS : asigna
+    ESTADOS_USUARIO ||--o{ USUARIOS : clasifica
+    USUARIOS ||--o{ CUENTAS : posee
+    USUARIOS ||--o{ OPERACIONES : realiza
+    
+    TIPOS_CUENTA ||--o{ CUENTAS : clasifica
+    ESTADOS_CUENTA ||--o{ CUENTAS : clasifica
+    
+    ESTADOS_OPERACION ||--o{ OPERACIONES : clasifica
+    TIPOS_OPERACION ||--o{ OPERACIONES : clasifica
+    CANALES ||--o{ OPERACIONES : registra
+    
+    OPERACIONES ||--o{ MOVIMIENTOS : genera
+    CUENTAS ||--o{ MOVIMIENTOS : recibe
+    
+    OPERACIONES ||--|| TRANSFERENCIAS : detalle
+    CUENTAS ||--o{ TRANSFERENCIAS : origen
+    CUENTAS ||--o{ TRANSFERENCIAS : destino
+```
 
 ---
 
@@ -33,65 +63,61 @@ Sistema web multi-módulo que simula las operaciones fundamentales de una entida
 
 El sistema opera sobre una **única base de datos centralizada**, de modo que cualquier transacción realizada desde cualquiera de los canales se refleja de forma instantánea en los demás:
 
-1. 🌐 **Módulo de Cliente — Banca Virtual (`/banca`):**
-   * Inicio de sesión seguro con correo o documento + contraseña.
-   * Visualización de tarjeta de débito con saldo disponible en tiempo real.
-   * Historial de movimientos con fecha, concepto, canal, valor y saldo resultante.
-   * Transferencias electrónicas inmediatas hacia otras cuentas registradas en el banco (con bloqueo de saldo, validación de cuenta activa y generación de comprobante).
-   * Modificación de información de perfil (teléfono) y cambio de contraseña.
+### 1. 🌐 Módulo de Cliente — Banca Virtual
+* Inicio de sesión seguro con correo o documento + contraseña.
+* Consulta de saldo en vivo, número de cuenta y tipo de cuenta.
+* Historial de movimientos con fecha, tipo de operación, canal, valor (+ / -) y saldo resultante.
+* **Transferencias electrónicas inmediatas** hacia otras cuentas registradas en el banco (con bloqueo de saldo, validación de cuenta activa y emisión de comprobante digital).
+* **Simulador Tributario Colombiano (4x1.000 - GMF):** Desglose del impuesto con opción de cuenta exenta (Art. 879 E.T.) y switch para simular cuenta gravada.
+* Modificación de información de perfil (teléfono) y cambio de contraseña con validación de clave actual en `bcrypt`.
 
-2. 🏧 **Módulo de Cajero Automático Virtual ATM (`/cajero`):**
-   * Simulación visual de terminal de autoservicio de cajero físico (pantalla CRT de alto contraste y teclado numérico PINPAD interactivo).
-   * Identificación por número de cuenta y PIN de 4 dígitos.
-   * Consulta de saldo en pantalla.
-   * Retiro rápido de efectivo ($20.000, $50.000, $100.000, $200.000, etc.) con validación de saldo suficiente y múltiplos de $10.000 COP.
-   * Emisión de recibo / comprobante térmico con número de transacción y nuevo saldo.
-   * Visualización de los últimos 5 movimientos.
+### 2. 🏧 Módulo de Cajero Automático Virtual ATM
+* Simulación visual de terminal de autoservicio de cajero físico con pantalla LCD bancaria.
+* Identificación por número de cuenta y PIN de 4 dígitos.
+* Consulta de saldo en pantalla.
+* Retiro rápido de efectivo ($50.000, $100.000, **$200.000 - Caso clave del docente**, $400.000 y monto personalizado) con validación de saldo suficiente y múltiplos de $10.000 COP.
+* Emisión de **Voucher / Recibo térmico digital** con número de aprobación, fecha, cajero `ATM-BOG-004` y nuevo saldo.
+* Visualización en pantalla de los últimos 5 movimientos.
 
-3. 🛡️ **Módulo Administrativo del Banco (`/admin`):**
-   * Consola central de backoffice bancario para funcionarios y administradores.
-   * **Dashboard con los 4 indicadores obligatorios:**
-     * Cantidad total de clientes.
-     * Cantidad de cuentas bancarias activas.
-     * Cantidad de clientes o cuentas bloqueadas.
-     * Suma total de los saldos almacenados en bóveda.
-   * Registro y creación de nuevos clientes con asignación automática de cuenta bancaria y saldo inicial.
-   * Búsqueda en tiempo real de clientes por documento, nombre o número de cuenta.
-   * Habilitación y bloqueo de clientes (estados: `ACTIVO`, `INACTIVO`, `BLOQUEADO`).
-   * Ventanilla de consignación en efectivo con comprobante oficial.
-   * Auditoría general de todos los movimientos del banco.
+### 3. 🛡️ Módulo Administrativo del Banco
+* Consola central de backoffice bancario para funcionarios y administradores.
+* **Dashboard con los 4 indicadores obligatorios (Pág. 3 del PDF):**
+  1. Cantidad total de clientes registrados.
+  2. Cantidad de cuentas bancarias activas.
+  3. Cantidad de clientes o cuentas bloqueadas.
+  4. Suma total de los saldos almacenados en bóveda.
+* Registro y creación de nuevos clientes con asignación automática de cuenta bancaria y saldo inicial.
+* Búsqueda en tiempo real de clientes por documento, nombre o número de cuenta.
+* **Habilitación y bloqueo de clientes** (estados: `ACTIVO`, `INACTIVO`, `BLOQUEADO`). Si se bloquea a un cliente, sus cuentas quedan suspendidas inmediatamente en MySQL y se rechazan retiros y transferencias en todos los canales.
+* **Ventanilla de consignación en efectivo** con comprobante oficial de caja (flujo clave del profesor para inyectar $100.000 COP).
+* Auditoría general inmutable de todos los movimientos del banco.
 
 ---
 
-## 📋 Requisitos para Ejecutar el Proyecto
+## 📋 Requisitos Previos
 * **Node.js** (v18 o superior) y **npm**.
 * **MySQL Server** o **XAMPP / MariaDB** ejecutándose en el puerto `3306`.
 
 ---
 
-## ⚙️ Instrucciones de Instalación y Configuración
+## ⚙️ Instrucciones de Instalación y Ejecución
 
-### 1. Clonar o descargar el repositorio
+### 1. Clonar el repositorio
 ```bash
 git clone https://github.com/pai12op/simulador-bancario-web.git
 cd simulador_bancario
 ```
 
-### 2. Instalar dependencias de Node.js
-```bash
-npm install
-```
-
-### 3. Configurar la Base de Datos MySQL
+### 2. Configurar la Base de Datos MySQL
 1. Abrir phpMyAdmin (`http://localhost/phpmyadmin`) o la consola de MySQL.
 2. Importar el script `database.sql` ubicado en la raíz del proyecto:
    ```bash
    mysql -u root -p < database.sql
    ```
-   *(El script crea la base de datos `simulador_bancario`, sus 12 tablas en 3NF con claves foráneas, restricciones y los datos iniciales de prueba).*
+   *(El script crea la base de datos `simulador_bancario`, sus 13 tablas en 3NF con claves foráneas, restricciones y los datos iniciales de prueba).*
 
-### 4. Configurar variables de entorno (`.env`)
-Verificar el archivo `.env` en la raíz con sus credenciales de base de datos:
+### 3. Configurar variables de entorno (`.env`)
+Crear un archivo `.env` en la raíz con sus credenciales locales:
 ```env
 PORT=3000
 DB_HOST=localhost
@@ -99,14 +125,34 @@ DB_USER=root
 DB_PASSWORD=
 DB_NAME=simulador_bancario
 DB_PORT=3306
-SESSION_SECRET=simulador_bancario_secret_key_2026_andres_pai
+SESSION_SECRET=banco_andino_super_secret_session_key_2026
 ```
 
-### 5. Iniciar la Aplicación
+### 4. Instalar dependencias del Backend y Frontend
+```bash
+# En la raíz (Backend Express)
+npm install
+
+# En la carpeta frontend (React + Tailwind)
+cd frontend
+npm install
+cd ..
+```
+
+### 5. Iniciar los Servidores
+
+**Terminal 1 — Backend Express:**
 ```bash
 node server.js
+# Servidor escuchando en: http://localhost:3000
 ```
-El servidor quedará disponible en: `http://localhost:3000`.
+
+**Terminal 2 — Frontend React (Vite):**
+```bash
+cd frontend
+npm run dev
+# Servidor de interfaz listo en: http://localhost:8080
+```
 
 ---
 
@@ -123,10 +169,12 @@ El servidor quedará disponible en: `http://localhost:3000`.
 ---
 
 ## 🎯 Prueba Mínima de Funcionamiento (Páginas 9-10 de la Guía)
+
 Para demostrar la integración total entre los módulos ante el docente, ejecute la siguiente secuencia en vivo:
-1. Ingrese a la **Banca Virtual** (`http://localhost:3000/banca`) con `andres@cliente.com` y verifique su saldo: **$1.000.000 COP**.
-2. Abra el **Cajero Automático** (`http://localhost:3000/cajero`) e ingrese la cuenta `400110203040` y PIN `1234`.
-3. Pulse **Retirar Dinero** y seleccione **$200.000 COP**. El cajero dispensará el efectivo y mostrará el nuevo saldo: **$800.000 COP**.
-4. Regrese a la pestaña de la Banca Virtual y pulse **Actualizar Saldos**: El saldo aparecerá inmediatamente en **$800.000 COP** y en la tabla se reflejará el movimiento: *`Retiro de efectivo en cajero automático: -$200.000`*.
-5. Ingrese a la **Consola Administrativa** (`http://localhost:3000/admin`), vaya a **Consignar en Ventanilla**, ingrese la cuenta `400110203040` y consigne **$100.000 COP**.
-6. El cliente recarga su Banca Virtual y verá su saldo actualizado en **$900.000 COP** con el comprobante de consignación.
+
+1. Ingrese a la **Banca Virtual** (`http://localhost:8080`) con `andres@cliente.com` y verifique su saldo: **$1.000.000 COP**.
+2. Abra el **Cajero Automático** (mediante el switcher superior) e ingrese la cuenta `400110203040` y PIN `1234`.
+3. Pulse **Retirar Dinero** y seleccione **$200.000 COP**. El cajero dispensará el efectivo, emitirá el comprobante y mostrará el nuevo saldo: **$800.000 COP**.
+4. Regrese a la pestaña de la Banca Virtual: El saldo aparecerá inmediatamente en **$800.000 COP** y en la tabla se reflejará el movimiento: *`Retiro de efectivo en cajero automático: -$200.000`*.
+5. Ingrese a la **Consola Administrativa**, vaya a **Consignar en Ventanilla**, ingrese la cuenta `400110203040` y consigne **$100.000 COP**.
+6. El cliente recarga su Banca Virtual y verá su saldo actualizado en **$900.000 COP** con el comprobante de consignación en ventanilla.

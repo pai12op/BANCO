@@ -73,6 +73,7 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
   const [cuentaDestino, setCuentaDestino] = useState("500190807060");
   const [montoTransferir, setMontoTransferir] = useState("");
   const [conceptoTransferir, setConceptoTransferir] = useState("");
+  const [aplicarCuatroPorMil, setAplicarCuatroPorMil] = useState(false);
   const [transferLoading, setTransferLoading] = useState(false);
 
   // Formulario Login
@@ -175,11 +176,14 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
     e.preventDefault();
     if (!cuentaActiva) return;
 
-    const valor = parseFloat(montoTransferir);
-    if (isNaN(valor) || valor <= 0) {
+    const valorBase = parseFloat(montoTransferir);
+    if (isNaN(valorBase) || valorBase <= 0) {
       toast.error("El monto debe ser mayor a $0.");
       return;
     }
+
+    const impuesto = aplicarCuatroPorMil ? Math.round(valorBase * 0.004) : 0;
+    const valor = valorBase + impuesto;
 
     if (valor > cuentaActiva.saldo) {
       toast.error(`Saldo insuficiente. Saldo disponible: ${fmt(cuentaActiva.saldo)}`);
@@ -193,6 +197,10 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
 
     try {
       setTransferLoading(true);
+      const conceptoFinal = conceptoTransferir.trim()
+        ? (impuesto > 0 ? `${conceptoTransferir.trim()} (Incluye GMF 4x1000: ${fmt(impuesto)})` : conceptoTransferir.trim())
+        : (impuesto > 0 ? `Transferencia (GMF 4x1000: ${fmt(impuesto)})` : undefined);
+
       const res = await fetch("/api/banca/transferir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -200,7 +208,7 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
           cuenta_origen_id: cuentaActiva.id,
           numero_cuenta_destino: cuentaDestino.trim(),
           valor,
-          concepto: conceptoTransferir.trim() || undefined,
+          concepto: conceptoFinal,
         }),
         credentials: "include",
       });
@@ -751,6 +759,44 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
                 onChange={(e) => setConceptoTransferir(e.target.value)}
                 className="mt-1"
               />
+            </div>
+
+            {/* DESGLOSE TRIBUTARIO 4x1000 (GMF - ART. 879 E.T.) */}
+            <div className="rounded-xl border border-border/80 bg-secondary/30 p-3 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Valor a transferir:</span>
+                <span className="font-mono font-bold">{fmt(parseFloat(montoTransferir) || 0)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Gravamen GMF (4x1.000):</span>
+                <span className={`font-mono font-bold ${aplicarCuatroPorMil ? "text-amber-400" : "text-emerald-400"}`}>
+                  {aplicarCuatroPorMil
+                    ? `+${fmt(Math.round((parseFloat(montoTransferir) || 0) * 0.004))}`
+                    : "$ 0 COP (Exenta Art. 879 E.T.)"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-border/60 pt-1.5 font-bold">
+                <span className="text-foreground">Total a debitar:</span>
+                <span className="font-mono text-cyan-400 text-sm">
+                  {fmt(
+                    (parseFloat(montoTransferir) || 0) +
+                      (aplicarCuatroPorMil ? Math.round((parseFloat(montoTransferir) || 0) * 0.004) : 0)
+                  )}
+                </span>
+              </div>
+
+              <div className="pt-2 border-t border-border/40 flex items-center justify-between">
+                <label htmlFor="toggle-4x1000" className="text-[11px] text-muted-foreground cursor-pointer select-none">
+                  Simular cuenta no exenta (+ 4x1.000 DIAN)
+                </label>
+                <input
+                  id="toggle-4x1000"
+                  type="checkbox"
+                  checked={aplicarCuatroPorMil}
+                  onChange={(e) => setAplicarCuatroPorMil(e.target.checked)}
+                  className="rounded border-border accent-primary cursor-pointer h-4 w-4"
+                />
+              </div>
             </div>
 
             <DialogFooter className="mt-6">
