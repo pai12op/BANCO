@@ -78,7 +78,12 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
       const res = await fetch("/api/admin/dashboard", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        setKpis(data.kpis);
+        setKpis({
+          totalClientes: Number(data.total_clientes) || 0,
+          cuentasActivas: Number(data.cuentas_activas) || 0,
+          cuentasBloqueadas: Number(data.cuentas_bloqueadas) || 0,
+          totalBoveda: Number(data.saldo_total_banco) || 0,
+        });
         setAutenticado(true);
         cargarClientes();
         cargarAuditoria();
@@ -122,7 +127,12 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
       const res = await fetch("/api/admin/dashboard", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        setKpis(data.kpis);
+        setKpis({
+          totalClientes: Number(data.total_clientes) || 0,
+          cuentasActivas: Number(data.cuentas_activas) || 0,
+          cuentasBloqueadas: Number(data.cuentas_bloqueadas) || 0,
+          totalBoveda: Number(data.saldo_total_banco) || 0,
+        });
       }
     } catch (err) {
       console.error(err);
@@ -252,7 +262,7 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
       cargarDashboard();
       cargarClientes();
     } catch (err) {
-      toast.error("Error al registrar cliente.");
+      toast.error("Error de comunicación.");
     } finally {
       setCrearLoading(false);
     }
@@ -280,50 +290,29 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
   });
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground">
-      {/* HEADER ADMIN */}
-      <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 lg:px-8">
+    <div className="min-h-[calc(100vh-53px)] bg-background font-sans text-foreground">
+      {/* HEADER ADMIN LIMPIO Y ESPACIOSO */}
+      <header className="border-b bg-background/80 backdrop-blur px-4 py-4 lg:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-purple-600 text-white">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-purple-600 text-white shadow-md shadow-purple-600/20">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-display text-lg font-bold leading-tight">Consola Administrativa</h1>
-              <p className="text-xs text-muted-foreground">Bóveda, Ventanilla y Gestión de Clientes</p>
+              <h1 className="font-display text-lg font-bold leading-tight text-foreground">Consola Administrativa</h1>
+              <p className="text-xs text-muted-foreground">Bóveda, Ventanilla y Gestión de Clientes · Rol: Administrador</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-card p-1">
-              <button
-                onClick={() => onSwitchModule?.("banca")}
-                className="rounded-lg px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-              >
-                🏦 Banca
-              </button>
-              <button
-                onClick={() => onSwitchModule?.("cajero")}
-                className="rounded-lg px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-              >
-                🏧 Cajero ATM
-              </button>
-              <button
-                onClick={() => onSwitchModule?.("admin")}
-                className="rounded-lg px-2.5 py-1 text-xs font-semibold bg-purple-600 text-white shadow"
-              >
-                🛡️ Admin
-              </button>
-            </div>
-
             {autenticado && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                className="gap-1.5 text-xs border-red-500/30 text-red-400 h-8"
+                className="gap-1.5 text-xs border-rose-500/30 text-rose-400 hover:bg-rose-500/10 h-9"
               >
-                <LogOut className="h-3.5 w-3.5" /> Salir
+                <LogOut className="h-3.5 w-3.5" /> Salir de Consola
               </Button>
             )}
           </div>
@@ -332,52 +321,70 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
 
       <main className="mx-auto max-w-6xl px-4 py-6 pb-24">
         {!autenticado ? (
-          /* LOGIN ADMIN */
-          <div className="mx-auto max-w-md rounded-2xl border bg-card p-6 shadow-2xl">
-            <div className="text-center">
-              <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-purple-500/20 text-purple-400">
-                <ShieldCheck className="h-8 w-8" />
+          /* LOGIN ADMIN DEDICADO */
+          <div className="mx-auto max-w-md rounded-2xl border border-purple-500/30 bg-card p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+            <div aria-hidden className="pointer-events-none absolute inset-0 hero-sheen" />
+            
+            <div className="relative">
+              <div className="text-center">
+                <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  <ShieldCheck className="h-7 w-7" />
+                </div>
+                <h2 className="font-display text-2xl font-bold">Acceso Administrativo</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Módulo reservado para gerencia y cajeros de ventanilla
+                </p>
               </div>
-              <h2 className="font-display text-2xl font-bold">Acceso Administrativo</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Módulo reservado para gerencia y cajeros de ventanilla
-              </p>
+
+              <form onSubmit={handleLogin} className="mt-6 space-y-4">
+                <div>
+                  <Label className="text-xs">Correo Electrónico</Label>
+                  <Input
+                    type="email"
+                    value={adminCorreo}
+                    onChange={(e) => setAdminCorreo(e.target.value)}
+                    required
+                    className="mt-1 font-mono text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Contraseña de Administrador</Label>
+                  <Input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    required
+                    className="mt-1 font-mono text-sm"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full gap-2 mt-2 h-11 text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"
+                >
+                  {loading && <RefreshCw className="h-4 w-4 animate-spin" />}
+                  Ingresar a la Consola
+                </Button>
+
+                <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 text-xs">
+                  <p className="font-semibold text-purple-300">Credenciales del Proyecto (Rubrica):</p>
+                  <p className="mt-1 text-muted-foreground">Usuario: <span className="font-mono text-foreground font-semibold">admin@banco.com</span></p>
+                  <p className="text-muted-foreground">Clave: <span className="font-mono text-foreground font-semibold">Banco123*</span></p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdminCorreo("admin@banco.com");
+                      setAdminPassword("Banco123*");
+                    }}
+                    className="mt-2 w-full rounded-lg bg-purple-500/20 py-1.5 text-center text-[11px] font-semibold text-purple-300 hover:bg-purple-500/30"
+                  >
+                    ⚡ Autocompletar Cuenta Administrador
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={handleLogin} className="mt-6 space-y-4">
-              <div>
-                <Label className="text-xs">Correo Electrónico</Label>
-                <Input
-                  type="email"
-                  value={adminCorreo}
-                  onChange={(e) => setAdminCorreo(e.target.value)}
-                  required
-                  className="mt-1 font-mono"
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs">Contraseña de Administrador</Label>
-                <Input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  required
-                  className="mt-1 font-mono"
-                />
-              </div>
-
-              <Button type="submit" disabled={loading} className="w-full gap-2 mt-2 h-11 text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white">
-                {loading && <RefreshCw className="h-4 w-4 animate-spin" />}
-                Ingresar a la Consola
-              </Button>
-
-              <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 p-3 text-xs">
-                <p className="font-semibold text-purple-300">Credenciales del Proyecto (Rubrica):</p>
-                <p className="mt-1">Usuario: <span className="font-mono text-foreground font-semibold">admin@banco.com</span></p>
-                <p>Clave: <span className="font-mono text-foreground font-semibold">Banco123*</span></p>
-              </div>
-            </form>
           </div>
         ) : (
           /* PANEL CON 4 KPIS Y GESTIÓN */
@@ -431,94 +438,87 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
               <div className="flex gap-2">
                 <Button
                   onClick={() => setOpenConsignar(true)}
-                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs"
                 >
                   <DollarSign className="h-4 w-4" /> Consignar en Ventanilla
                 </Button>
 
                 <Button
                   onClick={() => setOpenCrearCliente(true)}
-                  variant="outline"
-                  className="gap-1.5"
+                  className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs"
                 >
                   <Plus className="h-4 w-4" /> Nuevo Cliente
                 </Button>
               </div>
             </div>
 
-            {/* TABLA DE CLIENTES Y CUENTAS */}
-            <section className="rounded-2xl border bg-card p-4 lg:p-6">
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* TABLA DE CLIENTES Y GESTIÓN DE BLOQUEO */}
+            <section className="rounded-2xl border bg-card p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                 <div>
-                  <h3 className="font-display text-lg font-bold">Clientes del Banco</h3>
-                  <p className="text-xs text-muted-foreground">Gestión de estados, saldos y cuentas activas</p>
+                  <h3 className="font-display text-lg font-bold">Listado de Clientes y Cuentas</h3>
+                  <p className="text-xs text-muted-foreground">Control de estado activo / suspendido</p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar por cédula o nombre..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8 h-9 text-xs w-60"
-                    />
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => { cargarDashboard(); cargarClientes(); }}>
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  </Button>
+                <div className="flex items-center gap-2 rounded-xl border bg-background px-3 py-1.5 text-xs text-muted-foreground w-full sm:w-auto">
+                  <Search className="h-3.5 w-3.5" />
+                  <input
+                    placeholder="Buscar por cédula o nombre..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-transparent outline-none w-full sm:w-56"
+                  />
                 </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-b bg-secondary/40 text-muted-foreground">
+                  <thead className="border-b bg-secondary/40 text-muted-foreground font-mono uppercase">
                     <tr>
-                      <th className="p-3 font-semibold">Cliente</th>
-                      <th className="p-3 font-semibold">Documento</th>
-                      <th className="p-3 font-semibold">Número de Cuenta</th>
-                      <th className="p-3 font-semibold">Saldo Actual</th>
-                      <th className="p-3 font-semibold">Estado</th>
-                      <th className="p-3 font-semibold text-right">Acción</th>
+                      <th className="p-3">Doc</th>
+                      <th className="p-3">Cliente</th>
+                      <th className="p-3">Correo</th>
+                      <th className="p-3">No. Cuenta</th>
+                      <th className="p-3">Saldo</th>
+                      <th className="p-3">Estado</th>
+                      <th className="p-3 text-right">Acción</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
-                    {clientesFiltrados.map((c) => {
-                      const estadoTexto = c.estado || c.estado_cliente || (c.estado_id === 1 ? "ACTIVO" : "BLOQUEADO");
-                      const esActivo = estadoTexto === "ACTIVO";
+                  <tbody className="divide-y divide-border/60">
+                    {clientesFiltrados.map((cli) => {
+                      const estado = cli.estado || cli.estado_cliente || (cli.estado_id === 1 ? "ACTIVO" : "BLOQUEADO");
+                      const esActivo = estado === "ACTIVO";
                       return (
-                        <tr key={c.id} className="hover:bg-secondary/20">
-                          <td className="p-3 font-medium">
-                            <p className="text-foreground font-semibold">{c.nombres} {c.apellidos}</p>
-                            <p className="text-[10px] text-muted-foreground">{c.correo}</p>
-                          </td>
-                          <td className="p-3 font-mono">{c.tipo_doc || c.tipo_documento} {c.numero_documento}</td>
-                          <td className="p-3 font-mono text-cyan-400 font-semibold">{c.numero_cuenta}</td>
-                          <td className="p-3 font-mono font-bold text-foreground">{fmt(c.saldo)}</td>
+                        <tr key={cli.id} className="hover:bg-secondary/20 transition-colors">
+                          <td className="p-3 font-mono font-semibold">{cli.tipo_doc || "CC"} {cli.numero_documento}</td>
+                          <td className="p-3 font-medium text-foreground">{cli.nombres} {cli.apellidos}</td>
+                          <td className="p-3 text-muted-foreground">{cli.correo}</td>
+                          <td className="p-3 font-mono text-cyan-400 font-semibold">{cli.numero_cuenta || "Sin cuenta"}</td>
+                          <td className="p-3 font-mono font-bold text-foreground">{cli.saldo !== undefined ? fmt(cli.saldo) : "$ 0 COP"}</td>
                           <td className="p-3">
                             <span
-                              className={`rounded px-2 py-0.5 text-[10px] font-semibold ${
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                 esActivo
                                   ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
                                   : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                               }`}
                             >
-                              {estadoTexto}
+                              {estado}
                             </span>
                           </td>
                           <td className="p-3 text-right">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => toggleEstadoCliente(c)}
-                              className={`h-7 px-2 text-[11px] gap-1 ${
+                              onClick={() => toggleEstadoCliente(cli)}
+                              className={`h-7 px-2.5 text-[11px] gap-1 ${
                                 esActivo
-                                  ? "border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
-                                  : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                                  ? "border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
+                                  : "border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
                               }`}
                             >
                               {esActivo ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-                              {esActivo ? "Bloquear" : "Desbloquear"}
+                              {esActivo ? "Bloquear" : "Activar"}
                             </Button>
                           </td>
                         </tr>
@@ -529,15 +529,15 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
               </div>
             </section>
 
-            {/* AUDITORÍA GENERAL */}
-            <section className="rounded-2xl border bg-card p-4 lg:p-6">
-              <div className="mb-3 flex items-center justify-between">
+            {/* TABLA DE AUDITORÍA GLOBAL DE MOVIMIENTOS */}
+            <section className="rounded-2xl border bg-card p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-display text-lg font-bold">Auditoría Global de Operaciones</h3>
-                  <p className="text-xs text-muted-foreground">Trazabilidad contable en tiempo real (Últimos movimientos)</p>
+                  <h3 className="font-display text-lg font-bold">Historial General de Auditoría</h3>
+                  <p className="text-xs text-muted-foreground">Registro de todas las transacciones del banco</p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={cargarAuditoria} className="text-xs gap-1 text-accent">
-                  <RefreshCw className="h-3 w-3" /> Refrescar
+                <Button variant="ghost" size="sm" onClick={cargarAuditoria} className="h-8 text-xs gap-1">
+                  <RefreshCw className="h-3.5 w-3.5" /> Actualizar
                 </Button>
               </div>
 
@@ -546,32 +546,32 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
                   <thead className="border-b bg-secondary/40 text-muted-foreground sticky top-0">
                     <tr>
                       <th className="p-2.5">ID</th>
-                      <th className="p-2.5">Fecha</th>
+                      <th className="p-2.5">Fecha / Hora</th>
+                      <th className="p-2.5">Canal</th>
+                      <th className="p-2.5">Tipo</th>
                       <th className="p-2.5">Cuenta</th>
-                      <th className="p-2.5">Operación / Canal</th>
-                      <th className="p-2.5">Sentido</th>
-                      <th className="p-2.5">Valor</th>
+                      <th className="p-2.5">Monto</th>
                       <th className="p-2.5">Saldo Resultante</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-border/60">
                     {auditoria.map((a) => {
                       const esCredito = a.sentido === "CREDITO";
                       return (
-                        <tr key={a.id} className="hover:bg-secondary/10">
-                          <td className="p-2.5 font-bold">#{a.id}</td>
-                          <td className="p-2.5 text-slate-400">{new Date(a.fecha_hora).toLocaleString("es-CO")}</td>
-                          <td className="p-2.5 text-cyan-400">{a.numero_cuenta}</td>
-                          <td className="p-2.5 text-slate-300">{a.tipo_operacion} ({a.canal})</td>
+                        <tr key={a.id} className="hover:bg-secondary/20">
+                          <td className="p-2.5 text-muted-foreground">#{a.id}</td>
+                          <td className="p-2.5">{new Date(a.fecha_hora).toLocaleString("es-CO")}</td>
                           <td className="p-2.5">
-                            <span className={esCredito ? "text-emerald-400 font-bold" : "text-slate-300 font-bold"}>
-                              {a.sentido}
+                            <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px]">
+                              {a.canal}
                             </span>
                           </td>
-                          <td className="p-2.5 font-bold text-foreground">
+                          <td className="p-2.5 font-semibold text-slate-200">{a.tipo_operacion || a.descripcion}</td>
+                          <td className="p-2.5 text-cyan-400 font-semibold">{a.numero_cuenta}</td>
+                          <td className={`p-2.5 font-bold ${esCredito ? "text-emerald-400" : "text-slate-200"}`}>
                             {esCredito ? "+" : "-"}{fmt(a.valor)}
                           </td>
-                          <td className="p-2.5 text-slate-400">{fmt(a.saldo_resultante)}</td>
+                          <td className="p-2.5 text-muted-foreground">{fmt(a.saldo_resultante)}</td>
                         </tr>
                       );
                     })}
@@ -633,7 +633,7 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
             </div>
 
             <div>
-              <Label className="text-xs">Concepto de Ventanilla</Label>
+              <Label className="text-xs">Concepto / Referencia</Label>
               <Input
                 value={conceptoConsignar}
                 onChange={(e) => setConceptoConsignar(e.target.value)}
@@ -641,53 +641,57 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
               />
             </div>
 
-            <DialogFooter className="mt-4">
+            <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => setOpenConsignar(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={consignarLoading} className="bg-emerald-600 hover:bg-emerald-500 text-white">
-                {consignarLoading && <RefreshCw className="h-4 w-4 animate-spin mr-1.5" />}
-                Confirmar Depósito
+              <Button type="submit" disabled={consignarLoading} className="gap-2 bg-emerald-600 hover:bg-emerald-500 font-semibold text-white">
+                {consignarLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
+                Efectuar Depósito
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* COMPROBANTE CONSIGNACIÓN */}
+      {/* MODAL RECIBO DE CONSIGNACIÓN */}
       <Dialog open={!!reciboConsignacion} onOpenChange={() => setReciboConsignacion(null)}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader className="text-center sm:text-center">
             <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-full bg-emerald-500/20 text-emerald-400">
               <CheckCircle2 className="h-6 w-6" />
             </div>
-            <DialogTitle className="font-display text-xl text-center">¡Depósito Aplicado con Éxito!</DialogTitle>
+            <DialogTitle className="font-display text-xl text-center">¡Depósito Exitoso!</DialogTitle>
             <DialogDescription className="text-center">
-              Recibo oficial de ventanilla emitido por la entidad.
+              Comprobante de ventanilla registrado en MySQL.
             </DialogDescription>
           </DialogHeader>
 
           {reciboConsignacion && (
-            <div className="space-y-2 rounded-lg border bg-secondary/30 p-4 text-xs font-mono">
+            <div className="space-y-2 rounded-lg border border-border/80 bg-secondary/30 p-4 text-xs font-mono">
               <div className="flex justify-between border-b pb-1.5">
-                <span className="text-muted-foreground">Transacción #:</span>
-                <span className="font-bold">#{reciboConsignacion.transaccion_id}</span>
+                <span className="text-muted-foreground">Operación:</span>
+                <span className="font-bold">#{reciboConsignacion.numero_operacion}</span>
               </div>
               <div className="flex justify-between border-b pb-1.5">
-                <span className="text-muted-foreground">Titular:</span>
-                <span className="font-semibold">{reciboConsignacion.titular}</span>
+                <span className="text-muted-foreground">Fecha:</span>
+                <span>{new Date(reciboConsignacion.fecha).toLocaleString("es-CO")}</span>
               </div>
               <div className="flex justify-between border-b pb-1.5">
-                <span className="text-muted-foreground">Cuenta Destino:</span>
+                <span className="text-muted-foreground">Cuenta:</span>
                 <span>{reciboConsignacion.numero_cuenta}</span>
               </div>
               <div className="flex justify-between border-b pb-1.5">
-                <span className="text-muted-foreground">Valor Consignado:</span>
-                <span className="font-bold text-emerald-400">+{fmt(reciboConsignacion.valor_consignado)}</span>
+                <span className="text-muted-foreground">Titular:</span>
+                <span className="font-semibold text-foreground">{reciboConsignacion.titular}</span>
               </div>
-              <div className="flex justify-between pt-1">
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-muted-foreground">Valor Depositado:</span>
+                <span className="font-bold text-emerald-400">{fmt(reciboConsignacion.valor)}</span>
+              </div>
+              <div className="flex justify-between pt-1 font-bold">
                 <span className="text-muted-foreground">Nuevo Saldo:</span>
-                <span className="font-bold text-foreground">{fmt(reciboConsignacion.nuevo_saldo)}</span>
+                <span className="text-cyan-400">{fmt(reciboConsignacion.nuevo_saldo)}</span>
               </div>
             </div>
           )}
@@ -700,13 +704,13 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
         </DialogContent>
       </Dialog>
 
-      {/* MODAL CREAR CLIENTE */}
+      {/* MODAL CREAR NUEVO CLIENTE CON CUENTA BANCARIA */}
       <Dialog open={openCrearCliente} onOpenChange={setOpenCrearCliente}>
-        <DialogContent className="sm:max-w-lg bg-card border-border">
+        <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">Registrar Nuevo Cliente</DialogTitle>
             <DialogDescription>
-              Crea el perfil del cliente, su cuenta bancaria y aplica el depósito inicial de apertura.
+              Crea un cliente con cuenta bancaria activa y saldo de apertura.
             </DialogDescription>
           </DialogHeader>
 
@@ -717,6 +721,7 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
                 <Input
                   value={nuevoCliente.nombres}
                   onChange={(e) => setNuevoCliente({ ...nuevoCliente, nombres: e.target.value })}
+                  placeholder="Carlos"
                   required
                   className="mt-1"
                 />
@@ -726,6 +731,7 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
                 <Input
                   value={nuevoCliente.apellidos}
                   onChange={(e) => setNuevoCliente({ ...nuevoCliente, apellidos: e.target.value })}
+                  placeholder="Ramírez"
                   required
                   className="mt-1"
                 />
@@ -734,47 +740,36 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Tipo Doc.</Label>
-                <select
-                  value={nuevoCliente.tipo_documento_id}
-                  onChange={(e) => setNuevoCliente({ ...nuevoCliente, tipo_documento_id: parseInt(e.target.value) })}
-                  className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-sm"
-                >
-                  <option value={1} className="bg-card">Cédula Ciudadanía (CC)</option>
-                  <option value={2} className="bg-card">Cédula Extranjería (CE)</option>
-                  <option value={3} className="bg-card">Pasaporte (PAS)</option>
-                </select>
-              </div>
-              <div>
-                <Label className="text-xs">Número de Documento</Label>
+                <Label className="text-xs">No. Documento (Cédula)</Label>
                 <Input
                   value={nuevoCliente.numero_documento}
                   onChange={(e) => setNuevoCliente({ ...nuevoCliente, numero_documento: e.target.value })}
+                  placeholder="1009876543"
                   required
+                  className="mt-1 font-mono"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Teléfono Móvil</Label>
+                <Input
+                  value={nuevoCliente.telefono}
+                  onChange={(e) => setNuevoCliente({ ...nuevoCliente, telefono: e.target.value })}
+                  placeholder="3119876543"
                   className="mt-1 font-mono"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Correo Electrónico</Label>
-                <Input
-                  type="email"
-                  value={nuevoCliente.correo}
-                  onChange={(e) => setNuevoCliente({ ...nuevoCliente, correo: e.target.value })}
-                  required
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Teléfono</Label>
-                <Input
-                  value={nuevoCliente.telefono}
-                  onChange={(e) => setNuevoCliente({ ...nuevoCliente, telefono: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
+            <div>
+              <Label className="text-xs">Correo Electrónico</Label>
+              <Input
+                type="email"
+                value={nuevoCliente.correo}
+                onChange={(e) => setNuevoCliente({ ...nuevoCliente, correo: e.target.value })}
+                placeholder="carlos@correo.com"
+                required
+                className="mt-1 font-mono"
+              />
             </div>
 
             <div>
@@ -784,16 +779,21 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
                 step="10000"
                 value={nuevoCliente.saldo_inicial}
                 onChange={(e) => setNuevoCliente({ ...nuevoCliente, saldo_inicial: e.target.value })}
+                required
                 className="mt-1 font-mono font-bold"
               />
+            </div>
+
+            <div className="rounded-xl border border-secondary bg-secondary/30 p-2.5 text-[11px] text-muted-foreground">
+              Se creará automáticamente una cuenta de ahorros, PIN de cajero <span className="font-mono text-foreground font-semibold">1234</span> y contraseña temporal <span className="font-mono text-foreground font-semibold">Banco123*</span>.
             </div>
 
             <DialogFooter className="mt-4">
               <Button type="button" variant="outline" onClick={() => setOpenCrearCliente(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={crearLoading} className="bg-purple-600 hover:bg-purple-500 text-white">
-                {crearLoading && <RefreshCw className="h-4 w-4 animate-spin mr-1.5" />}
+              <Button type="submit" disabled={crearLoading} className="gap-2">
+                {crearLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
                 Crear Cliente y Cuenta
               </Button>
             </DialogFooter>

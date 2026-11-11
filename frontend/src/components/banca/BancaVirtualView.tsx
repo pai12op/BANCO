@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, CreditCard, PiggyBank, Settings,
   Bell, Search, ArrowUpRight, ArrowDownLeft, Send, Plus, Receipt, Landmark,
-  MoreHorizontal, LogOut, CheckCircle2, ShieldCheck, RefreshCw
+  MoreHorizontal, LogOut, CheckCircle2, ShieldCheck, RefreshCw, KeyRound, User
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -66,7 +66,6 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
   // Modales
   const [openTransferir, setOpenTransferir] = useState(false);
   const [openAjustes, setOpenAjustes] = useState(false);
-  const [openLogin, setOpenLogin] = useState(false);
   const [comprobante, setComprobante] = useState<any>(null);
 
   // Formulario Transferencia
@@ -93,7 +92,7 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
       setLoading(true);
       const res = await fetch("/api/banca/resumen", { credentials: "include" });
       if (res.status === 401) {
-        setOpenLogin(true);
+        setUsuario(null);
         setLoading(false);
         return;
       }
@@ -150,7 +149,6 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
         return;
       }
       toast.success(`Bienvenido(a), ${data.usuario.nombres}`);
-      setOpenLogin(false);
       cargarResumen();
     } catch (err) {
       toast.error("Error de conexión al iniciar sesión.");
@@ -165,7 +163,6 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
       setUsuario(null);
       setCuentas([]);
       setMovimientos([]);
-      setOpenLogin(true);
       toast.info("Sesión cerrada correctamente.");
     } catch (err) {
       console.error(err);
@@ -219,14 +216,15 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
         return;
       }
 
-      toast.success("¡Transferencia realizada con éxito!");
+      toast.success(data.mensaje);
       setComprobante(data.comprobante);
       setOpenTransferir(false);
       setMontoTransferir("");
       setConceptoTransferir("");
+
       cargarResumen();
     } catch (err) {
-      toast.error("Error durante la transferencia.");
+      toast.error("Error al procesar la transferencia.");
     } finally {
       setTransferLoading(false);
     }
@@ -247,10 +245,10 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
         toast.error(data.error || "Error al actualizar perfil.");
         return;
       }
-      toast.success("Teléfono actualizado en MySQL.");
-      cargarResumen();
+      toast.success(data.mensaje);
+      if (usuario) setUsuario({ ...usuario, telefono });
     } catch (err) {
-      toast.error("Error de conexión.");
+      toast.error("Error de comunicación.");
     } finally {
       setAjustesLoading(false);
     }
@@ -258,14 +256,11 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
 
   const handleCambiarPass = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!passActual || !passNueva) {
-      toast.error("Complete ambos campos.");
-      return;
-    }
     if (passNueva.length < 6) {
       toast.error("La nueva contraseña debe tener mínimo 6 caracteres.");
       return;
     }
+
     try {
       setAjustesLoading(true);
       const res = await fetch("/api/banca/password", {
@@ -292,13 +287,12 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
 
   const saldoReal = cuentaActiva ? cuentaActiva.saldo : 1000000;
 
-  // Cuentas del dashboard
   const accountsDisplay = [
     {
-      name: "Cuenta de Ahorros",
-      num: "•••• 3040",
+      name: cuentaActiva?.tipo_cuenta || "Cuenta de Ahorros",
+      num: cuentaActiva ? `•••• ${cuentaActiva.numero_cuenta.slice(-4)}` : "•••• 3040",
       bal: saldoReal,
-      sub: "Disponible hoy · Principal",
+      sub: "Disponible en MySQL · Principal",
       active: true,
       onClick: () => cuentaActiva && cargarMovimientos(cuentaActiva.id),
     },
@@ -349,18 +343,94 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
   ];
 
   const mobileNav = [
-    { icon: LayoutDashboard, label: "Inicio", active: true, action: () => onSwitchModule?.("banca") },
+    { icon: LayoutDashboard, label: "Inicio", active: true, action: () => {} },
     { icon: ArrowLeftRight, label: "Transferir", action: () => setOpenTransferir(true) },
     { icon: Receipt, label: "Cajero", action: () => onSwitchModule?.("cajero") },
     { icon: ShieldCheck, label: "Admin", action: () => onSwitchModule?.("admin") },
     { icon: MoreHorizontal, label: "Ajustes", action: () => setOpenAjustes(true) },
   ];
 
+  // SI NO HAY USUARIO AUTENTICADO: PANTALLA DEDICADA DE LOGIN CLIENTE
+  if (!usuario && !loading) {
+    return (
+      <div className="min-h-[calc(100vh-53px)] flex items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-2xl border border-primary/30 bg-card p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+          <div aria-hidden className="pointer-events-none absolute inset-0 hero-sheen" />
+          
+          <div className="relative">
+            <div className="text-center">
+              <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/20 text-primary border border-primary/40 shadow-inner">
+                <Landmark className="h-7 w-7" />
+              </div>
+              <h2 className="font-display text-2xl font-bold">Banca Virtual Personas</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Ingrese sus credenciales de cliente para consultar saldos y transferir.
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="mt-6 space-y-4">
+              <div>
+                <Label className="text-xs">Correo Electrónico o Documento</Label>
+                <Input
+                  value={loginIdentificador}
+                  onChange={(e) => setLoginIdentificador(e.target.value)}
+                  placeholder="andres@cliente.com"
+                  required
+                  className="mt-1 font-mono text-sm"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs">Contraseña Bancaria</Label>
+                <Input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="mt-1 font-mono text-sm"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full gap-2 mt-2 h-11 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+              >
+                {loginLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
+                Ingresar a Banca Virtual
+              </Button>
+
+              <div className="rounded-xl border border-primary/30 bg-primary/10 p-3.5 text-xs">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-semibold text-accent">Credenciales del Docente:</span>
+                  <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] text-accent font-mono font-bold">Rubrica</span>
+                </div>
+                <p className="text-muted-foreground">Usuario: <span className="font-mono text-foreground font-semibold">andres@cliente.com</span></p>
+                <p className="text-muted-foreground">Clave: <span className="font-mono text-foreground font-semibold">Banco123*</span></p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginIdentificador("andres@cliente.com");
+                    setLoginPassword("Banco123*");
+                  }}
+                  className="mt-2.5 w-full rounded-lg bg-primary/20 py-2 text-center text-xs font-semibold text-accent hover:bg-primary/30 transition-colors"
+                >
+                  ⚡ Autocompletar Cuenta Andrés Pai
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground">
-      {/* ASIDE / SIDEBAR FIJO EXACTO AL ORIGINAL */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar p-5 text-sidebar-foreground lg:flex">
-        <div className="mb-8 flex min-w-0 items-center gap-2.5">
+    <div className="min-h-[calc(100vh-53px)] bg-background font-sans text-foreground">
+      {/* ASIDE / SIDEBAR FIJO DESKTOP */}
+      <aside className="fixed top-[53px] bottom-0 left-0 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar p-5 text-sidebar-foreground lg:flex">
+        <div className="mb-6 flex min-w-0 items-center gap-2.5">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
             <Landmark className="h-5 w-5" />
           </div>
@@ -389,139 +459,106 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
             <p className="mt-1 text-xs text-sidebar-foreground/80">Línea 24/7: 01 8000 123 456</p>
           </div>
 
-          {usuario && (
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-sidebar-accent hover:text-red-400"
-            >
-              <LogOut className="h-4 w-4" /> Cerrar sesión
-            </button>
-          )}
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-sidebar-accent hover:text-red-400 transition-colors"
+          >
+            <LogOut className="h-4 w-4" /> Cerrar sesión
+          </button>
         </div>
       </aside>
 
-      {/* ÁREA PRINCIPAL CON PL-64 */}
+      {/* ÁREA PRINCIPAL CON PL-64 EN DESKTOP */}
       <div className="lg:pl-64">
-        {/* HEADER ÚNICO Y LIMPIO */}
-        <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 lg:px-8">
-            {/* MOBILE TITLE */}
-            <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
-                <Landmark className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate font-display text-base font-bold leading-tight">Banca Verde</p>
-                <p className="truncate text-xs text-muted-foreground">Buenas noches, Andrés</p>
-              </div>
+        {/* HEADER LIMPIO Y ESPACIOSO */}
+        <header className="border-b bg-background/80 backdrop-blur px-4 py-4 lg:px-8">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
+            {/* SALUDO AL CLIENTE */}
+            <div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Bienvenido(a)</p>
+              <h1 className="truncate font-display text-2xl font-bold text-foreground">
+                {usuario ? `${usuario.nombres} ${usuario.apellidos}` : "Andrés Paiwa"}
+              </h1>
             </div>
 
-            {/* DESKTOP TITLE */}
-            <div className="hidden min-w-0 lg:block">
-              <p className="text-sm text-muted-foreground">Buenas noches,</p>
-              <h1 className="truncate font-display text-2xl font-bold">Andrés Paiwa</h1>
-            </div>
-
-            {/* SWITCHER INTEGRADO Y ACCIONES */}
-            <div className="flex shrink-0 items-center gap-2.5">
-              {/* SELECTOR DE MÓDULOS EN EL HEADER */}
-              <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-card p-1">
-                <button
-                  onClick={() => onSwitchModule?.("banca")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                    activeModule === "banca"
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  🏦 Banca
-                </button>
-                <button
-                  onClick={() => onSwitchModule?.("cajero")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                    activeModule === "cajero"
-                      ? "bg-cyan-600 text-white shadow"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  🏧 Cajero ATM
-                </button>
-                <button
-                  onClick={() => onSwitchModule?.("admin")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                    activeModule === "admin"
-                      ? "bg-purple-600 text-white shadow"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  🛡️ Admin
-                </button>
+            {/* ACCIONES DEL HEADER */}
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground">
+                <Search className="h-3.5 w-3.5" />
+                <input
+                  placeholder="Buscar movimientos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-transparent outline-none w-36 lg:w-48 placeholder:text-muted-foreground"
+                />
               </div>
 
               <button
-                aria-label="Notificaciones"
-                className="relative grid h-9 w-9 place-items-center rounded-lg border bg-card"
+                aria-label="Actualizar datos"
+                className="relative grid h-9 w-9 place-items-center rounded-xl border bg-card text-muted-foreground hover:text-foreground transition-colors"
                 onClick={cargarResumen}
-                title="Actualizar datos"
+                title="Actualizar datos desde MySQL"
               >
                 <Bell className="h-4 w-4" />
                 <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-accent" />
               </button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="gap-1.5 text-xs border-red-500/30 text-red-400 hover:bg-red-500/10 h-9"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Salir
+              </Button>
             </div>
           </div>
         </header>
 
         {/* CONTENIDO CENTRAL */}
-        <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 lg:px-8 lg:pb-10 lg:pt-6">
-          {/* BUSCADOR */}
-          <div className="mb-4 hidden items-center gap-2 rounded-xl border bg-card px-3 py-2.5 lg:flex">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <input
-              placeholder="Buscar movimientos"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-
+        <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 lg:px-8 lg:pb-12">
           {/* GRID: SALDO DISPONIBLE Y TARJETA */}
-          <div className="grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
+          <div className="grid items-stretch gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
             {/* HERO CARD SALDO */}
-            <section className="relative flex min-w-0 items-center overflow-hidden rounded-lg bg-gradient-card p-5 text-primary-foreground ring-1 ring-primary/25 sm:p-6">
+            <section className="relative flex min-w-0 items-center overflow-hidden rounded-xl bg-gradient-card p-6 text-primary-foreground ring-1 ring-primary/25 sm:p-7 shadow-xl">
               <div aria-hidden className="pointer-events-none absolute inset-0 hero-sheen" />
               <div className="relative w-full">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wider opacity-75">Saldo total disponible</p>
-                    <p className="mt-2 truncate font-display text-3xl font-bold sm:text-4xl">{fmt(saldoReal)}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider opacity-75">Saldo Total Disponible</p>
+                    <p className="mt-2 truncate font-display text-3xl font-bold sm:text-4xl text-white">
+                      {fmt(saldoReal)}
+                    </p>
                   </div>
                   <span className="shrink-0 rounded-full bg-primary-foreground/10 px-2.5 py-1 text-xs font-semibold text-accent">
                     +8,2%
                   </span>
                 </div>
-                <p className="mt-2 text-xs opacity-70">3 cuentas activas · actualizado hoy, 7:42 p. m.</p>
+                <p className="mt-2 text-xs opacity-70">
+                  {cuentas.length || 1} cuenta(s) activa(s) · Conectado en vivo a MySQL 3NF
+                </p>
 
-                <div className="mt-5 grid grid-cols-3 gap-2">
+                <div className="mt-6 grid grid-cols-3 gap-2.5">
                   <Button
                     onClick={() => setOpenTransferir(true)}
                     variant="ghost"
-                    className="h-auto min-w-0 flex-col gap-1.5 rounded-lg bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
+                    className="h-auto min-w-0 flex-col gap-1.5 rounded-xl bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
                   >
-                    <Send className="h-4 w-4 shrink-0" /> Transferir
+                    <Send className="h-4 w-4 shrink-0 text-cyan-300" /> Transferir
                   </Button>
                   <Button
                     onClick={() => onSwitchModule?.("cajero")}
                     variant="ghost"
-                    className="h-auto min-w-0 flex-col gap-1.5 rounded-lg bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
+                    className="h-auto min-w-0 flex-col gap-1.5 rounded-xl bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
                   >
-                    <Receipt className="h-4 w-4 shrink-0" /> Pagar / ATM
+                    <Receipt className="h-4 w-4 shrink-0 text-cyan-300" /> Ir a Cajero
                   </Button>
                   <Button
-                    onClick={() => onSwitchModule?.("admin")}
+                    onClick={() => setOpenAjustes(true)}
                     variant="ghost"
-                    className="h-auto min-w-0 flex-col gap-1.5 rounded-lg bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
+                    className="h-auto min-w-0 flex-col gap-1.5 rounded-xl bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
                   >
-                    <Plus className="h-4 w-4 shrink-0" /> Recargar
+                    <User className="h-4 w-4 shrink-0 text-cyan-300" /> Mi Perfil
                   </Button>
                 </div>
               </div>
@@ -529,239 +566,223 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
 
             {/* TARJETA DE CRÉDITO ORIGINAL */}
             <section
-              aria-label="Tarjeta de crédito"
-              className="mx-auto flex aspect-[1.586/1] w-full max-w-[380px] min-w-0 flex-col justify-between rounded-lg border border-payment-data/30 bg-payment-card p-5 text-payment-data"
+              aria-label="Tarjeta débito"
+              className="mx-auto flex aspect-[1.586/1] w-full max-w-[380px] min-w-0 flex-col justify-between rounded-xl border border-payment-data/30 bg-payment-card p-6 text-payment-data shadow-xl relative overflow-hidden"
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <p className="text-sm font-semibold">Tarjeta de crédito</p>
-                <CreditCard aria-hidden className="h-6 w-6 shrink-0" />
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tarjeta Débito / Ahorros</p>
+                <CreditCard aria-hidden className="h-6 w-6 shrink-0 text-cyan-400" />
               </div>
-              <p className="my-4 whitespace-nowrap font-mono text-lg">5412 •••• •••• 9087</p>
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs">Titular</p>
-                  <p className="truncate text-sm font-semibold">A. PAIWA</p>
+              <p className="my-4 whitespace-nowrap font-mono text-xl tracking-wider text-slate-100">
+                {cuentaActiva?.numero_cuenta ? `${cuentaActiva.numero_cuenta.slice(0, 4)} •••• •••• ${cuentaActiva.numero_cuenta.slice(-4)}` : "4001 •••• •••• 3040"}
+              </p>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 text-xs">
+                <div>
+                  <p className="text-[10px] uppercase text-muted-foreground">Titular</p>
+                  <p className="font-semibold text-slate-200">
+                    {usuario ? `${usuario.nombres} ${usuario.apellidos}` : "JAIRO ANDRÉS PAI"}
+                  </p>
                 </div>
-                <div className="text-right text-xs">
-                  <p>Vence</p>
-                  <p className="mt-0.5 font-semibold">08/29</p>
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="flex flex-wrap justify-between gap-1 text-[11px]">
-                  <span>Cupo usado {fmt(3800000)}</span>
-                  <span>38% de {fmt(10000000)}</span>
-                </div>
-                <div className="mt-2 h-1 rounded-full bg-payment-data/15">
-                  <div className="h-1 w-[38%] rounded-full bg-payment-data" />
+                <div className="text-right">
+                  <p className="text-[10px] uppercase text-muted-foreground">Vence</p>
+                  <p className="font-mono text-slate-300">11/29</p>
                 </div>
               </div>
             </section>
           </div>
 
-          {/* SECCIÓN: TUS CUENTAS (3 CARDS PERFECTAMENTE ALINEADAS) */}
-          <section className="mt-6">
-            <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <h2 className="truncate font-display text-lg font-bold">Tus cuentas</h2>
-              <a href="#" onClick={(e) => { e.preventDefault(); cargarResumen(); }} className="shrink-0 text-sm font-semibold text-accent">
-                Ver todas
-              </a>
+          {/* TUS CUENTAS */}
+          <section className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-lg font-bold">Tus Cuentas</h2>
+              <span className="text-xs text-muted-foreground">Datos en tiempo real</span>
             </div>
-            <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:px-0">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {accountsDisplay.map((a) => (
-                <article
+                <div
                   key={a.num}
                   onClick={a.onClick}
-                  className={`w-[80%] max-w-[360px] shrink-0 snap-start rounded-lg border p-4 transition-all md:w-auto md:min-w-0 md:max-w-none md:shrink cursor-pointer ${
+                  className={`flex cursor-pointer flex-col justify-between rounded-xl border p-4.5 transition-all ${
                     a.active
-                      ? "border-primary/60 bg-card shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-primary/30"
-                      : "border-border bg-card hover:border-primary/40"
+                      ? "border-primary/50 bg-card shadow-lg ring-1 ring-primary/25"
+                      : "border-border bg-card/60 hover:border-border/80"
                   }`}
                 >
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                    <p className="truncate text-sm font-semibold">{a.name}</p>
-                    <span className="shrink-0 text-xs text-muted-foreground">{a.num}</span>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold">{a.name}</p>
+                    <span className="font-mono text-xs text-muted-foreground">{a.num}</span>
                   </div>
-                  <p className="mt-3 truncate font-display text-2xl font-bold">{fmt(a.bal)}</p>
+                  <p className="mt-3 font-display text-2xl font-bold">{fmt(a.bal)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{a.sub}</p>
-                </article>
+                </div>
               ))}
             </div>
           </section>
 
-          {/* GRID INFERIOR: ÚLTIMOS MOVIMIENTOS Y GASTOS */}
-          <div className="mt-6 grid gap-6 lg:grid-cols-5">
-            {/* ÚLTIMOS MOVIMIENTOS */}
-            <section className="rounded-2xl border bg-card p-4 lg:col-span-3 lg:p-6">
-              <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <h2 className="truncate font-display text-lg font-bold">Últimos movimientos</h2>
-                <button onClick={cargarResumen} className="shrink-0 text-sm font-semibold text-accent">
-                  Ver todos
-                </button>
+          {/* MOVIMIENTOS Y GASTOS 2026 */}
+          <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
+            {/* MOVIMIENTOS */}
+            <section className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="font-display text-lg font-bold">Últimos Movimientos</h2>
+                  <p className="text-xs text-muted-foreground">Registro cronológico con saldo resultante</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => cuentaActiva && cargarMovimientos(cuentaActiva.id)} className="h-8 text-xs gap-1">
+                  <RefreshCw className="h-3.5 w-3.5" /> Actualizar
+                </Button>
               </div>
 
               {movimientosFiltrados.length === 0 ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  No hay movimientos registrados.
+                <div className="py-8 text-center text-muted-foreground text-xs">
+                  No hay movimientos registrados en esta cuenta.
                 </div>
               ) : (
-                <ul className="divide-y divide-border">
-                  {movimientosFiltrados.slice(0, 6).map((t) => {
-                    const isPositive = t.sentido === "CREDITO";
+                <div className="divide-y divide-border/60">
+                  {movimientosFiltrados.map((m) => {
+                    const esIngreso = m.sentido === "CREDITO" || (m.tipo_movimiento === "CREDITO");
                     return (
-                      <li key={t.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3">
+                      <div key={m.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3">
                         <div
-                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
-                            isPositive ? "bg-success/15 text-success" : "bg-secondary text-secondary-foreground"
+                          className={`grid h-8 w-8 place-items-center rounded-lg ${
+                            esIngreso ? "bg-emerald-500/15 text-emerald-400" : "bg-secondary text-muted-foreground"
                           }`}
                         >
-                          {isPositive ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                          {esIngreso ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{t.descripcion || t.tipo_operacion}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {t.tipo_operacion} · {new Date(t.fecha_hora).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}
+                          <p className="truncate text-sm font-medium text-foreground">{m.descripcion || m.tipo_operacion}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {m.tipo_operacion} · {new Date(m.fecha_hora).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className={`shrink-0 text-sm font-bold ${isPositive ? "text-success" : ""}`}>
-                            {isPositive ? "+" : "-"}{fmt(t.valor)}
+                          <p className={`font-mono text-sm font-semibold ${esIngreso ? "text-emerald-400" : "text-slate-300"}`}>
+                            {esIngreso ? `+${fmt(m.valor)}` : `-${fmt(m.valor)}`}
                           </p>
-                          <p className="text-[10px] text-muted-foreground font-mono">
-                            Saldo: {fmt(t.saldo_resultante)}
-                          </p>
+                          {m.saldo_resultante !== undefined && (
+                            <p className="font-mono text-[11px] text-muted-foreground">
+                              Saldo: {fmt(m.saldo_resultante)}
+                            </p>
+                          )}
                         </div>
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               )}
             </section>
 
-            {/* GASTOS 2026 (IDÉNTICO EN ALTURA Y DISEÑO) */}
-            <section className="rounded-2xl border bg-card p-4 lg:col-span-2 lg:p-6 flex flex-col justify-between">
-              <div>
-                <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                  <div className="min-w-0">
-                    <h2 className="truncate font-display text-lg font-bold">Gastos 2026</h2>
-                    <p className="truncate text-xs text-muted-foreground">Por mes</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
-                    Noviembre
-                  </span>
+            {/* GRÁFICO GASTOS 2026 ORIGINAL */}
+            <section className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="font-display text-lg font-bold">Actividad 2026</h2>
+                  <p className="text-xs text-muted-foreground">Balance mensual estimado</p>
                 </div>
-                <div className="mt-8 flex h-44 items-stretch gap-1.5 sm:gap-2">
-                  {bars.map((b, i) => (
-                    <div key={i} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
-                      <div
-                        className={`w-full rounded-t-md transition-all ${i === 10 ? "bg-accent shadow-[0_0_10px_rgba(34,211,238,0.4)]" : "bg-primary/70"}`}
-                        style={{ height: `${b}%` }}
-                      />
-                      <span className={`text-[10px] ${i === 10 ? "font-bold text-accent" : "text-muted-foreground"}`}>
-                        {months[i]}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <span className="rounded-md bg-secondary px-2 py-1 text-xs font-semibold">Noviembre</span>
               </div>
-              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                <span>Promedio mensual</span>
-                <span className="font-semibold text-foreground font-mono">{fmt(1850000)}</span>
+              <div className="flex h-40 items-end justify-between gap-1.5 pt-4">
+                {bars.map((h, i) => (
+                  <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
+                    <div
+                      style={{ height: `${h}%` }}
+                      className={`w-full rounded-t transition-all ${
+                        i === 10 ? "bg-accent shadow-lg shadow-accent/30" : "bg-primary/40 hover:bg-primary/60"
+                      }`}
+                    />
+                    <span className="font-mono text-[10px] text-muted-foreground">{months[i]}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 rounded-lg bg-secondary/30 p-3 text-xs space-y-1">
+                <p className="font-semibold text-accent">Regla de Negocio ACID:</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Cada transferencia actualiza saldos concurrentemente con bloqueos a nivel de fila (InnoDB).
+                </p>
               </div>
             </section>
           </div>
         </main>
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION BAR */}
-      <nav
-        aria-label="Navegación principal"
-        className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur lg:hidden"
-      >
-        <ul className="mx-auto grid max-w-md grid-cols-5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5">
-          {mobileNav.map((n) => (
-            <li key={n.label}>
-              <button
-                onClick={n.action}
-                className={`flex w-full flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[11px] font-medium transition-colors ${
-                  n.active ? "text-accent" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <n.icon className={`h-5 w-5 shrink-0 ${n.active ? "text-accent" : ""}`} />
-                <span className="truncate">{n.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t bg-background/95 py-2 backdrop-blur lg:hidden">
+        {mobileNav.map((n) => (
+          <button
+            key={n.label}
+            onClick={n.action}
+            className={`flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${
+              n.active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <n.icon className="h-5 w-5" /> {n.label}
+          </button>
+        ))}
       </nav>
 
-      {/* MODAL TRANSFERIR */}
+      {/* MODAL TRANSFERIR CON 4x1000 */}
       <Dialog open={openTransferir} onOpenChange={setOpenTransferir}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">Nueva Transferencia</DialogTitle>
+            <DialogTitle className="font-display text-xl">Transferir Dinero</DialogTitle>
             <DialogDescription>
-              Transfiere dinero al instante entre cuentas del banco con registro contable 3NF.
+              Transfiere fondos a otra cuenta bancaria en tiempo real.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleTransferir} className="space-y-4 py-2">
             <div>
-              <Label className="text-xs">Cuenta Origen</Label>
-              <div className="mt-1 rounded-lg border bg-secondary/40 p-2.5 text-sm font-mono">
-                {cuentaActiva?.numero_cuenta || "400110203040"} — Saldo: {fmt(saldoReal)}
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="destino" className="text-xs">Número de Cuenta Destino</Label>
+              <Label className="text-xs">Cuenta Destino</Label>
               <Input
-                id="destino"
-                placeholder="Ej: 500190807060"
                 value={cuentaDestino}
                 onChange={(e) => setCuentaDestino(e.target.value)}
+                placeholder="500190807060"
                 required
-                className="font-mono mt-1"
+                className="mt-1 font-mono"
               />
-              <div className="mt-1 flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground">Cuenta destino frecuente:</span>
-                <button
-                  type="button"
-                  onClick={() => setCuentaDestino("500190807060")}
-                  className="font-semibold text-accent hover:underline"
-                >
-                  Valentina Gómez (500190807060)
-                </button>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Cuenta de prueba sugerida: <button type="button" onClick={() => setCuentaDestino("500190807060")} className="text-accent underline">500190807060 (Valentina Gómez)</button>
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-xs">Monto a Transferir (COP)</Label>
+              <Input
+                type="number"
+                step="1000"
+                value={montoTransferir}
+                onChange={(e) => setMontoTransferir(e.target.value)}
+                placeholder="100000"
+                required
+                className="mt-1 font-mono text-lg font-bold"
+              />
+              <div className="mt-1 flex gap-2">
+                {[50000, 100000, 200000].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setMontoTransferir(v.toString())}
+                    className="rounded bg-secondary px-2 py-0.5 text-[11px] hover:bg-secondary/80 font-mono"
+                  >
+                    {fmt(v)}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div>
-              <Label htmlFor="monto" className="text-xs">Monto a Transferir (COP)</Label>
+              <Label className="text-xs">Concepto / Descripción (Opcional)</Label>
               <Input
-                id="monto"
-                type="number"
-                min="1000"
-                step="1000"
-                placeholder="Ej: 50000"
-                value={montoTransferir}
-                onChange={(e) => setMontoTransferir(e.target.value)}
-                required
-                className="mt-1 text-lg font-bold font-mono"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="concepto" className="text-xs">Concepto / Motivo (Opcional)</Label>
-              <Input
-                id="concepto"
-                placeholder="Ej: Pago de arriendo"
                 value={conceptoTransferir}
                 onChange={(e) => setConceptoTransferir(e.target.value)}
+                placeholder="Pago almuerzo, servicio, etc."
                 className="mt-1"
               />
             </div>
 
-            {/* DESGLOSE TRIBUTARIO 4x1000 (GMF - ART. 879 E.T.) */}
+            {/* DESGLOSE TRIBUTARIO 4x1000 */}
             <div className="rounded-xl border border-border/80 bg-secondary/30 p-3 text-xs space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Valor a transferir:</span>
@@ -803,7 +824,7 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
               <Button type="button" variant="outline" onClick={() => setOpenTransferir(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={transferLoading} className="gap-2">
+              <Button type="submit" disabled={transferLoading} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
                 {transferLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
                 Confirmar Transferencia
               </Button>
@@ -868,7 +889,7 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
           <DialogHeader>
             <DialogTitle className="font-display text-xl">Perfil y Seguridad</DialogTitle>
             <DialogDescription>
-              Gestiona tu contraseña y credenciales de acceso.
+              Gestiona tu teléfono y credenciales de acceso.
             </DialogDescription>
           </DialogHeader>
 
@@ -938,51 +959,6 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
               </div>
             </form>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* MODAL INICIAR SESIÓN */}
-      <Dialog open={openLogin} onOpenChange={setOpenLogin}>
-        <DialogContent className="sm:max-w-md bg-card border-border">
-          <DialogHeader>
-            <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground">
-              <Landmark className="h-6 w-6" />
-            </div>
-            <DialogTitle className="font-display text-xl text-center">Banca Virtual — Inicio de Sesión</DialogTitle>
-            <DialogDescription className="text-center">
-              Ingresa tus credenciales para acceder a tus cuentas.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleLogin} className="space-y-4 py-2">
-            <div>
-              <Label htmlFor="login-id" className="text-xs">Correo o Cédula</Label>
-              <Input
-                id="login-id"
-                value={loginIdentificador}
-                onChange={(e) => setLoginIdentificador(e.target.value)}
-                required
-                className="mt-1 font-mono"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="login-pass" className="text-xs">Contraseña</Label>
-              <Input
-                id="login-pass"
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                required
-                className="mt-1 font-mono"
-              />
-            </div>
-
-            <Button type="submit" disabled={loginLoading} className="w-full gap-2 mt-4">
-              {loginLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
-              Entrar a la Banca Virtual
-            </Button>
-          </form>
         </DialogContent>
       </Dialog>
     </div>
