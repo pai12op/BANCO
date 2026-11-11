@@ -14,6 +14,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `transferencias`;
 DROP TABLE IF EXISTS `movimientos`;
 DROP TABLE IF EXISTS `operaciones`;
+DROP TABLE IF EXISTS `estados_operacion`;
 DROP TABLE IF EXISTS `canales`;
 DROP TABLE IF EXISTS `tipos_operacion`;
 DROP TABLE IF EXISTS `cuentas`;
@@ -52,6 +53,11 @@ CREATE TABLE `tipos_cuenta` (
 ) ENGINE=InnoDB;
 
 CREATE TABLE `estados_cuenta` (
+    `id` TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `nombre` VARCHAR(30) NOT NULL UNIQUE
+) ENGINE=InnoDB;
+
+CREATE TABLE `estados_operacion` (
     `id` TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `nombre` VARCHAR(30) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
@@ -113,12 +119,14 @@ CREATE TABLE `cuentas` (
 CREATE TABLE `operaciones` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `tipo_id` TINYINT UNSIGNED NOT NULL,
+    `estado_id` TINYINT UNSIGNED NOT NULL DEFAULT 1,
     `canal_id` TINYINT UNSIGNED NOT NULL,
     `realizado_por` BIGINT UNSIGNED NULL,
-    `monto` DECIMAL(15, 2) NOT NULL,
-    `descripcion` VARCHAR(255) NOT NULL,
-    `fecha_hora` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `valor` DECIMAL(15, 2) NOT NULL,
+    `descripcion` VARCHAR(255) NULL,
+    `creada_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_operacion_tipo` FOREIGN KEY (`tipo_id`) REFERENCES `tipos_operacion` (`id`),
+    CONSTRAINT `fk_operacion_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados_operacion` (`id`),
     CONSTRAINT `fk_operacion_canal` FOREIGN KEY (`canal_id`) REFERENCES `canales` (`id`),
     CONSTRAINT `fk_operacion_usuario` FOREIGN KEY (`realizado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
@@ -131,10 +139,9 @@ CREATE TABLE `movimientos` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `operacion_id` BIGINT UNSIGNED NOT NULL,
     `cuenta_id` BIGINT UNSIGNED NOT NULL,
-    `tipo_movimiento` ENUM('DEBITO', 'CREDITO') NOT NULL,
-    `valor` DECIMAL(15, 2) NOT NULL,
+    `sentido` ENUM('DEBITO', 'CREDITO') NOT NULL,
     `saldo_resultante` DECIMAL(15, 2) NOT NULL,
-    `fecha_hora` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `creada_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_movimiento_operacion` FOREIGN KEY (`operacion_id`) REFERENCES `operaciones` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_movimiento_cuenta` FOREIGN KEY (`cuenta_id`) REFERENCES `cuentas` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
@@ -179,6 +186,12 @@ INSERT INTO `estados_cuenta` (`id`, `nombre`) VALUES
 (2, 'INACTIVA'),
 (3, 'BLOQUEADA');
 
+INSERT INTO `estados_operacion` (`id`, `nombre`) VALUES
+(1, 'EXITOSA'),
+(2, 'PENDIENTE'),
+(3, 'FALLIDA'),
+(4, 'RECHAZADA');
+
 INSERT INTO `tipos_operacion` (`id`, `nombre`) VALUES
 (1, 'Consignación'),
 (2, 'Retiro Cajero'),
@@ -219,14 +232,14 @@ INSERT INTO `cuentas` (`id`, `usuario_id`, `numero_cuenta`, `tipo_id`, `estado_i
 (3, 4, '400155667788', 1, 3, '$2b$10$jXnIXzZcx1ye9AfyCcbSQe/mhAY5glX.cAf4HFLNwJSHVzhzpBMSq', 350000.00);
 
 -- 4. Movimientos iniciales de apertura para trazabilidad contable
-INSERT INTO `operaciones` (`id`, `tipo_id`, `canal_id`, `realizado_por`, `monto`, `descripcion`, `fecha_hora`) VALUES
-(1, 1, 3, 1, 1000000.00, 'Depósito inicial de apertura en ventanilla', '2026-11-01 09:00:00'),
-(2, 1, 3, 1, 2500000.00, 'Depósito inicial de apertura en ventanilla', '2026-11-02 10:15:00'),
-(3, 1, 3, 1, 350000.00, 'Depósito inicial de apertura en ventanilla', '2026-11-03 11:30:00');
+INSERT INTO `operaciones` (`id`, `tipo_id`, `estado_id`, `canal_id`, `realizado_por`, `valor`, `descripcion`, `creada_en`) VALUES
+(1, 1, 1, 3, 1, 1000000.00, 'Depósito inicial de apertura en ventanilla', '2026-11-01 09:00:00'),
+(2, 1, 1, 3, 1, 2500000.00, 'Depósito inicial de apertura en ventanilla', '2026-11-02 10:15:00'),
+(3, 1, 1, 3, 1, 350000.00, 'Depósito inicial de apertura en ventanilla', '2026-11-03 11:30:00');
 
-INSERT INTO `movimientos` (`id`, `operacion_id`, `cuenta_id`, `tipo_movimiento`, `valor`, `saldo_resultante`, `fecha_hora`) VALUES
-(1, 1, 1, 'CREDITO', 1000000.00, 1000000.00, '2026-11-01 09:00:00'),
-(2, 2, 2, 'CREDITO', 2500000.00, 2500000.00, '2026-11-02 10:15:00'),
-(3, 3, 3, 'CREDITO', 350000.00, 350000.00, '2026-11-03 11:30:00');
+INSERT INTO `movimientos` (`id`, `operacion_id`, `cuenta_id`, `sentido`, `saldo_resultante`, `creada_en`) VALUES
+(1, 1, 1, 'CREDITO', 1000000.00, '2026-11-01 09:00:00'),
+(2, 2, 2, 'CREDITO', 2500000.00, '2026-11-02 10:15:00'),
+(3, 3, 3, 'CREDITO', 350000.00, '2026-11-03 11:30:00');
 
 COMMIT;

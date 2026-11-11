@@ -45,14 +45,14 @@ async function getMovimientos(req, res) {
         }
 
         const [movimientos] = await db.query(`
-            SELECT m.id, m.tipo_movimiento, m.valor, m.saldo_resultante, m.fecha_hora,
+            SELECT m.id, m.sentido, m.sentido AS tipo_movimiento, o.valor, m.saldo_resultante, m.creada_en AS fecha_hora,
                    o.descripcion, top.nombre AS tipo_operacion, can.nombre AS canal
             FROM movimientos m
             JOIN operaciones o ON m.operacion_id = o.id
             JOIN tipos_operacion top ON o.tipo_id = top.id
             JOIN canales can ON o.canal_id = can.id
             WHERE m.cuenta_id = ?
-            ORDER BY m.fecha_hora DESC, m.id DESC
+            ORDER BY m.creada_en DESC, m.id DESC
         `, [cuentaId]);
 
         return res.json({
@@ -148,8 +148,8 @@ async function transferir(req, res) {
         // 6. Registrar en operaciones generales
         const descripOp = concepto && concepto.trim() ? concepto.trim() : `Transferencia a cuenta ${cuentaDestino.numero_cuenta}`;
         const [resOp] = await connection.query(`
-            INSERT INTO operaciones (tipo_id, canal_id, realizado_por, monto, descripcion)
-            VALUES (3, 2, ?, ?, ?)
+            INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
+            VALUES (3, 1, 2, ?, ?, ?)
         `, [usuarioId, valor, descripOp]);
 
         const operacionId = resOp.insertId;
@@ -163,15 +163,15 @@ async function transferir(req, res) {
         // 8. Registrar los dos movimientos contables (Asiento doble)
         // Débito en origen
         await connection.query(`
-            INSERT INTO movimientos (operacion_id, cuenta_id, tipo_movimiento, valor, saldo_resultante)
-            VALUES (?, ?, 'DEBITO', ?, ?)
-        `, [operacionId, cuentaOrigen.id, valor, nuevoSaldoOrigen]);
+            INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
+            VALUES (?, ?, 'DEBITO', ?)
+        `, [operacionId, cuentaOrigen.id, nuevoSaldoOrigen]);
 
         // Crédito en destino
         await connection.query(`
-            INSERT INTO movimientos (operacion_id, cuenta_id, tipo_movimiento, valor, saldo_resultante)
-            VALUES (?, ?, 'CREDITO', ?, ?)
-        `, [operacionId, cuentaDestino.id, valor, nuevoSaldoDestino]);
+            INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
+            VALUES (?, ?, 'CREDITO', ?)
+        `, [operacionId, cuentaDestino.id, nuevoSaldoDestino]);
 
         await connection.commit();
 

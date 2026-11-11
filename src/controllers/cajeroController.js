@@ -86,19 +86,19 @@ async function retirar(req, res) {
         // 1. Actualizar saldo en MySQL
         await connection.query('UPDATE cuentas SET saldo = ? WHERE id = ?', [nuevoSaldo, cuentaId]);
 
-        // 2. Registrar operación (Tipo 2: Retiro Cajero, Canal 1: Cajero Automático)
+        // 2. Registrar operación (Tipo 2: Retiro Cajero, Estado 1: Exitosa, Canal 1: Cajero Automático)
         const [resOp] = await connection.query(`
-            INSERT INTO operaciones (tipo_id, canal_id, realizado_por, monto, descripcion)
-            VALUES (2, 1, ?, ?, 'Retiro de efectivo en cajero automático')
+            INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
+            VALUES (2, 1, 1, ?, ?, 'Retiro de efectivo en cajero automático')
         `, [cuenta.usuario_id, valor]);
 
         const operacionId = resOp.insertId;
 
         // 3. Registrar movimiento contable
         await connection.query(`
-            INSERT INTO movimientos (operacion_id, cuenta_id, tipo_movimiento, valor, saldo_resultante)
-            VALUES (?, ?, 'DEBITO', ?, ?)
-        `, [operacionId, cuentaId, valor, nuevoSaldo]);
+            INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
+            VALUES (?, ?, 'DEBITO', ?)
+        `, [operacionId, cuentaId, nuevoSaldo]);
 
         await connection.commit();
 
@@ -130,13 +130,13 @@ async function getUltimosMovimientos(req, res) {
     try {
         const cuentaId = req.session.cajeroCuenta.id;
         const [movimientos] = await db.query(`
-            SELECT m.id, m.tipo_movimiento, m.valor, m.saldo_resultante, m.fecha_hora,
+            SELECT m.id, m.sentido, m.sentido AS tipo_movimiento, o.valor, m.saldo_resultante, m.creada_en AS fecha_hora,
                    o.descripcion, top.nombre AS tipo_operacion
             FROM movimientos m
             JOIN operaciones o ON m.operacion_id = o.id
             JOIN tipos_operacion top ON o.tipo_id = top.id
             WHERE m.cuenta_id = ?
-            ORDER BY m.fecha_hora DESC, m.id DESC
+            ORDER BY m.creada_en DESC, m.id DESC
             LIMIT 5
         `, [cuentaId]);
 

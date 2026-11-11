@@ -135,14 +135,14 @@ async function crearCliente(req, res) {
         if (saldoNum > 0) {
             const adminId = req.session.usuario ? req.session.usuario.id : null;
             const [resOp] = await connection.query(`
-                INSERT INTO operaciones (tipo_id, canal_id, realizado_por, monto, descripcion)
-                VALUES (1, 3, ?, ?, 'Depósito de apertura de cuenta en ventanilla')
+                INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
+                VALUES (1, 1, 3, ?, ?, 'Depósito de apertura de cuenta en ventanilla')
             `, [adminId, saldoNum]);
 
             await connection.query(`
-                INSERT INTO movimientos (operacion_id, cuenta_id, tipo_movimiento, valor, saldo_resultante)
-                VALUES (?, ?, 'CREDITO', ?, ?)
-            `, [resOp.insertId, nuevaCuentaId, saldoNum, saldoNum]);
+                INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
+                VALUES (?, ?, 'CREDITO', ?)
+            `, [resOp.insertId, nuevaCuentaId, saldoNum]);
         }
 
         await connection.commit();
@@ -251,17 +251,17 @@ async function consignar(req, res) {
         // 3. Registrar operación
         const descripOp = concepto && concepto.trim() ? concepto.trim() : `Consignación en ventanilla administrativa por $${valor.toLocaleString('es-CO')}`;
         const [resOp] = await connection.query(`
-            INSERT INTO operaciones (tipo_id, canal_id, realizado_por, monto, descripcion)
-            VALUES (1, 3, ?, ?, ?)
+            INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
+            VALUES (1, 1, 3, ?, ?, ?)
         `, [adminId, valor, descripOp]);
 
         const operacionId = resOp.insertId;
 
         // 4. Registrar movimiento contable
         await connection.query(`
-            INSERT INTO movimientos (operacion_id, cuenta_id, tipo_movimiento, valor, saldo_resultante)
-            VALUES (?, ?, 'CREDITO', ?, ?)
-        `, [operacionId, cuenta.id, valor, nuevoSaldo]);
+            INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
+            VALUES (?, ?, 'CREDITO', ?)
+        `, [operacionId, cuenta.id, nuevoSaldo]);
 
         await connection.commit();
 
@@ -290,7 +290,7 @@ async function consignar(req, res) {
 async function getHistorialGeneral(req, res) {
     try {
         const [movimientos] = await db.query(`
-            SELECT m.id, m.tipo_movimiento, m.valor, m.saldo_resultante, m.fecha_hora,
+            SELECT m.id, m.sentido, m.sentido AS tipo_movimiento, o.valor, m.saldo_resultante, m.creada_en AS fecha_hora,
                    c.numero_cuenta, u.nombres, u.apellidos,
                    o.descripcion, top.nombre AS tipo_operacion, can.nombre AS canal
             FROM movimientos m
@@ -299,7 +299,7 @@ async function getHistorialGeneral(req, res) {
             JOIN operaciones o ON m.operacion_id = o.id
             JOIN tipos_operacion top ON o.tipo_id = top.id
             JOIN canales can ON o.canal_id = can.id
-            ORDER BY m.fecha_hora DESC, m.id DESC
+            ORDER BY m.creada_en DESC, m.id DESC
             LIMIT 50
         `);
 
