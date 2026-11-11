@@ -81,6 +81,7 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
   const [loginLoading, setLoginLoading] = useState(false);
 
   // Formulario Ajustes
+  const [telefono, setTelefono] = useState("");
   const [passActual, setPassActual] = useState("");
   const [passNueva, setPassNueva] = useState("");
   const [ajustesLoading, setAjustesLoading] = useState(false);
@@ -98,6 +99,7 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
       const data = await res.json();
       if (data.usuario) {
         setUsuario(data.usuario);
+        setTelefono(data.usuario.telefono || "");
         setCuentas(data.cuentas || []);
         if (data.cuentas && data.cuentas.length > 0) {
           const cuentaActual = cuentaActiva
@@ -222,18 +224,46 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
     }
   };
 
+  const handleActualizarPerfil = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setAjustesLoading(true);
+      const res = await fetch("/api/banca/perfil", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telefono: telefono.trim() }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Error al actualizar perfil.");
+        return;
+      }
+      toast.success("Teléfono actualizado en MySQL.");
+      cargarResumen();
+    } catch (err) {
+      toast.error("Error de conexión.");
+    } finally {
+      setAjustesLoading(false);
+    }
+  };
+
   const handleCambiarPass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passActual || !passNueva) {
       toast.error("Complete ambos campos.");
       return;
     }
+    if (passNueva.length < 6) {
+      toast.error("La nueva contraseña debe tener mínimo 6 caracteres.");
+      return;
+    }
     try {
       setAjustesLoading(true);
-      const res = await fetch("/api/banca/cambiar-password", {
-        method: "PUT",
+      const res = await fetch("/api/banca/password", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password_actual: passActual, password_nueva: passNueva }),
+        body: JSON.stringify({ password_actual: passActual, password_nuevo: passNueva }),
         credentials: "include",
       });
       const data = await res.json();
@@ -796,51 +826,72 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCambiarPass} className="space-y-4 py-2">
+          <div className="space-y-4 py-2">
             <div>
-              <Label className="text-xs">Titular</Label>
+              <Label className="text-xs">Información del Titular</Label>
               <p className="mt-1 text-sm font-semibold text-foreground">
                 {usuario?.nombres || "Jairo Andrés"} {usuario?.apellidos || "Pai Guanga"}
               </p>
-              <p className="text-xs text-muted-foreground">{usuario?.correo || "andres@cliente.com"}</p>
+              <p className="text-xs text-muted-foreground">{usuario?.tipo_documento || "CC"} {usuario?.numero_documento || "1001234567"} · {usuario?.correo || "andres@cliente.com"}</p>
             </div>
 
-            <div className="border-t pt-3">
-              <Label htmlFor="pass-act" className="text-xs">Contraseña Actual</Label>
-              <Input
-                id="pass-act"
-                type="password"
-                placeholder="Tu contraseña actual"
-                value={passActual}
-                onChange={(e) => setPassActual(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
+            {/* ACTUALIZAR TELÉFONO */}
+            <form onSubmit={handleActualizarPerfil} className="border-t pt-3 space-y-2">
+              <Label htmlFor="tel-user" className="text-xs">Número de Teléfono</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="tel-user"
+                  value={telefono}
+                  onChange={(e) => setTelefono(e.target.value)}
+                  placeholder="3001234567"
+                  className="font-mono text-xs"
+                />
+                <Button type="submit" size="sm" disabled={ajustesLoading} variant="outline" className="text-xs">
+                  Guardar
+                </Button>
+              </div>
+            </form>
 
-            <div>
-              <Label htmlFor="pass-new" className="text-xs">Nueva Contraseña</Label>
-              <Input
-                id="pass-new"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={passNueva}
-                onChange={(e) => setPassNueva(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
+            {/* CAMBIAR CONTRASEÑA */}
+            <form onSubmit={handleCambiarPass} className="border-t pt-3 space-y-3">
+              <Label className="text-xs font-semibold">Cambio de Contraseña</Label>
+              <div>
+                <Label htmlFor="pass-act" className="text-[11px] text-muted-foreground">Contraseña Actual</Label>
+                <Input
+                  id="pass-act"
+                  type="password"
+                  placeholder="Tu contraseña actual"
+                  value={passActual}
+                  onChange={(e) => setPassActual(e.target.value)}
+                  required
+                  className="mt-1"
+                />
+              </div>
 
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => setOpenAjustes(false)}>
-                Cerrar
-              </Button>
-              <Button type="submit" disabled={ajustesLoading}>
-                {ajustesLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
-                Actualizar Contraseña
-              </Button>
-            </DialogFooter>
-          </form>
+              <div>
+                <Label htmlFor="pass-new" className="text-[11px] text-muted-foreground">Nueva Contraseña</Label>
+                <Input
+                  id="pass-new"
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  value={passNueva}
+                  onChange={(e) => setPassNueva(e.target.value)}
+                  required
+                  className="mt-1"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setOpenAjustes(false)}>
+                  Cerrar
+                </Button>
+                <Button type="submit" size="sm" disabled={ajustesLoading}>
+                  {ajustesLoading && <RefreshCw className="h-4 w-4 animate-spin mr-1.5" />}
+                  Cambiar Contraseña
+                </Button>
+              </div>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
 

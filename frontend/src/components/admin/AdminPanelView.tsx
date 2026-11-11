@@ -143,7 +143,7 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
 
   const cargarAuditoria = async () => {
     try {
-      const res = await fetch("/api/admin/auditoria", { credentials: "include" });
+      const res = await fetch("/api/admin/movimientos-general", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setAuditoria(data.movimientos || []);
@@ -154,12 +154,13 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
   };
 
   const toggleEstadoCliente = async (cliente: any) => {
-    const nuevoEstado = cliente.estado_cliente === "ACTIVO" ? "BLOQUEADO" : "ACTIVO";
+    const estadoActual = cliente.estado || cliente.estado_cliente || (cliente.estado_id === 1 ? "ACTIVO" : "BLOQUEADO");
+    const nuevoEstadoId = estadoActual === "ACTIVO" ? 3 : 1; // 3: BLOQUEADO, 1: ACTIVO
     try {
-      const res = await fetch(`/api/admin/clientes/${cliente.id}/estado`, {
-        method: "PATCH",
+      const res = await fetch("/api/admin/clientes/estado", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado: nuevoEstado }),
+        body: JSON.stringify({ usuario_id: cliente.id, nuevo_estado_id: nuevoEstadoId }),
         credentials: "include",
       });
 
@@ -483,14 +484,15 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
                   </thead>
                   <tbody className="divide-y divide-border">
                     {clientesFiltrados.map((c) => {
-                      const esActivo = c.estado_cliente === "ACTIVO";
+                      const estadoTexto = c.estado || c.estado_cliente || (c.estado_id === 1 ? "ACTIVO" : "BLOQUEADO");
+                      const esActivo = estadoTexto === "ACTIVO";
                       return (
                         <tr key={c.id} className="hover:bg-secondary/20">
                           <td className="p-3 font-medium">
                             <p className="text-foreground font-semibold">{c.nombres} {c.apellidos}</p>
                             <p className="text-[10px] text-muted-foreground">{c.correo}</p>
                           </td>
-                          <td className="p-3 font-mono">{c.tipo_documento} {c.numero_documento}</td>
+                          <td className="p-3 font-mono">{c.tipo_doc || c.tipo_documento} {c.numero_documento}</td>
                           <td className="p-3 font-mono text-cyan-400 font-semibold">{c.numero_cuenta}</td>
                           <td className="p-3 font-mono font-bold text-foreground">{fmt(c.saldo)}</td>
                           <td className="p-3">
@@ -501,7 +503,7 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
                                   : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                               }`}
                             >
-                              {c.estado_cliente}
+                              {estadoTexto}
                             </span>
                           </td>
                           <td className="p-3 text-right">
