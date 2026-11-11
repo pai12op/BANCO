@@ -51,9 +51,14 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
     : "JAIRO PAI";
 
   const numCuenta = cuentaActiva?.numero_cuenta || "4093882177343040";
+  // Generar número estándar de 16 dígitos para la tarjeta (frecuente en Colombia: prefijo 4001/4093)
+  const fullCardNumber = numCuenta.length >= 16
+    ? numCuenta
+    : (numCuenta + "5566").slice(0, 16);
+
   const numTarjetaFormateado = showNumeroCompleto
-    ? `${numCuenta.slice(0, 4)} ${numCuenta.slice(4, 8)} ${numCuenta.slice(8, 12)} ${numCuenta.slice(12, 16) || "3040"}`
-    : `${numCuenta.slice(0, 4)} •••• •••• ${numCuenta.slice(-4)}`;
+    ? `${fullCardNumber.slice(0, 4)} ${fullCardNumber.slice(4, 8)} ${fullCardNumber.slice(8, 12)} ${fullCardNumber.slice(12, 16)}`
+    : `${fullCardNumber.slice(0, 4)} •••• •••• ${fullCardNumber.slice(-4)}`;
 
   // Cargar movimientos desde MySQL
   const cargarMovimientos = async () => {
@@ -75,9 +80,9 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
 
   const handleCopyNumero = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(numCuenta);
+    navigator.clipboard.writeText(fullCardNumber);
     setCopied(true);
-    toast.success("Número de tarjeta copiado al portapapeles.");
+    toast.success(`Número copiado: ${fullCardNumber}`);
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -231,7 +236,13 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
       {/* CONTENEDOR 3D FLIP CARD TIPO NEQUI */}
       <div className="perspective-1000 w-full py-2">
         <div
-          onClick={() => setFlipped(!flipped)}
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest("button") || target.closest('[data-interactive="true"]')) {
+              return;
+            }
+            setFlipped(!flipped);
+          }}
           className={`relative aspect-[1.586/1] w-full max-w-[400px] mx-auto cursor-pointer rounded-3xl shadow-2xl transition-transform duration-700 transform-style-3d select-none ${
             flipped ? "rotate-y-180" : ""
           }`}
@@ -241,6 +252,8 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
           {/* ======================================================== */}
           <div
             className={`absolute inset-0 backface-hidden rounded-3xl p-6 flex flex-col justify-between overflow-hidden border shadow-2xl transition-all ${
+              flipped ? "pointer-events-none" : "pointer-events-auto"
+            } ${
               congelada
                 ? "bg-slate-900/90 border-rose-500/40 grayscale"
                 : tipoTarjeta === "debito"
@@ -327,6 +340,8 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
           {/* ======================================================== */}
           <div
             className={`absolute inset-0 rotate-y-180 backface-hidden rounded-3xl p-6 flex flex-col justify-between overflow-hidden border shadow-2xl transition-all ${
+              flipped ? "pointer-events-auto z-10" : "pointer-events-none z-0"
+            } ${
               congelada
                 ? "bg-slate-900/90 border-rose-500/40 grayscale"
                 : tipoTarjeta === "debito"
@@ -341,29 +356,41 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
               </span>
 
               <button
+                type="button"
+                data-interactive="true"
                 onClick={handleCopyNumero}
-                className="flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1 text-xs font-semibold text-white transition-all shadow-sm"
+                className="flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1 text-xs font-semibold text-white transition-all shadow-sm active:scale-95 cursor-pointer"
               >
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                 <span>{copied ? "¡Copiado!" : "Copiar número"}</span>
               </button>
             </div>
 
-            {/* NÚMERO DE LA TARJETA */}
-            <div className="my-2 space-y-1">
+            {/* NÚMERO DE LA TARJETA CLICKABLE PARA VER / OCULTAR */}
+            <div
+              data-interactive="true"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowNumeroCompleto(!showNumeroCompleto);
+              }}
+              className="my-2 space-y-1.5 rounded-2xl bg-white/5 hover:bg-white/10 p-3 border border-white/10 cursor-pointer transition-all"
+              title="Haz clic para ver u ocultar el número completo"
+            >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                <span className="text-[11px] font-medium text-slate-300 uppercase tracking-wider">
                   Número de la Tarjeta
                 </span>
                 <button
+                  type="button"
+                  data-interactive="true"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowNumeroCompleto(!showNumeroCompleto);
                   }}
-                  className="text-[11px] text-[#38bdf8] hover:underline flex items-center gap-1"
+                  className="text-xs text-[#38bdf8] hover:text-[#00d2ff] font-semibold flex items-center gap-1.5"
                 >
-                  {showNumeroCompleto ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                  <span>{showNumeroCompleto ? "Ocultar" : "Ver"}</span>
+                  {showNumeroCompleto ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  <span>{showNumeroCompleto ? "Ocultar" : "Ver número"}</span>
                 </button>
               </div>
 
@@ -372,22 +399,32 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
               </p>
             </div>
 
-            {/* FECHA DE EXPIRACIÓN Y CVV */}
+            {/* FECHA DE EXPIRACIÓN Y CVV CLICKABLE */}
             <div className="grid grid-cols-2 gap-4 bg-black/40 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
               <div>
                 <p className="text-[10px] uppercase text-slate-400">Fecha de expiración</p>
                 <p className="font-mono text-sm font-bold text-white mt-0.5">10/28</p>
               </div>
 
-              <div>
+              <div
+                data-interactive="true"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCvv(!showCvv);
+                }}
+                className="cursor-pointer hover:bg-white/5 p-1 rounded-lg transition-colors"
+                title="Haz clic para ver u ocultar CVV"
+              >
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] uppercase text-slate-400">Código CVV</p>
                   <button
+                    type="button"
+                    data-interactive="true"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowCvv(!showCvv);
                     }}
-                    className="text-[10px] text-[#38bdf8] hover:underline"
+                    className="text-[10px] text-[#38bdf8] font-semibold hover:underline"
                   >
                     {showCvv ? "Ocultar" : "Mostrar"}
                   </button>
