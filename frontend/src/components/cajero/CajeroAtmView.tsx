@@ -167,16 +167,24 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
             </div>
           </div>
 
-          {autenticado && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-1.5 text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 h-9"
+          <div className="flex items-center gap-2.5">
+            <a
+              href="/"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors"
             >
-              <LogOut className="h-3.5 w-3.5" /> Expulsar Tarjeta
-            </Button>
-          )}
+              ← Volver a Banca Clientes
+            </a>
+            {autenticado && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="gap-1.5 text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 h-9"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Expulsar Tarjeta
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 

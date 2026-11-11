@@ -345,8 +345,8 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
   const mobileNav = [
     { icon: LayoutDashboard, label: "Inicio", active: true, action: () => {} },
     { icon: ArrowLeftRight, label: "Transferir", action: () => setOpenTransferir(true) },
-    { icon: Receipt, label: "Cajero", action: () => onSwitchModule?.("cajero") },
-    { icon: ShieldCheck, label: "Admin", action: () => onSwitchModule?.("admin") },
+    { icon: Wallet, label: "Cuentas", action: () => {} },
+    { icon: Receipt, label: "Cajero", action: () => { window.location.href = "/cajero"; } },
     { icon: MoreHorizontal, label: "Ajustes", action: () => setOpenAjustes(true) },
   ];
 
@@ -547,7 +547,7 @@ export function BancaVirtualView({ activeModule = "banca", onSwitchModule }: Ban
                     <Send className="h-4 w-4 shrink-0 text-cyan-300" /> Transferir
                   </Button>
                   <Button
-                    onClick={() => onSwitchModule?.("cajero")}
+                    onClick={() => { window.location.href = "/cajero"; }}
                     variant="ghost"
                     className="h-auto min-w-0 flex-col gap-1.5 rounded-xl bg-primary-foreground/10 px-2 py-3 text-xs font-semibold hover:bg-primary-foreground/20 hover:text-primary-foreground"
                   >

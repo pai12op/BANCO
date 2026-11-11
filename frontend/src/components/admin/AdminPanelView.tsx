@@ -305,6 +305,12 @@ export function AdminPanelView({ activeModule = "admin", onSwitchModule }: Admin
           </div>
 
           <div className="flex items-center gap-2.5">
+            <a
+              href="/"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors"
+            >
+              ← Ir a Portal Clientes
+            </a>
             {autenticado && (
               <Button
                 variant="outline"
