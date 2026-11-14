@@ -28,6 +28,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
   // Estados de pantalla del cajero: 'menu' | 'saldo' | 'retirar' | 'confirmar_retiro' | 'movimientos' | 'recibo'
   const [pantalla, setPantalla] = useState<"menu" | "saldo" | "retirar" | "confirmar_retiro" | "movimientos" | "recibo">("menu");
   const [montoARetirar, setMontoARetirar] = useState<number>(50000);
+  const [codigoOtpRetiro, setCodigoOtpRetiro] = useState("");
   const [recibo, setRecibo] = useState<any>(null);
   const [movimientos, setMovimientos] = useState<any[]>([]);
   const [otroValor, setOtroValor] = useState("");
@@ -60,8 +61,9 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
       if (cParam) setCuentaNumero(cParam);
       if (codParam) {
         setPin(codParam);
+        setCodigoOtpRetiro(codParam);
         setModoAcceso("codigo");
-        toast.info("¡Código de retiro de Banca Rota cargado automáticamente!");
+        toast.info("¡Código de retiro de Banca Rota cargado!");
       }
     }
   }, []);
@@ -123,12 +125,23 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
       return;
     }
 
+    if (!codigoOtpRetiro.trim()) {
+      toast.error("Por favor ingrese el código OTP de retiro (6 dígitos).");
+      return;
+    }
+
+    const cleanOtp = codigoOtpRetiro.trim();
+    if (cleanOtp.length !== 6 && cleanOtp.length !== 4) {
+      toast.error("El código debe tener 6 dígitos (Código OTP generado) o 4 dígitos (PIN de tarjeta).");
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch("/api/cajero/retirar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ valor }),
+        body: JSON.stringify({ valor, codigoOtp: cleanOtp }),
         credentials: "include",
       });
 
@@ -200,7 +213,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
             </div>
             <div>
               <h1 className="font-display text-lg font-bold leading-tight text-foreground">Cajero Automático ATM</h1>
-              <p className="text-xs text-muted-foreground">Terminal Red Los Andes · ATM-BOG-004 · Manizales</p>
+              <p className="text-xs text-muted-foreground">Terminal Red Banca Rota · ATM-BOG-004 · Manizales</p>
             </div>
           </div>
 
@@ -385,7 +398,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
               <div className="flex items-center justify-between border-b border-cyan-500/30 pb-3">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="font-mono text-xs uppercase text-cyan-400">ATM EN LÍNEA · RED LOS ANDES</span>
+                  <span className="font-mono text-xs uppercase text-cyan-400">ATM EN LÍNEA · BANCA ROTA</span>
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-semibold">{cuentaInfo?.nombres} {cuentaInfo?.apellidos}</p>
@@ -520,19 +533,125 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                     </div>
                   </div>
 
+                  {/* CAJA OBLIGATORIA: AUTORIZACIÓN CON CÓDIGO OTP */}
+                  <div className="rounded-2xl border-2 border-cyan-500/60 bg-gradient-to-b from-[#091833] to-[#050c18] p-4 text-center space-y-3 shadow-xl">
+                    <div className="flex items-center justify-center gap-2 text-cyan-300">
+                      <KeyRound className="h-4 w-4 text-cyan-400" />
+                      <span className="font-bold text-xs uppercase tracking-wider">
+                        Código de Retiro OTP (6 Dígitos)
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-300">
+                      Ingresa el código temporal generado en <span className="font-bold text-white">Banca Rota</span> desde "Sacar plata" para autorizar el dispensador:
+                    </p>
+
+                    <div className="max-w-[260px] mx-auto space-y-2">
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        value={codigoOtpRetiro}
+                        onChange={(e) => setCodigoOtpRetiro(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="••••••"
+                        className="font-mono text-center tracking-[0.6em] text-3xl font-black bg-black/80 border-2 border-cyan-400 text-cyan-300 h-13 shadow-inner focus:border-cyan-300 focus:ring-2 focus:ring-cyan-500/40"
+                        autoFocus
+                      />
+
+                      {/* AYUDA RÁPIDA: PEGAR O CARGAR CÓDIGO */}
+                      <div className="flex items-center justify-center gap-3 pt-1">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              if (navigator.clipboard && window.isSecureContext) {
+                                const text = await navigator.clipboard.readText();
+                                const clean = text.replace(/\D/g, "").slice(0, 6);
+                                if (clean) {
+                                  setCodigoOtpRetiro(clean);
+                                  toast.success(`Código pegado: ${clean}`);
+                                  return;
+                                }
+                              }
+                            } catch (e) {}
+
+                            const params = new URLSearchParams(window.location.search);
+                            const cod = params.get("codigo");
+                            if (cod) {
+                              setCodigoOtpRetiro(cod);
+                              toast.success(`Código cargado: ${cod}`);
+                            } else {
+                              toast.info("Pega el código de 6 dígitos que copiaste en Banca Rota.");
+                            }
+                          }}
+                          className="text-[11px] font-semibold text-cyan-300 hover:text-white underline flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <KeyRound className="h-3 w-3" />
+                          Pegar código de Banca Rota
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* TECLADO NUMÉRICO TÁCTIL EN PANTALLA */}
+                    <div className="pt-1">
+                      <div className="grid grid-cols-3 gap-1.5 max-w-[220px] mx-auto">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => {
+                              if (codigoOtpRetiro.length < 6) {
+                                setCodigoOtpRetiro((prev) => prev + n.toString());
+                              }
+                            }}
+                            className="h-9 rounded-lg bg-slate-800/90 hover:bg-slate-700 font-mono font-bold text-sm text-white border border-slate-700 active:scale-95 transition-all shadow-sm"
+                          >
+                            {n}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setCodigoOtpRetiro("")}
+                          className="h-9 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 font-semibold text-[10px] text-rose-300 border border-rose-500/30 active:scale-95 transition-all"
+                        >
+                          Borrar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (codigoOtpRetiro.length < 6) {
+                              setCodigoOtpRetiro((prev) => prev + "0");
+                            }
+                          }}
+                          className="h-9 rounded-lg bg-slate-800/90 hover:bg-slate-700 font-mono font-bold text-sm text-white border border-slate-700 active:scale-95 transition-all shadow-sm"
+                        >
+                          0
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCodigoOtpRetiro((prev) => prev.slice(0, -1))}
+                          className="h-9 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 font-semibold text-[10px] text-amber-300 border border-amber-500/30 active:scale-95 transition-all"
+                        >
+                          ⌫
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* BOTONES DE CONFIRMACIÓN Y CANCELACIÓN */}
                   <div className="space-y-2.5 pt-2">
                     <Button
-                      disabled={loading}
+                      disabled={loading || !codigoOtpRetiro || (codigoOtpRetiro.length !== 6 && codigoOtpRetiro.length !== 4)}
                       onClick={() => handleRetiro(montoARetirar)}
-                      className="h-12 w-full text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/30 gap-2"
+                      className="h-12 w-full text-sm font-bold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white shadow-xl shadow-emerald-600/30 gap-2 transition-all cursor-pointer"
                     >
                       {loading ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
                       ) : (
                         <CheckCircle2 className="h-5 w-5" />
                       )}
-                      Confirmar y Retirar {fmt(montoARetirar)}
+                      Confirmar y Dispensar {fmt(montoARetirar)}
                     </Button>
 
                     <Button
@@ -601,6 +720,10 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                       <div className="flex justify-between">
                         <span>OPERACIÓN:</span>
                         <span className="font-bold">RETIRO EFECTIVO</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>MÉTODO:</span>
+                        <span className="font-bold text-cyan-800">{recibo.metodo_retiro || "OTP BANCA ROTA"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>AUTORIZACIÓN:</span>

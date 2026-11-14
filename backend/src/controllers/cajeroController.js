@@ -1,5 +1,7 @@
 // src/controllers/cajeroController.js
 const db = require('../config/db');
+const bcrypt = require('bcryptjs');
+const { validarCodigoRetiro } = require('../config/otpStore');
 
 function getCajero(req) {
     return req.session.cajero || req.session.cajeroCuenta;
@@ -52,7 +54,7 @@ async function retirar(req, res) {
         const cajero = getCajero(req);
         if (!cajero) return res.status(401).json({ error: 'Sesión no activa' });
         const cuentaId = cajero.id;
-        let { valor } = req.body;
+        let { valor, codigoOtp } = req.body;
 
         valor = parseFloat(valor);
         if (!valor || isNaN(valor) || valor <= 0) {
@@ -63,6 +65,12 @@ async function retirar(req, res) {
         if (valor % 10000 !== 0) {
             return res.status(400).json({ error: 'El valor debe ser múltiplo de $10.000 COP.' });
         }
+
+        if (!codigoOtp) {
+            return res.status(400).json({ error: 'Debe ingresar el código de retiro OTP de 6 dígitos para autorizar la operación.' });
+        }
+
+        const cleanOtp = codigoOtp.toString().trim();
 
         await connection.beginTransaction();
 
@@ -88,6 +96,29 @@ async function retirar(req, res) {
             return res.status(403).json({ error: 'La cuenta no se encuentra activa para retiros.' });
         }
 
+        // Validación de Seguridad: Código OTP (6 dígitos) o PIN Físico (4 dígitos)
+        let metodoRetiro = 'OTP Banca Rota';
+        if (cleanOtp.length === 6) {
+            const esOtpValido = validarCodigoRetiro(cleanOtp, cuenta.numero_cuenta, true);
+            if (!esOtpValido) {
+                await connection.rollback();
+                return res.status(401).json({
+                    error: 'Código de retiro OTP incorrecto o expirado. Genera un nuevo código en Banca Rota desde "Sacar plata".'
+                });
+            }
+            metodoRetiro = 'OTP Banca Rota (Sin Tarjeta)';
+        } else if (cleanOtp.length === 4) {
+            const esPinValido = await bcrypt.compare(cleanOtp, cuenta.pin_hash);
+            if (!esPinValido) {
+                await connection.rollback();
+                return res.status(401).json({ error: 'PIN de cajero de 4 dígitos incorrecto.' });
+            }
+            metodoRetiro = 'Tarjeta Débito (PIN)';
+        } else {
+            await connection.rollback();
+            return res.status(400).json({ error: 'El código debe tener 6 dígitos (OTP) o 4 dígitos (PIN).' });
+        }
+
         const saldoActual = parseFloat(cuenta.saldo);
         if (saldoActual < valor) {
             await connection.rollback();
@@ -102,10 +133,11 @@ async function retirar(req, res) {
         await connection.query('UPDATE cuentas SET saldo = ? WHERE id = ?', [nuevoSaldo, cuentaId]);
 
         // 2. Registrar operación (Tipo 2: Retiro Cajero, Estado 1: Exitosa, Canal 1: Cajero Automático)
+        const descripcionOp = `Retiro de efectivo en cajero (${metodoRetiro})`;
         const [resOp] = await connection.query(`
             INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
-            VALUES (2, 1, 1, ?, ?, 'Retiro de efectivo en cajero automático')
-        `, [cuenta.usuario_id, valor]);
+            VALUES (2, 1, 1, ?, ?, ?)
+        `, [cuenta.usuario_id, valor, descripcionOp]);
 
         const operacionId = resOp.insertId;
 
@@ -130,7 +162,8 @@ async function retirar(req, res) {
                 numero_cuenta: cuenta.numero_cuenta,
                 valor: valor,
                 valor_retirado: valor,
-                nuevo_saldo: nuevoSaldo
+                nuevo_saldo: nuevoSaldo,
+                metodo_retiro: metodoRetiro
             }
         });
     } catch (error) {

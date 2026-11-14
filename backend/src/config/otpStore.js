@@ -18,7 +18,7 @@ function generarCodigoRetiro(usuarioId, cuentaId, numeroCuenta) {
   return { codigo, expiraMinutos: 30 };
 }
 
-function validarCodigoRetiro(codigo, numeroCuenta) {
+function validarCodigoRetiro(codigo, numeroCuenta, consumir = true) {
   if (!codigo || !numeroCuenta) return false;
   const cleanCode = codigo.toString().trim();
   const entry = codigosRetiro.get(cleanCode);
@@ -35,8 +35,10 @@ function validarCodigoRetiro(codigo, numeroCuenta) {
   const entryNum = entry.numeroCuenta.toString().trim().replace(/[-\s]/g, '');
 
   if (cleanNum === entryNum) {
-    // Código de un solo uso válido: se consume
-    codigosRetiro.delete(cleanCode);
+    // Código de un solo uso válido: se consume si consumir === true
+    if (consumir) {
+      codigosRetiro.delete(cleanCode);
+    }
     return true;
   }
 

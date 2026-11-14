@@ -159,7 +159,8 @@ async function loginCajero(req, res) {
         }
 
         // 1. Probar primero si es un código de retiro de 6 dígitos válido (OTP sin tarjeta)
-        const esOtpValido = validarCodigoRetiro(authCode, cuenta.numero_cuenta);
+        // No se consume todavía para que pueda ser confirmado al momento de dispensar el efectivo
+        const esOtpValido = validarCodigoRetiro(authCode, cuenta.numero_cuenta, false);
 
         let pinValido = false;
         if (!esOtpValido) {
