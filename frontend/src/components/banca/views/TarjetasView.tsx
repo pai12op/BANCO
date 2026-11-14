@@ -45,6 +45,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
   const [datafonoPaso, setDatafonoPaso] = useState<"comercio" | "pin" | "voucher">("comercio");
   const [datafonoPin, setDatafonoPin] = useState("");
   const [datafonoVoucher, setDatafonoVoucher] = useState<any>(null);
+  const [datafonoEstadoTexto, setDatafonoEstadoTexto] = useState("CONECTANDO CON REDEBAN...");
   const [otroComercioActivo, setOtroComercioActivo] = useState(false);
   const [otroComercioNombre, setOtroComercioNombre] = useState("");
   const [otroComercioValor, setOtroComercioValor] = useState("");
@@ -153,7 +154,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
     }
   };
 
-  // Procesar pago en Datáfono contra el backend con validación de PIN
+  // Procesar pago en Datáfono con simulación realista de tiempos (Conectando -> Verificando -> Aprobada)
   const handleProcesarPagoDatafono = async () => {
     if (datafonoPin.length < 4) {
       toast.error("Por favor digite los 4 dígitos de su clave PIN.");
@@ -162,6 +163,14 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
 
     try {
       setDatafonoProcesando(true);
+      setDatafonoExito(false);
+      setDatafonoEstadoTexto("CONECTANDO CON REDEBAN...");
+
+      // 1. Simular conexión con la red transaccional (~1.3s)
+      await new Promise((resolve) => setTimeout(resolve, 1300));
+
+      setDatafonoEstadoTexto("VERIFICANDO CHIP Y FONDOS...");
+
       const res = await fetch("/api/usuario/pago-tarjeta", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,21 +184,34 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
       });
 
       const data = await res.json();
+
+      // 2. Simular autorización bancaria (~1.1s)
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+
       if (!res.ok) {
+        setDatafonoEstadoTexto("TRANSACCIÓN RECHAZADA");
         toast.error(data.error || "Transacción declinada.");
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         setDatafonoProcesando(false);
+        setDatafonoPin("");
         return;
       }
 
-      setDatafonoVoucher(data.comprobante);
+      // 3. ¡Transacción Aprobada!
       setDatafonoExito(true);
-      toast.success("¡Transacción Aprobada por Redeban!");
+      setDatafonoEstadoTexto("¡TRANSACCIÓN APROBADA!");
+      setDatafonoVoucher(data.comprobante);
       cargarMovimientos();
       if (onRefreshResumen) onRefreshResumen();
+
+      // 4. Mostrar pantalla de Aprobada / Retire su tarjeta durante 1.8s antes de emitir el voucher
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+
       setDatafonoPaso("voucher");
+      setDatafonoProcesando(false);
+      toast.success("Comprobante emitido exitosamente.");
     } catch (err) {
       toast.error("Error de comunicación con el datáfono.");
-    } finally {
       setDatafonoProcesando(false);
     }
   };
@@ -937,106 +959,157 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
             {/* ================= PASO 2: DIGITACIÓN DE PIN EN DATÁFONO ================= */}
             {datafonoPaso === "pin" && (
               <div className="space-y-4">
-                {/* PANTALLA LCD POS */}
-                <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/40 p-4 font-mono text-emerald-400 shadow-inner space-y-2">
-                  <div className="flex items-center justify-between text-[10px] text-emerald-500">
-                    <span>CHIP CONTACTLESS DETECTADO</span>
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                  </div>
-                  <p className="text-xs text-emerald-300 truncate font-bold">{datafonoComercio}</p>
-                  <p className="text-xl font-black text-white">{fmt(parseFloat(datafonoMonto) || 0)}</p>
-                  <p className="text-[11px] text-emerald-400 pt-1 font-semibold animate-pulse">
-                    DIGITE SU CLAVE Y PRESIONE ENTER
-                  </p>
+                {datafonoProcesando ? (
+                  /* PANTALLA LCD DURANTE LA SIMULACIÓN DE PROCESAMIENTO (CONECTANDO -> VERIFICANDO -> APROBADA) */
+                  <div className="rounded-3xl border border-emerald-500/50 bg-[#06141a] p-6 font-mono text-emerald-400 shadow-2xl space-y-4 text-center animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between text-[10px] text-emerald-500 border-b border-emerald-900/50 pb-2">
+                      <span>TERMINAL POS-MNZ-7749</span>
+                      <span className="flex items-center gap-1 font-bold">
+                        <Radio className="h-3 w-3 animate-pulse" /> REDEBAN 4G
+                      </span>
+                    </div>
 
-                  {/* VISOR DE DÍGITOS MASCARADOS */}
-                  <div className="flex items-center justify-center gap-3 pt-2">
-                    {[0, 1, 2, 3].map((idx) => {
-                      const tieneDigito = datafonoPin.length > idx;
-                      return (
-                        <div
-                          key={idx}
-                          className={`h-9 w-9 rounded-xl border flex items-center justify-center text-lg font-bold transition-all ${
-                            tieneDigito
-                              ? "border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-sm shadow-emerald-500/30"
-                              : "border-emerald-900/60 bg-emerald-950/20 text-emerald-800"
-                          }`}
-                        >
-                          {tieneDigito ? "●" : "—"}
+                    {!datafonoExito ? (
+                      <div className="py-5 space-y-4">
+                        <div className="relative mx-auto h-20 w-20 flex items-center justify-center">
+                          <div className="absolute inset-0 rounded-full border-2 border-emerald-400/20 animate-ping" />
+                          <div className="h-16 w-16 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
+                          <Radio className="absolute h-6 w-6 text-emerald-400 animate-pulse rotate-90" />
                         </div>
-                      );
-                    })}
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold tracking-wider text-white animate-pulse uppercase">
+                            {datafonoEstadoTexto}
+                          </p>
+                          <p className="text-xs text-emerald-300 font-semibold">{datafonoComercio}</p>
+                          <p className="text-base font-black text-white">{fmt(parseFloat(datafonoMonto) || 0)}</p>
+                        </div>
+                        <p className="text-[11px] text-amber-300/90 font-medium">
+                          ⚠ POR FAVOR NO RETIRE SU TARJETA
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-5 space-y-3 animate-in zoom-in-95 duration-200">
+                        <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 shadow-xl shadow-emerald-500/30">
+                          <CheckCircle2 className="h-12 w-12 text-emerald-400 animate-bounce" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-lg font-black tracking-wider text-emerald-300 uppercase">
+                            ¡TRANSACCIÓN APROBADA!
+                          </p>
+                          <p className="text-xs text-slate-300">
+                            AUT: <span className="font-bold text-white font-mono">{datafonoVoucher?.autorizacion || "AUTH-OK"}</span>
+                          </p>
+                          <p className="text-xl font-black text-white">{fmt(parseFloat(datafonoMonto) || 0)}</p>
+                        </div>
+                        <p className="text-xs text-emerald-300 font-bold bg-emerald-950/60 py-2 px-3 rounded-xl border border-emerald-500/40">
+                          ✓ RETIRE SU TARJETA DEL LECTOR
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="w-full bg-emerald-950/80 rounded-full h-1.5 overflow-hidden border border-emerald-500/30">
+                      <div
+                        className={`h-full bg-emerald-400 transition-all duration-700 ${
+                          datafonoExito ? "w-full" : "w-3/4 animate-pulse"
+                        }`}
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* PANTALLA LCD NORMAL CON CLAVE PIN */}
+                    <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/40 p-4 font-mono text-emerald-400 shadow-inner space-y-2">
+                      <div className="flex items-center justify-between text-[10px] text-emerald-500">
+                        <span>CHIP CONTACTLESS DETECTADO</span>
+                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                      </div>
+                      <p className="text-xs text-emerald-300 truncate font-bold">{datafonoComercio}</p>
+                      <p className="text-xl font-black text-white">{fmt(parseFloat(datafonoMonto) || 0)}</p>
+                      <p className="text-[11px] text-emerald-400 pt-1 font-semibold animate-pulse">
+                        DIGITE SU CLAVE Y PRESIONE ENTER
+                      </p>
 
-                <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 px-3 py-1.5 text-[11px] text-cyan-300 flex items-center justify-between">
-                  <span>💡 Clave de tu tarjeta:</span>
-                  <span className="font-mono font-bold text-white bg-cyan-500/30 px-2 py-0.5 rounded">1234</span>
-                </div>
+                      {/* VISOR DE DÍGITOS MASCARADOS */}
+                      <div className="flex items-center justify-center gap-3 pt-2">
+                        {[0, 1, 2, 3].map((idx) => {
+                          const tieneDigito = datafonoPin.length > idx;
+                          return (
+                            <div
+                              key={idx}
+                              className={`h-9 w-9 rounded-xl border flex items-center justify-center text-lg font-bold transition-all ${
+                                tieneDigito
+                                  ? "border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-sm shadow-emerald-500/30"
+                                  : "border-emerald-900/60 bg-emerald-950/20 text-emerald-800"
+                              }`}
+                            >
+                              {tieneDigito ? "●" : "—"}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                {/* TECLADO NUMÉRICO DEL DATÁFONO */}
-                <div className="grid grid-cols-3 gap-2 pt-1">
-                  {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((num) => (
+                    <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 px-3 py-1.5 text-[11px] text-cyan-300 flex items-center justify-between">
+                      <span>💡 Clave de tu tarjeta:</span>
+                      <span className="font-mono font-bold text-white bg-cyan-500/30 px-2 py-0.5 rounded">1234</span>
+                    </div>
+
+                    {/* TECLADO NUMÉRICO DEL DATÁFONO */}
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((num) => (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => handlePinTecla(num)}
+                          className="rounded-xl border border-[#223558] bg-[#0e1933] hover:bg-[#15274d] active:scale-95 py-3 text-sm font-bold text-white shadow transition-all font-mono"
+                        >
+                          {num}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => handlePinTecla("BORRAR")}
+                        className="rounded-xl border border-rose-500/30 bg-rose-950/30 hover:bg-rose-900/40 active:scale-95 py-3 text-xs font-bold text-rose-300 shadow transition-all"
+                      >
+                        Borrar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePinTecla("0")}
+                        className="rounded-xl border border-[#223558] bg-[#0e1933] hover:bg-[#15274d] active:scale-95 py-3 text-sm font-bold text-white shadow transition-all font-mono"
+                      >
+                        0
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePinTecla("ENTER")}
+                        disabled={datafonoPin.length < 4}
+                        className="rounded-xl border border-emerald-500/40 bg-emerald-600/30 hover:bg-emerald-600/50 active:scale-95 py-3 text-xs font-bold text-emerald-300 shadow transition-all disabled:opacity-40"
+                      >
+                        Entrar
+                      </button>
+                    </div>
+
+                    {/* BOTÓN ACCIÓN DIRECTA */}
                     <button
-                      key={num}
                       type="button"
-                      onClick={() => handlePinTecla(num)}
-                      className="rounded-xl border border-[#223558] bg-[#0e1933] hover:bg-[#15274d] active:scale-95 py-3 text-sm font-bold text-white shadow transition-all font-mono"
+                      onClick={handleProcesarPagoDatafono}
+                      disabled={datafonoPin.length < 4}
+                      className="w-full rounded-2xl py-3.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 shadow-lg shadow-emerald-500/20 disabled:opacity-40 flex items-center justify-center gap-2"
                     >
-                      {num}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => handlePinTecla("BORRAR")}
-                    className="rounded-xl border border-rose-500/30 bg-rose-950/30 hover:bg-rose-900/40 active:scale-95 py-3 text-xs font-bold text-rose-300 shadow transition-all"
-                  >
-                    Borrar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handlePinTecla("0")}
-                    className="rounded-xl border border-[#223558] bg-[#0e1933] hover:bg-[#15274d] active:scale-95 py-3 text-sm font-bold text-white shadow transition-all font-mono"
-                  >
-                    0
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handlePinTecla("ENTER")}
-                    disabled={datafonoPin.length < 4 || datafonoProcesando}
-                    className="rounded-xl border border-emerald-500/40 bg-emerald-600/30 hover:bg-emerald-600/50 active:scale-95 py-3 text-xs font-bold text-emerald-300 shadow transition-all disabled:opacity-40"
-                  >
-                    Entrar
-                  </button>
-                </div>
-
-                {/* BOTÓN ACCIÓN DIRECTA */}
-                <button
-                  type="button"
-                  onClick={handleProcesarPagoDatafono}
-                  disabled={datafonoPin.length < 4 || datafonoProcesando}
-                  className="w-full rounded-2xl py-3.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 shadow-lg shadow-emerald-500/20 disabled:opacity-40 flex items-center justify-center gap-2"
-                >
-                  {datafonoProcesando ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      <span>Conectando con Redeban...</span>
-                    </>
-                  ) : (
-                    <>
                       <CheckCircle2 className="h-4 w-4" />
                       <span>Confirmar y Pagar en Datáfono</span>
-                    </>
-                  )}
-                </button>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => setDatafonoPaso("comercio")}
-                  className="text-xs text-slate-400 hover:text-white transition-colors"
-                >
-                  ← Cambiar comercio o monto
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => setDatafonoPaso("comercio")}
+                      className="text-xs text-slate-400 hover:text-white transition-colors"
+                    >
+                      ← Cambiar comercio o monto
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
