@@ -280,20 +280,21 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                   Validar Tarjeta y PIN
                 </Button>
 
-                {/* FAST DEMO ACCESS */}
+                {/* ACCESO RÁPIDO PARA PRUEBAS */}
                 <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-3 text-xs">
-                  <p className="font-semibold text-cyan-300">Tarjeta de Prueba Docente:</p>
-                  <p className="mt-1">Cuenta: <span className="font-mono text-foreground font-semibold">400110203040</span></p>
-                  <p>PIN: <span className="font-mono text-foreground font-semibold">1234</span> (Andrés Pai)</p>
+                  <p className="font-semibold text-cyan-300">Tus Credenciales de Cajero:</p>
+                  <p className="mt-1">Cuenta / Tarjeta: <span className="font-mono text-foreground font-bold">400150181053</span></p>
+                  <p>Cédula: <span className="font-mono text-foreground font-bold">1130766219</span></p>
+                  <p>PIN ATM: <span className="font-mono text-cyan-300 font-bold">1234</span> (Jairo Pai)</p>
                   <button
                     type="button"
                     onClick={() => {
-                      setCuentaNumero("400110203040");
+                      setCuentaNumero("400150181053");
                       setPin("1234");
                     }}
-                    className="mt-2 w-full rounded-lg bg-cyan-500/20 py-1.5 text-center text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/30"
+                    className="mt-2 w-full rounded-lg bg-cyan-500/20 py-1.5 text-center text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/30 transition-colors"
                   >
-                    ⚡ Insertar Tarjeta Demo de Andrés
+                    ⚡ Cargar Tarjeta de Jairo Pai
                   </button>
                 </div>
               </form>

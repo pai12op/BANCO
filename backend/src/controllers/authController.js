@@ -134,6 +134,7 @@ async function loginCajero(req, res) {
             return res.status(400).json({ error: 'Ingrese el número de cuenta y su PIN de 4 dígitos.' });
         }
 
+        const cleanId = numero_cuenta.trim().replace(/[-\s]/g, '');
         const [cuentas] = await db.query(`
             SELECT c.*, tc.nombre AS tipo_cuenta, ec.nombre AS estado_cuenta,
                    u.nombres, u.apellidos, u.numero_documento, u.estado_id AS usuario_estado_id
@@ -141,8 +142,8 @@ async function loginCajero(req, res) {
             JOIN tipos_cuenta tc ON c.tipo_id = tc.id
             JOIN estados_cuenta ec ON c.estado_id = ec.id
             JOIN usuarios u ON c.usuario_id = u.id
-            WHERE c.numero_cuenta = ?
-        `, [numero_cuenta.trim().replace(/[-\s]/g, '')]);
+            WHERE c.numero_cuenta = ? OR u.numero_documento = ?
+        `, [cleanId, cleanId]);
 
         if (cuentas.length === 0) {
             return res.status(404).json({ error: 'La cuenta ingresada no existe en el sistema.' });
