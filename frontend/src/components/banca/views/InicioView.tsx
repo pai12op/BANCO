@@ -3,7 +3,7 @@ import {
   Send, Receipt, Plus, CreditCard, ArrowDownLeft,
   ArrowUpRight, Search, Wallet, FileText, ShieldCheck,
   ChevronRight, Copy, Check, Eye, EyeOff, ChevronDown, ChevronUp,
-  Store, Heart, Edit3, Radio, Sparkles
+  Store, Heart, Edit3, Radio, Sparkles, Landmark
 } from "lucide-react";
 import { toast } from "sonner";
 import { Cuenta, Movimiento, Usuario } from "../types";
