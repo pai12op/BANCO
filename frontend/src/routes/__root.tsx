@@ -96,8 +96,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap" },
-      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "alternate icon", href: "/favicon.ico" },
+      {
+        rel: "icon",
+        type: "image/svg+xml",
+        href: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23091222'/%3E%3Cpath d='M32 10 L12 22 L52 22 Z' fill='%2300e5ff'/%3E%3Crect x='14' y='24' width='36' height='4' rx='1' fill='%230e76fd'/%3E%3Crect x='16' y='30' width='6' height='18' rx='1' fill='%2300e5ff'/%3E%3Crect x='25' y='30' width='6' height='18' rx='1' fill='%2300e5ff'/%3E%3Crect x='33' y='30' width='6' height='18' rx='1' fill='%2300e5ff'/%3E%3Crect x='42' y='30' width='6' height='18' rx='1' fill='%2300e5ff'/%3E%3Crect x='12' y='50' width='40' height='4' rx='1' fill='%230e76fd'/%3E%3C/svg%3E",
+      },
+      { rel: "alternate icon", href: "/favicon.ico?v=20261114" },
+      { rel: "shortcut icon", href: "/favicon.ico?v=20261114" },
+      { rel: "apple-touch-icon", href: "/favicon.svg?v=20261114" },
     ],
   }),
   shellComponent: RootShell,
@@ -124,6 +130,19 @@ import { Toaster } from "../components/ui/sonner";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    // Reemplazo forzado en caliente del favicon en el navegador para eliminar caché persistente
+    const svgBankIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23091222'/%3E%3Cpath d='M32 10 L12 22 L52 22 Z' fill='%2300e5ff'/%3E%3Crect x='14' y='24' width='36' height='4' rx='1' fill='%230e76fd'/%3E%3Crect x='16' y='30' width='6' height='18' rx='1' fill='%2300e5ff'/%3E%3Crect x='25' y='30' width='6' height='18' rx='1' fill='%2300e5ff'/%3E%3Crect x='33' y='30' width='6' height='18' rx='1' fill='%2300e5ff'/%3E%3Crect x='42' y='30' width='6' height='18' rx='1' fill='%2300e5ff'/%3E%3Crect x='12' y='50' width='40' height='4' rx='1' fill='%230e76fd'/%3E%3C/svg%3E";
+    const existingIcons = document.querySelectorAll("link[rel*='icon']");
+    existingIcons.forEach((el) => el.remove());
+
+    const link = document.createElement("link");
+    link.type = "image/svg+xml";
+    link.rel = "icon";
+    link.href = svgBankIcon;
+    document.head.appendChild(link);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
