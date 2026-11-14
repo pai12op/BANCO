@@ -22,45 +22,62 @@ export function TransferenciasView({
   movimientos,
   onTransferSuccess,
 }: TransferenciasViewProps) {
-  const [cuentaDestino, setCuentaDestino] = useState("500190807060");
+  const [cuentaDestino, setCuentaDestino] = useState("");
   const [monto, setMonto] = useState("");
   const [concepto, setConcepto] = useState("");
   const [aplicarGmf, setAplicarGmf] = useState(false);
   const [loading, setLoading] = useState(false);
   const [comprobante, setComprobante] = useState<ComprobanteTransferencia | null>(null);
 
-  const contactosFrecuentes = [
+  // Lista dinámica de contactos del equipo
+  // Se excluye la cuenta activa del usuario actual para evitar transferencias a sí mismo
+  const listaContactos = [
+    { nombre: "Jairo Andrés Pai", cuenta: "400110203040", banco: "Banco Digital Andino" },
     { nombre: "Valentina Gómez", cuenta: "500190807060", banco: "Banco Digital Andino" },
-    { nombre: "Mateo Restrepo", cuenta: "400155667788", banco: "Banco Digital Andino" },
+    { nombre: "Melisa Pinilla", cuenta: "400122334455", banco: "Banco Digital Andino" },
+    { nombre: "Isabella Caviedes", cuenta: "400166778899", banco: "Banco Digital Andino" },
   ];
+
+  const contactosFrecuentes = listaContactos.filter(
+    (c) => c.cuenta !== cuentaActiva?.numero_cuenta
+  );
 
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cuentaActiva) return;
+    if (!cuentaActiva) {
+      toast.error("No se ha seleccionado una cuenta de origen activa.");
+      return;
+    }
 
     const valorBase = parseFloat(monto);
     if (isNaN(valorBase) || valorBase <= 0) {
-      toast.error("El monto debe ser mayor a $0.");
+      toast.error("El monto debe ser mayor a $0 COP.");
+      return;
+    }
+
+    const destinoLimpio = cuentaDestino.trim().replace(/\D/g, "");
+    if (!destinoLimpio) {
+      toast.error("Ingrese o seleccione el número de cuenta de destino.");
+      return;
+    }
+
+    if (destinoLimpio === cuentaActiva.numero_cuenta) {
+      toast.error("No puede realizar una transferencia a su misma cuenta de origen.");
       return;
     }
 
     const impuesto = aplicarGmf ? Math.round(valorBase * 0.004) : 0;
-    const valor = valorBase + impuesto;
+    const valor = valorBase;
 
-    if (valor > saldoReal) {
+    if (valorBase + impuesto > saldoReal) {
       toast.error(`Saldo insuficiente. Saldo disponible: ${fmt(saldoReal)}`);
-      return;
-    }
-
-    if (!cuentaDestino.trim()) {
-      toast.error("Ingrese el número de cuenta de destino.");
       return;
     }
 
     try {
       setLoading(true);
       const conceptoFinal = concepto.trim()
-        ? (impuesto > 0 ? `${concepto.trim()} (Incluye GMF 4x1000: ${fmt(impuesto)})` : concepto.trim())
+        ? (impuesto > 0 ? `${concepto.trim()} (GMF 4x1000: ${fmt(impuesto)})` : concepto.trim())
         : (impuesto > 0 ? `Transferencia (GMF 4x1000: ${fmt(impuesto)})` : undefined);
 
       const res = await fetch("/api/banca/transferir", {
@@ -68,7 +85,7 @@ export function TransferenciasView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cuenta_origen_id: cuentaActiva.id,
-          numero_cuenta_destino: cuentaDestino.trim(),
+          numero_cuenta_destino: destinoLimpio,
           valor,
           concepto: conceptoFinal,
         }),
@@ -81,10 +98,11 @@ export function TransferenciasView({
         return;
       }
 
-      toast.success(data.mensaje);
+      toast.success(data.mensaje || "¡Transferencia realizada con éxito!");
       setComprobante(data.comprobante);
       setMonto("");
       setConcepto("");
+      setCuentaDestino("");
       onTransferSuccess();
     } catch (err) {
       toast.error("Error al procesar la transferencia.");
@@ -132,26 +150,36 @@ export function TransferenciasView({
               <Input
                 value={cuentaDestino}
                 onChange={(e) => setCuentaDestino(e.target.value)}
-                placeholder="Ej: 500190807060"
+                placeholder="Ej: 400110203040"
                 required
                 className="mt-1 font-mono text-sm"
               />
 
               {/* CONTACTOS FRECUENTES */}
-              <div className="mt-2">
-                <span className="text-[11px] text-muted-foreground">Contactos frecuentes:</span>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {contactosFrecuentes.map((c) => (
-                    <button
-                      key={c.cuenta}
-                      type="button"
-                      onClick={() => setCuentaDestino(c.cuenta)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-secondary/40 px-2 py-1 text-[11px] hover:border-accent hover:text-accent transition-colors"
-                    >
-                      <UserCheck className="h-3 w-3" />
-                      <span>{c.nombre} ({c.cuenta.slice(-4)})</span>
-                    </button>
-                  ))}
+              <div className="mt-2.5">
+                <span className="text-[11px] text-muted-foreground font-medium">Seleccionar contacto del equipo:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1.5">
+                  {contactosFrecuentes.map((c) => {
+                    const isSelected = cuentaDestino === c.cuenta;
+                    return (
+                      <button
+                        key={c.cuenta}
+                        type="button"
+                        onClick={() => setCuentaDestino(c.cuenta)}
+                        className={`flex items-center gap-2 rounded-xl border p-2.5 text-left text-xs transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/20 text-white shadow-sm ring-1 ring-primary/40"
+                            : "border-border/60 bg-secondary/30 text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-secondary/50"
+                        }`}
+                      >
+                        <UserCheck className={`h-4 w-4 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                        <div className="truncate">
+                          <p className="font-semibold truncate text-foreground">{c.nombre}</p>
+                          <p className="font-mono text-[10px] text-muted-foreground">{c.cuenta}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

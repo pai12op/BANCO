@@ -82,11 +82,14 @@ async function crearCliente(req, res) {
             saldo_inicial
         } = req.body;
 
-        if (!numero_documento || !nombres || !apellidos || !correo || !password || !pin_cajero) {
+        const finalPassword = password || 'Banco123*';
+        const finalPin = (pin_cajero || '1234').toString().trim();
+
+        if (!numero_documento || !nombres || !apellidos || !correo) {
             return res.status(400).json({ error: 'Todos los campos obligatorios deben ser diligenciados.' });
         }
 
-        if (pin_cajero.toString().length !== 4) {
+        if (finalPin.length !== 4) {
             return res.status(400).json({ error: 'El PIN del cajero debe ser exactamente de 4 dígitos numéricos.' });
         }
 
@@ -107,8 +110,8 @@ async function crearCliente(req, res) {
             return res.status(400).json({ error: 'Ya existe un usuario registrado con ese correo o número de documento.' });
         }
 
-        const passwordHash = await bcrypt.hash(password, 10);
-        const pinHash = await bcrypt.hash(pin_cajero.toString().trim(), 10);
+        const passwordHash = await bcrypt.hash(finalPassword, 10);
+        const pinHash = await bcrypt.hash(finalPin, 10);
 
         // 1. Insertar usuario
         const [resUser] = await connection.query(`

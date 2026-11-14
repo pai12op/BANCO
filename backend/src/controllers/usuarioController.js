@@ -81,7 +81,11 @@ async function transferir(req, res) {
             return res.status(400).json({ error: 'Debe ingresar el número de cuenta de destino.' });
         }
 
-        numero_cuenta_destino = numero_cuenta_destino.trim().replace(/[-\s]/g, '');
+        numero_cuenta_destino = String(numero_cuenta_destino).trim().replace(/\D/g, '');
+
+        if (!numero_cuenta_destino) {
+            return res.status(400).json({ error: 'El número de cuenta de destino no es válido.' });
+        }
 
         await connection.beginTransaction();
 
@@ -185,7 +189,8 @@ async function transferir(req, res) {
                 cuenta_destino: cuentaDestino.numero_cuenta,
                 titular_destino: `${cuentaDestino.nombres} ${cuentaDestino.apellidos}`,
                 valor,
-                nuevo_saldo: nuevoSaldoOrigen
+                nuevo_saldo: nuevoSaldoOrigen,
+                nuevo_saldo_origen: nuevoSaldoOrigen
             }
         });
     } catch (error) {

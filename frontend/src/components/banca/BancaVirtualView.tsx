@@ -101,6 +101,7 @@ export function BancaVirtualView() {
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       setUsuario(null);
       setCuentas([]);
+      setCuentaActiva(null);
       setMovimientos([]);
       setActiveTab("inicio");
       setShowMobileMore(false);

@@ -30,7 +30,7 @@ export function AdminCrearClienteModal({
     apellidos: "",
     correo: "",
     telefono: "",
-    saldo_inicial: "100000",
+    saldo_inicial: "1500000",
   });
   const [loading, setLoading] = useState(false);
 
@@ -47,7 +47,7 @@ export function AdminCrearClienteModal({
         apellidos: "",
         correo: "",
         telefono: "",
-        saldo_inicial: "100000",
+        saldo_inicial: "1500000",
       });
       onOpenChange(false);
     }

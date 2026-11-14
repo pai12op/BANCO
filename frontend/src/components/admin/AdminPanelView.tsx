@@ -192,6 +192,9 @@ export function AdminPanelView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...nuevoCliente,
+          password: "Banco123*",
+          pin_cajero: "1234",
+          tipo_cuenta_id: 1,
           saldo_inicial: parseFloat(nuevoCliente.saldo_inicial) || 0,
         }),
         credentials: "include",
