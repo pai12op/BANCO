@@ -79,9 +79,9 @@ export function InicioView({
   return (
     <div className="space-y-6">
       {/* ======================================================== */}
-      {/* SECCIÓN HERO NEQUI EN MODO OBSIDIANA (IMAGEN 1)          */}
+      {/* SECCIÓN HERO SALDO OBSIDIANA LIMPIO Y ORDENADO           */}
       {/* ======================================================== */}
-      <section className="relative overflow-hidden rounded-3xl border border-[#1a2d4e] bg-gradient-to-b from-[#0e1d3a] via-[#091326] to-[#060b14] p-5 sm:p-7 text-center shadow-2xl space-y-3">
+      <section className="relative overflow-hidden rounded-3xl border border-[#1a2d4e] bg-gradient-to-b from-[#0e1d3a] via-[#091326] to-[#060b14] p-5 sm:p-7 text-center shadow-2xl space-y-4">
         {/* CUENTA Y OJO PARA OCULTAR SALDO */}
         <div className="flex items-center justify-center gap-2 text-xs text-slate-300 font-medium">
           <span>{cuentasAMostrar[0]?.tipo_cuenta || "Cuenta de Ahorros"}</span>
@@ -105,7 +105,7 @@ export function InicioView({
         </div>
 
         {/* BOTÓN DESPLEGABLE "TU PLATA ∨" */}
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-center pt-0.5">
           <button
             onClick={() => setTuPlataAbierto(!tuPlataAbierto)}
             className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/90 hover:bg-slate-800 px-4 py-1.5 text-xs font-semibold text-slate-200 hover:text-white transition-all shadow-md active:scale-95"
@@ -134,131 +134,75 @@ export function InicioView({
             </div>
           </div>
         )}
-      </section>
 
-      {/* ======================================================== */}
-      {/* CARRUSEL DE BANNERS "ORGANIZA TU PLATA" (IMAGEN 1)       */}
-      {/* ======================================================== */}
-      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
-        {/* CARD 1: Organiza tu plata */}
-        <div className="min-w-[270px] sm:min-w-[310px] snap-center rounded-2xl border border-[#1b2b4a] bg-gradient-to-r from-[#0d1c3a] to-[#071124] p-4 flex items-center justify-between shadow-lg">
-          <div className="space-y-1 pr-2">
-            <p className="font-display font-bold text-sm text-white">Organiza tu plata</p>
-            <p className="text-[11px] text-slate-400 leading-snug">Separa tus gastos y ahorra con metas</p>
-            <button
-              onClick={onOpenAjustes}
-              className="mt-2.5 inline-block rounded-xl bg-cyan-500 hover:bg-cyan-400 px-3.5 py-1.5 text-[11px] font-bold text-slate-950 transition-colors shadow-md shadow-cyan-500/20"
-            >
-              Hazlo aquí
-            </button>
-          </div>
-          <div className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-            <Wallet className="h-6 w-6" />
-          </div>
-        </div>
+        {/* LOS 3 BOTONES DE ACCIÓN RÁPIDA PRINCIPALES */}
+        <div className="grid grid-cols-3 gap-2.5 pt-2">
+          <button
+            onClick={onOpenTransferir}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-[#0f1d38] border border-[#1f3763] hover:bg-[#152a52] active:scale-95 px-3 py-3 text-xs font-bold text-white shadow transition-all"
+          >
+            <Send className="h-4 w-4 text-[#38bdf8]" />
+            <span>Transferir</span>
+          </button>
 
-        {/* CARD 2: Tarjeta Débito Digital */}
-        <div className="min-w-[270px] sm:min-w-[310px] snap-center rounded-2xl border border-[#1b2b4a] bg-gradient-to-r from-[#0d1c3a] to-[#071124] p-4 flex items-center justify-between shadow-lg">
-          <div className="space-y-1 pr-2">
-            <p className="font-display font-bold text-sm text-white">Tarjeta Débito Digital</p>
-            <p className="text-[11px] text-slate-400 leading-snug">Paga en datáfono y compras en línea</p>
-            <button
-              onClick={onOpenTarjetas}
-              className="mt-2.5 inline-block rounded-xl bg-blue-600 hover:bg-blue-500 px-3.5 py-1.5 text-[11px] font-bold text-white transition-colors shadow-md shadow-blue-600/20"
-            >
-              Ver tarjeta
-            </button>
-          </div>
-          <div className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            <CreditCard className="h-6 w-6" />
-          </div>
-        </div>
-
-        {/* CARD 3: Domicilios Llorente */}
-        <div className="min-w-[270px] sm:min-w-[310px] snap-center rounded-2xl border border-amber-500/30 bg-gradient-to-r from-[#1c1808] to-[#0b0c16] p-4 flex items-center justify-between shadow-lg">
-          <div className="space-y-1 pr-2">
-            <p className="font-display font-bold text-sm text-amber-300">🛵 Domicilios Llorente</p>
-            <p className="text-[11px] text-slate-400 leading-snug">Prueba el pago en datáfono contactless</p>
-            <button
-              onClick={onOpenTarjetas}
-              className="mt-2.5 inline-block rounded-xl bg-amber-500 hover:bg-amber-400 px-3.5 py-1.5 text-[11px] font-bold text-slate-950 transition-colors shadow-md shadow-amber-500/20"
-            >
-              Pagar $35.000
-            </button>
-          </div>
-          <div className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <Store className="h-6 w-6" />
-          </div>
-        </div>
-      </div>
-
-      {/* ======================================================== */}
-      {/* SECCIÓN SUGERIDOS (IMAGEN 1)                             */}
-      {/* ======================================================== */}
-      <div className="space-y-2.5">
-        <h3 className="font-display text-sm font-bold text-slate-200">Sugeridos</h3>
-        <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-4">
-          {[
-            { label: "Envía plata", icon: Send, action: onOpenTransferir, color: "text-[#38bdf8]" },
-            { label: "Datáfono POS", icon: Radio, action: onOpenTarjetas, color: "text-cyan-400" },
-            { label: "Cajero ATM", icon: Landmark, action: () => { window.location.href = "/cajero"; }, color: "text-emerald-400" },
-            { label: "Mis Cuentas", icon: Wallet, action: onOpenCuentas, color: "text-indigo-400" },
-          ].map((s, idx) => {
-            const Icon = s.icon;
-            return (
-              <button
-                key={idx}
-                onClick={s.action}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-[#162544] bg-[#091122] hover:bg-[#0e1c36] p-3 text-center transition-all group shadow-sm active:scale-95"
-              >
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#111e38] group-hover:scale-105 transition-transform">
-                  <Icon className={`h-5 w-5 ${s.color}`} />
-                </div>
-                <span className="text-[10px] font-medium text-slate-300 leading-tight truncate w-full">
-                  {s.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ======================================================== */}
-      {/* SECCIÓN TUS FAVORITOS (IMAGEN 1)                         */}
-      {/* ======================================================== */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-sm font-bold text-slate-200 flex items-center gap-1.5">
-            <Heart className="h-4 w-4 text-rose-400" /> Tus favoritos
-          </h3>
           <button
             onClick={onOpenTarjetas}
-            className="text-slate-400 hover:text-white p-1"
-            title="Editar favoritos"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-[#0f1d38] border border-[#1f3763] hover:bg-[#152a52] active:scale-95 px-3 py-3 text-xs font-bold text-white shadow transition-all"
           >
-            <Edit3 className="h-4 w-4" />
+            <CreditCard className="h-4 w-4 text-cyan-400" />
+            <span>Datáfono</span>
+          </button>
+
+          <button
+            onClick={() => {
+              window.location.href = "/cajero";
+            }}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-cyan-950/40 border border-cyan-500/40 hover:bg-cyan-900/40 active:scale-95 px-3 py-3 text-xs font-bold text-cyan-300 shadow transition-all"
+          >
+            <Landmark className="h-4 w-4 text-cyan-400" />
+            <span>Cajero ATM</span>
           </button>
         </div>
-        <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
-          {[
-            { name: "Domicilios Llorente", emoji: "🛵", tag: "Llorente" },
-            { name: "Juan Valdez Café", emoji: "☕", tag: "Café" },
-            { name: "Éxito Manizales", emoji: "🛒", tag: "Éxito" },
-            { name: "Cine Colombia", emoji: "🎬", tag: "Cine" },
-          ].map((fav, i) => (
-            <button
-              key={i}
-              onClick={onOpenTarjetas}
-              className="flex flex-col items-center gap-1 rounded-2xl border border-[#162544] bg-[#091122] hover:bg-[#0e1c36] p-2.5 min-w-[76px] text-center shrink-0 active:scale-95 transition-all shadow-sm"
-            >
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#12203a] text-xl shadow-inner">
-                <span>{fav.emoji}</span>
-              </div>
-              <span className="text-[10px] font-semibold text-slate-300 truncate w-16">{fav.tag}</span>
-            </button>
-          ))}
+      </section>
+
+      {/* CARD TARJETA DÉBITO DIGITAL DESTACADA */}
+      <section
+        onClick={onOpenTarjetas}
+        className="cursor-pointer flex flex-col justify-between rounded-3xl border border-[#182845] bg-gradient-to-r from-[#091224] to-[#0d1c3a] p-5 shadow-xl hover:border-[#0e76fd]/50 transition-all active:scale-[0.99] group"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+            <CreditCard className="h-4 w-4" /> Tarjeta Débito Digital
+          </span>
+          <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
+            ● ACTIVA
+          </span>
         </div>
-      </div>
+
+        <div className="my-3 flex items-center justify-between">
+          <p className="font-mono text-xl sm:text-2xl font-bold tracking-widest text-white">
+            {cuentaActiva
+              ? `${cuentaActiva.numero_cuenta.slice(0, 4)} •••• •••• ${cuentaActiva.numero_cuenta.slice(-4)}`
+              : "4001 •••• •••• 1053"}
+          </p>
+          <span className="text-xs text-cyan-400 font-semibold group-hover:underline">
+            Gestionar →
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-800/80">
+          <div>
+            <span className="text-[10px] uppercase text-slate-500 block">Titular</span>
+            <span className="font-semibold text-slate-200">
+              {usuario ? `${usuario.nombres} ${usuario.apellidos}`.toUpperCase() : "JAIRO PAI"}
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] uppercase text-slate-500 block">Saldo en Tarjeta</span>
+            <span className="font-mono font-bold text-emerald-400">{fmt(saldoReal)}</span>
+          </div>
+        </div>
+      </section>
 
       {/* SECCIÓN PRINCIPAL: 2 COLUMNAS ARMONIZADAS */}
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
