@@ -9,11 +9,9 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
 export function AhorrosView() {
-  const [bolsillos, setBolsillos] = useState([
-    { id: 1, nombre: "Viaje Fin de Año", meta: 3000000, actual: 1850000, emoji: "✈️" },
-    { id: 2, nombre: "Fondo de Emergencia", meta: 5000000, actual: 3400000, emoji: "🛡️" },
-    { id: 3, nombre: "Nuevo Computador", meta: 4000000, actual: 1200000, emoji: "💻" },
-  ]);
+  const [bolsillos, setBolsillos] = useState<
+    { id: number; nombre: string; meta: number; actual: number; emoji: string }[]
+  >([]);
 
   const [modalNuevo, setModalNuevo] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState("");
@@ -79,20 +77,20 @@ export function AhorrosView() {
           <div>
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-bold text-accent border border-accent/30">
-                CDT DIGITAL ACTIVO
+                INVERSIÓN DISPONIBLE
               </span>
-              <span className="text-xs text-muted-foreground font-mono">180 Días Plazo Fijo</span>
+              <span className="text-xs text-muted-foreground font-mono">Plazo Fijo a 180 Días</span>
             </div>
-            <p className="font-display text-3xl font-bold text-white mt-2">$ 25.000.000 COP</p>
+            <p className="font-display text-2xl font-bold text-white mt-2">CDT Digital con Tasa 11.50% E.A.</p>
             <p className="text-xs text-slate-300 mt-1">
-              Rendimiento pactado: <strong className="text-cyan-300 font-mono">11.50% E.A.</strong> · Ganancia estimada: <strong className="text-emerald-400 font-mono">+$ 1.437.500 COP</strong>
+              Haz crecer tu dinero de forma 100% segura. Aperturas en ventanilla o desde tu cuenta de ahorros.
             </p>
           </div>
 
           <div className="rounded-xl bg-card/60 border border-border/60 p-4 text-xs font-mono space-y-1">
-            <p className="text-muted-foreground">Vencimiento: <span className="text-foreground font-semibold">15 Mayo 2027</span></p>
-            <p className="text-muted-foreground">Días restantes: <span className="text-cyan-300 font-semibold">112 días</span></p>
-            <p className="text-muted-foreground">Estado: <span className="text-emerald-400 font-bold">Generando Intereses</span></p>
+            <p className="text-muted-foreground">Monto Mínimo: <span className="text-foreground font-semibold">$ 500.000 COP</span></p>
+            <p className="text-muted-foreground">Plazos: <span className="text-cyan-300 font-semibold">90, 180 o 360 días</span></p>
+            <p className="text-muted-foreground">Seguro: <span className="text-emerald-400 font-bold">Protegido Fogafín</span></p>
           </div>
         </div>
       </div>
@@ -106,48 +104,58 @@ export function AhorrosView() {
           </span>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {bolsillos.map((b) => {
-            const porcentaje = Math.min(100, Math.round((b.actual / b.meta) * 100));
-            return (
-              <div key={b.id} className="rounded-2xl border bg-card p-5 shadow-sm space-y-4 hover:border-border/80 transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-2xl">{b.emoji}</span>
-                    <div>
-                      <h4 className="font-semibold text-sm">{b.nombre}</h4>
-                      <p className="text-[11px] text-muted-foreground">Meta: {fmt(b.meta)}</p>
+        {bolsillos.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border/80 p-8 text-center bg-card/30">
+            <PiggyBank className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
+            <p className="text-sm font-semibold text-slate-200">Aún no tienes bolsillos creados</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+              Crea tu primer bolsillo para apartar plata de tu cuenta y ahorrar para tus viajes, tecnología o emergencias.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {bolsillos.map((b) => {
+              const porcentaje = Math.min(100, Math.round((b.actual / b.meta) * 100));
+              return (
+                <div key={b.id} className="rounded-2xl border bg-card p-5 shadow-sm space-y-4 hover:border-border/80 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl">{b.emoji}</span>
+                      <div>
+                        <h4 className="font-semibold text-sm">{b.nombre}</h4>
+                        <p className="text-[11px] text-muted-foreground">Meta: {fmt(b.meta)}</p>
+                      </div>
+                    </div>
+                    <span className="font-mono text-xs font-bold text-cyan-300">{porcentaje}%</span>
+                  </div>
+
+                  {/* BARRA DE PROGRESO */}
+                  <div>
+                    <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-accent h-full rounded-full transition-all duration-500"
+                        style={{ width: `${porcentaje}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[11px] text-muted-foreground mt-1.5 font-mono">
+                      <span>Ahorrado: {fmt(b.actual)}</span>
+                      <span>Falta: {fmt(Math.max(0, b.meta - b.actual))}</span>
                     </div>
                   </div>
-                  <span className="font-mono text-xs font-bold text-cyan-300">{porcentaje}%</span>
-                </div>
 
-                {/* BARRA DE PROGRESO */}
-                <div>
-                  <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-accent h-full rounded-full transition-all duration-500"
-                      style={{ width: `${porcentaje}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[11px] text-muted-foreground mt-1.5 font-mono">
-                    <span>Ahorrado: {fmt(b.actual)}</span>
-                    <span>Falta: {fmt(Math.max(0, b.meta - b.actual))}</span>
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAbonar(b.id)}
+                    className="w-full h-8 text-xs gap-1 border-primary/40 text-primary-foreground hover:bg-primary/20"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Abonar $100.000
+                  </Button>
                 </div>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAbonar(b.id)}
-                  className="w-full h-8 text-xs gap-1 border-primary/40 text-primary-foreground hover:bg-primary/20"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Abonar $100.000
-                </Button>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* MODAL CREAR NUEVO BOLSILLO */}

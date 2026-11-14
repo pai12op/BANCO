@@ -42,48 +42,21 @@ export function InicioView({
   const bars = [42, 65, 38, 80, 55, 72, 90, 48, 60, 76, 52, 68];
   const months = ["E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
-  // Cuentas por defecto si no hay suficientes cargadas
-  const accountsDisplay = [
-    {
-      id: cuentaActiva?.id || 1,
-      tipo: cuentaActiva?.tipo_cuenta || "Cuenta de Ahorros",
-      numero: cuentaActiva ? `•••• ${cuentaActiva.numero_cuenta.slice(-4)}` : "•••• 4821",
-      saldo: saldoReal,
-      sub: "Disponible hoy",
-      active: true,
-      onClick: () => cuentaActiva && onSelectCuenta(cuentaActiva),
-    },
-    {
-      id: 2,
-      tipo: "Cuenta Corriente",
-      numero: "•••• 1093",
-      saldo: 3820150,
-      sub: "Disponible hoy",
-      active: false,
-      onClick: onOpenCuentas,
-    },
-    {
-      id: 3,
-      tipo: "CDT 180 días",
-      numero: "•••• 7710",
-      saldo: 25000000,
-      sub: "Disponible hoy",
-      active: false,
-      onClick: onOpenCuentas,
-    },
-  ];
+  // Cuentas reales conectadas a MySQL
+  const cuentasAMostrar = cuentas && cuentas.length > 0
+    ? cuentas
+    : (cuentaActiva ? [cuentaActiva] : []);
 
-  // Movimientos iniciales de muestra si el cliente aún no tiene suficientes
-  const movimientosDemo = [
-    { id: 101, desc: "Nómina Empresa S.A.", cat: "Ingreso · 10 nov", valor: 4850000, ingreso: true },
-    { id: 102, desc: "Supermercado Éxito", cat: "Mercado · 09 nov", valor: 312400, ingreso: false },
-    { id: 103, desc: "Transferencia a Laura M.", cat: "Transferencia · 08 nov", valor: 500000, ingreso: false },
-    { id: 104, desc: "Netflix", cat: "Suscripción · 07 nov", valor: 38900, ingreso: false },
-    { id: 105, desc: "EPM Servicios", cat: "Servicios · 05 nov", valor: 184700, ingreso: false },
-    { id: 106, desc: "Reembolso Amazon", cat: "Ingreso · 04 nov", valor: 129000, ingreso: true },
-  ];
+  // Saldo total real sumando las cuentas del cliente
+  const totalDisponible = cuentasAMostrar.reduce(
+    (acc, c) => acc + (parseFloat(c.saldo as any) || 0),
+    0
+  );
 
-  const totalDisponible = saldoReal + 3820150 + 25000000;
+  // Total de gastos reales (débitos)
+  const totalGastos = movimientosFiltrados
+    .filter((m) => m.sentido === "DEBITO" || m.tipo_movimiento === "DEBITO")
+    .reduce((acc, m) => acc + (parseFloat(m.valor as any) || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -99,7 +72,7 @@ export function InicioView({
         />
       </div>
 
-      {/* FILA 1: SALDO TOTAL DISPONIBLE Y TARJETA DE CRÉDITO */}
+      {/* FILA 1: SALDO TOTAL DISPONIBLE Y TARJETA DÉBITO VINCULADA */}
       <div className="grid items-stretch gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         {/* CARD HERO SALDO */}
         <section className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-[#1371ff]/30 bg-gradient-to-br from-[#0c2445] via-[#09152a] to-[#060a14] p-6 shadow-2xl">
@@ -113,13 +86,13 @@ export function InicioView({
                   {fmt(totalDisponible)}
                 </p>
               </div>
-              <span className="shrink-0 rounded-full bg-[#0e76fd]/20 px-2.5 py-1 text-xs font-bold text-[#38bdf8] border border-[#0e76fd]/30">
-                +8,2%
+              <span className="shrink-0 rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/30">
+                ● Al día
               </span>
             </div>
 
             <p className="mt-2 text-xs text-slate-400">
-              3 cuentas activas · actualizado hoy, 7:42 p. m.
+              {cuentasAMostrar.length} {cuentasAMostrar.length === 1 ? "cuenta activa" : "cuentas activas"} · saldo en línea
             </p>
 
             {/* BOTONES DE ACCIÓN RÁPIDA */}
@@ -147,27 +120,31 @@ export function InicioView({
                 className="flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-all shadow-sm"
               >
                 <Plus className="h-3.5 w-3.5 text-[#38bdf8]" />
-                <span>Recargar</span>
+                <span>Cajero ATM</span>
               </button>
             </div>
           </div>
         </section>
 
-        {/* CARD TARJETA DE CRÉDITO */}
+        {/* CARD TARJETA DÉBITO VINCULADA */}
         <section
           onClick={onOpenTarjetas}
           className="cursor-pointer flex flex-col justify-between rounded-2xl border border-[#162339] bg-[#080e1b] p-6 shadow-xl transition-all hover:border-[#0e76fd]/50"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#00d2ff]">
-              Tarjeta de crédito
+            <span className="text-xs font-semibold text-[#00d2ff] flex items-center gap-1.5">
+              <CreditCard className="h-4 w-4" /> Tarjeta Débito Digital
             </span>
-            <CreditCard className="h-5 w-5 text-[#00d2ff]" />
+            <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
+              ● ACTIVA
+            </span>
           </div>
 
           <div className="my-4">
             <p className="font-mono text-xl sm:text-2xl font-bold tracking-widest text-[#00d2ff]">
-              5412 •••• •••• 9087
+              {cuentaActiva
+                ? `${cuentaActiva.numero_cuenta.slice(0, 4)} •••• •••• ${cuentaActiva.numero_cuenta.slice(-4)}`
+                : "4001 •••• •••• 1053"}
             </p>
           </div>
 
@@ -176,23 +153,18 @@ export function InicioView({
               <div>
                 <p className="text-[10px] uppercase text-slate-500">Titular</p>
                 <p className="font-semibold text-slate-200">
-                  {usuario ? `${usuario.nombres[0]}. ${usuario.apellidos.toUpperCase()}` : "A. PAIWA"}
+                  {usuario ? `${usuario.nombres} ${usuario.apellidos}`.toUpperCase() : "ANDRÉS PAI"}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] uppercase text-slate-500">Vence</p>
-                <p className="font-mono text-slate-200">08/29</p>
+                <p className="font-mono text-slate-200">12/30</p>
               </div>
             </div>
 
-            <div>
-              <div className="flex justify-between text-[11px] text-slate-400 mb-1.5">
-                <span>Cupo usado $ 3.800.000</span>
-                <span className="font-mono text-slate-300">38% de $ 10.000.000</span>
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-[#162339] overflow-hidden">
-                <div className="h-full bg-[#0e76fd] rounded-full" style={{ width: "38%" }} />
-              </div>
+            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+              <span className="text-slate-400">Saldo Disponible:</span>
+              <span className="font-mono font-bold text-emerald-400">{fmt(saldoReal)}</span>
             </div>
           </div>
         </section>
@@ -213,32 +185,40 @@ export function InicioView({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {accountsDisplay.map((a) => (
-            <div
-              key={a.id}
-              onClick={a.onClick}
-              className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-5 transition-all ${
-                a.active
-                  ? "border-[#1a2d4f] bg-[#091120] shadow-lg ring-1 ring-[#0e76fd]/30"
-                  : "border-[#141d2f] bg-[#080d19] hover:border-[#1a2d4f]"
-              }`}
-            >
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-300">{a.tipo}</span>
-                <span className="font-mono text-slate-400">{a.numero}</span>
-              </div>
+          {cuentasAMostrar.map((c) => {
+            const isActive = cuentaActiva?.id === c.id;
+            return (
+              <div
+                key={c.id}
+                onClick={() => onSelectCuenta(c)}
+                className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-5 transition-all ${
+                  isActive
+                    ? "border-[#1a2d4f] bg-[#091120] shadow-lg ring-1 ring-[#0e76fd]/30"
+                    : "border-[#141d2f] bg-[#080d19] hover:border-[#1a2d4f]"
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-300">{c.tipo_cuenta || "Cuenta de Ahorros"}</span>
+                  <span className="font-mono text-slate-400">•••• {c.numero_cuenta ? c.numero_cuenta.slice(-4) : "0000"}</span>
+                </div>
 
-              <div className="my-3">
-                <p className="font-display text-2xl font-bold text-white tracking-tight">
-                  {fmt(a.saldo)}
-                </p>
-              </div>
+                <div className="my-3">
+                  <p className="font-display text-2xl font-bold text-white tracking-tight">
+                    {fmt(parseFloat(c.saldo as any) || 0)}
+                  </p>
+                </div>
 
-              <div className="text-[11px] text-slate-400">
-                {a.sub}
+                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Disponible hoy</span>
+                  {isActive ? (
+                    <span className="text-emerald-400 font-semibold">● Seleccionada</span>
+                  ) : (
+                    <span className="text-slate-500">Seleccionar</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -305,41 +285,9 @@ export function InicioView({
                 );
               })
             ) : (
-              movimientosDemo.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
-                        item.ingreso
-                          ? "bg-emerald-500/15 text-emerald-400"
-                          : "bg-[#111929] text-slate-400"
-                      }`}
-                    >
-                      {item.ingreso ? (
-                        <ArrowDownLeft className="h-4 w-4" />
-                      ) : (
-                        <ArrowUpRight className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-100">
-                        {item.desc}
-                      </p>
-                      <p className="text-[11px] text-slate-400">{item.cat}</p>
-                    </div>
-                  </div>
-
-                  <div className="text-right pl-3">
-                    <p
-                      className={`font-mono text-sm font-bold ${
-                        item.ingreso ? "text-emerald-400" : "text-slate-200"
-                      }`}
-                    >
-                      {item.ingreso ? `+${fmt(item.valor)}` : `-${fmt(item.valor)}`}
-                    </p>
-                  </div>
-                </div>
-              ))
+              <div className="py-8 text-center text-slate-500 text-xs">
+                No hay movimientos registrados en esta cuenta.
+              </div>
             )}
           </div>
         </section>
@@ -376,8 +324,8 @@ export function InicioView({
 
           <div className="mt-5 rounded-xl bg-[#09101c] p-3 text-xs border border-[#141d2f]">
             <div className="flex justify-between items-center text-slate-300">
-              <span className="text-[11px]">Gasto promedio mensual:</span>
-              <span className="font-mono font-bold text-cyan-400">$ 2.450.000</span>
+              <span className="text-[11px]">Gastos acumulados del mes:</span>
+              <span className="font-mono font-bold text-cyan-400">{fmt(totalGastos)}</span>
             </div>
           </div>
         </section>

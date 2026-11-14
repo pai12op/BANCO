@@ -131,47 +131,32 @@ export function CuentasView({
       <div>
         <h3 className="font-display text-lg font-bold mb-3">Tus Productos Registrados</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* CUENTA 1 (REAL MYSQL) */}
-          <div
-            onClick={() => cuentaActiva && onSelectCuenta(cuentaActiva)}
-            className="cursor-pointer rounded-xl border border-primary/50 bg-card p-5 shadow-md ring-1 ring-primary/20 hover:border-primary transition-all"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm">{cuentaActiva?.tipo_cuenta || "Cuenta de Ahorros"}</span>
-              <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-400 font-bold border border-emerald-500/20">
-                PRINCIPAL
-              </span>
-            </div>
-            <p className="font-mono text-xs text-muted-foreground mt-1">{numCuenta}</p>
-            <p className="font-display text-2xl font-bold text-foreground mt-3">{fmt(saldo)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Conectada a base de datos MySQL 3NF</p>
-          </div>
-
-          {/* CUENTA 2 (CORRIENTE) */}
-          <div className="rounded-xl border border-border bg-card/60 p-5 hover:border-border/80 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm">Cuenta Corriente</span>
-              <span className="rounded bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
-                ACTIVA
-              </span>
-            </div>
-            <p className="font-mono text-xs text-muted-foreground mt-1">5001 •••• •••• 7060</p>
-            <p className="font-display text-2xl font-bold text-foreground mt-3">$ 2.500.000</p>
-            <p className="text-xs text-muted-foreground mt-1">Cupo de sobregiro asignado: $5.000.000</p>
-          </div>
-
-          {/* CUENTA 3 (CDT DIGITAL) */}
-          <div className="rounded-xl border border-border bg-card/60 p-5 hover:border-border/80 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm">CDT Digital 180 Días</span>
-              <span className="rounded bg-accent/20 px-2 py-0.5 text-[10px] text-accent font-bold">
-                RENTABILIDAD
-              </span>
-            </div>
-            <p className="font-mono text-xs text-muted-foreground mt-1">9002 •••• •••• 7710</p>
-            <p className="font-display text-2xl font-bold text-cyan-300 mt-3">$ 25.000.000</p>
-            <p className="text-xs text-muted-foreground mt-1">Tasa E.A.: 11.50% · Vence: Mayo 2027</p>
-          </div>
+          {(cuentas && cuentas.length > 0 ? cuentas : (cuentaActiva ? [cuentaActiva] : [])).map((c) => {
+            const isActiva = cuentaActiva?.id === c.id;
+            return (
+              <div
+                key={c.id}
+                onClick={() => onSelectCuenta(c)}
+                className={`cursor-pointer rounded-xl border p-5 transition-all ${
+                  isActiva
+                    ? "border-primary/50 bg-card shadow-md ring-1 ring-primary/20 hover:border-primary"
+                    : "border-border bg-card/60 hover:border-border/80"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-sm">{c.tipo_cuenta || "Cuenta de Ahorros"}</span>
+                  <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                    isActiva ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-secondary text-muted-foreground"
+                  }`}>
+                    {isActiva ? "PRINCIPAL" : "SECUNDARIA"}
+                  </span>
+                </div>
+                <p className="font-mono text-xs text-muted-foreground mt-1">{c.numero_cuenta}</p>
+                <p className="font-display text-2xl font-bold text-foreground mt-3">{fmt(parseFloat(c.saldo as any) || 0)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Conectada a base de datos MySQL</p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
