@@ -22,6 +22,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
   const [loading, setLoading] = useState(false);
   const [cuentaNumero, setCuentaNumero] = useState("");
   const [pin, setPin] = useState("");
+  const [modoAcceso, setModoAcceso] = useState<"codigo" | "tarjeta">("codigo");
   const [cuentaInfo, setCuentaInfo] = useState<any>(null);
 
   // Estados de pantalla del cajero: 'menu' | 'saldo' | 'retirar' | 'confirmar_retiro' | 'movimientos' | 'recibo'
@@ -49,9 +50,20 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
     setPantalla("confirmar_retiro");
   };
 
-  // Verificar sesión existente en cajero
+  // Verificar sesión existente en cajero o parámetros en URL desde Banca Virtual
   useEffect(() => {
     checkSesion();
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const cParam = params.get("cuenta");
+      const codParam = params.get("codigo");
+      if (cParam) setCuentaNumero(cParam);
+      if (codParam) {
+        setPin(codParam);
+        setModoAcceso("codigo");
+        toast.info("¡Código de retiro de Banca Rota cargado automáticamente!");
+      }
+    }
   }, []);
 
   const checkSesion = async () => {
@@ -167,7 +179,8 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
   };
 
   const handlePinKey = (val: string) => {
-    if (pin.length < 4) {
+    const maxLen = modoAcceso === "codigo" ? 6 : 4;
+    if (pin.length < maxLen) {
       setPin((prev) => prev + val);
     }
   };
@@ -215,44 +228,82 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
       {/* CONTENEDOR DEL CAJERO ESTILO HARDWARE */}
       <main className="mx-auto max-w-4xl px-4 py-8">
         {!autenticado ? (
-          /* PANTALLA DE INSERTAR TARJETA / LOGIN ATM */
+          /* PANTALLA DE INSERTAR TARJETA O INGRESAR CÓDIGO DE RETIRO */
           <div className="mx-auto max-w-md rounded-2xl border-2 border-primary/30 bg-card p-6 sm:p-8 shadow-2xl relative overflow-hidden">
             <div aria-hidden className="pointer-events-none absolute inset-0 hero-sheen" />
             
             <div className="relative">
+              {/* SELECTOR DE MODALIDAD EN CAJERO: CÓDIGO VS TARJETA */}
+              <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/60 p-1 border border-border/60 mb-5 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModoAcceso("codigo");
+                    setPin("");
+                  }}
+                  className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    modoAcceso === "codigo" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "text-muted-foreground hover:text-white"
+                  }`}
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  <span>Retiro con Código</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModoAcceso("tarjeta");
+                    setPin("");
+                  }}
+                  className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    modoAcceso === "tarjeta" ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30" : "text-muted-foreground hover:text-white"
+                  }`}
+                >
+                  <CreditCard className="h-3.5 w-3.5" />
+                  <span>Tarjeta Débito</span>
+                </button>
+              </div>
+
               <div className="text-center">
                 <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                  <CreditCard className="h-7 w-7" />
+                  {modoAcceso === "codigo" ? <KeyRound className="h-7 w-7" /> : <CreditCard className="h-7 w-7" />}
                 </div>
-                <h2 className="font-display text-2xl font-bold">Inserte su Tarjeta</h2>
+                <h2 className="font-display text-2xl font-bold">
+                  {modoAcceso === "codigo" ? "Retiro con Código OTP" : "Inserte su Tarjeta"}
+                </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Simulador de Cajero ATM con autenticación mediante PIN de 4 dígitos
+                  {modoAcceso === "codigo"
+                    ? "Ingrese su cuenta y el código de 6 dígitos generado en Banca Rota."
+                    : "Simulador de Cajero ATM con autenticación mediante PIN de 4 dígitos."}
                 </p>
               </div>
 
               <form onSubmit={handleLogin} className="mt-6 space-y-4">
                 <div>
-                  <Label htmlFor="num-cuenta" className="text-xs">Número de Cuenta / Tarjeta</Label>
+                  <Label htmlFor="num-cuenta" className="text-xs">
+                    {modoAcceso === "codigo" ? "Número de Cuenta o Celular" : "Número de Cuenta / Tarjeta"}
+                  </Label>
                   <Input
                     id="num-cuenta"
                     value={cuentaNumero}
                     onChange={(e) => setCuentaNumero(e.target.value)}
-                    placeholder="400110203040"
+                    placeholder="400150181053"
                     className="mt-1 font-mono text-center tracking-widest text-lg bg-black/40 border-cyan-500/40 text-cyan-300"
                     required
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="pin-cajero" className="text-xs">PIN Secreto (4 Dígitos)</Label>
+                  <Label htmlFor="pin-cajero" className="text-xs">
+                    {modoAcceso === "codigo" ? "Código de Retiro (6 Dígitos)" : "PIN Secreto (4 Dígitos)"}
+                  </Label>
                   <Input
                     id="pin-cajero"
-                    type="password"
-                    maxLength={4}
+                    type={modoAcceso === "codigo" ? "text" : "password"}
+                    maxLength={modoAcceso === "codigo" ? 6 : 4}
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    placeholder="••••"
-                    className="mt-1 font-mono text-center tracking-[1em] text-2xl bg-black/40 border-cyan-500/40 text-cyan-300"
+                    placeholder={modoAcceso === "codigo" ? "849201" : "••••"}
+                    className="mt-1 font-mono text-center tracking-[0.5em] text-2xl bg-black/40 border-cyan-500/40 text-cyan-300 font-bold"
                     required
                   />
                 </div>
@@ -301,24 +352,25 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                   className="w-full gap-2 mt-4 h-11 text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/20"
                 >
                   {loading && <RefreshCw className="h-4 w-4 animate-spin" />}
-                  Validar Tarjeta y PIN
+                  {modoAcceso === "codigo" ? "Validar Código y Retirar Dinero" : "Validar Tarjeta y PIN"}
                 </Button>
 
                 {/* ACCESO RÁPIDO PARA PRUEBAS */}
                 <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-3 text-xs">
-                  <p className="font-semibold text-cyan-300">Tus Credenciales de Cajero:</p>
-                  <p className="mt-1">Cuenta / Tarjeta: <span className="font-mono text-foreground font-bold">400150181053</span></p>
-                  <p>Cédula: <span className="font-mono text-foreground font-bold">1130766219</span></p>
-                  <p>PIN ATM: <span className="font-mono text-cyan-300 font-bold">1234</span> (Jairo Pai)</p>
+                  <p className="font-semibold text-cyan-300">Credenciales Rápidas de Prueba:</p>
+                  <p className="mt-1">Cuenta: <span className="font-mono text-foreground font-bold">400150181053</span></p>
+                  <p>PIN Físico: <span className="font-mono text-cyan-300 font-bold">1234</span></p>
+                  <p className="text-[10px] text-muted-foreground mt-1">O genera tu código de 6 dígitos en Banca Rota desde "Sacar plata".</p>
                   <button
                     type="button"
                     onClick={() => {
                       setCuentaNumero("400150181053");
                       setPin("1234");
+                      setModoAcceso("tarjeta");
                     }}
                     className="mt-2 w-full rounded-lg bg-cyan-500/20 py-1.5 text-center text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/30 transition-colors"
                   >
-                    ⚡ Cargar Tarjeta de Jairo Pai
+                    ⚡ Cargar Tarjeta de Jairo Pai (PIN 1234)
                   </button>
                 </div>
               </form>

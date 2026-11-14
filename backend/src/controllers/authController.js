@@ -1,6 +1,7 @@
 // src/controllers/authController.js
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const { validarCodigoRetiro } = require('../config/otpStore');
 
 // 1. Iniciar sesión en Banca Virtual (Cliente)
 async function loginCliente(req, res) {
@@ -126,12 +127,14 @@ async function loginAdmin(req, res) {
     }
 }
 
-// 3. Identificación en Cajero Automático (Cuenta + PIN)
+// 3. Identificación en Cajero Automático (Cuenta + PIN de 4 dígitos o Código de Retiro OTP de 6 dígitos)
 async function loginCajero(req, res) {
     try {
-        const { numero_cuenta, pin } = req.body;
-        if (!numero_cuenta || !pin) {
-            return res.status(400).json({ error: 'Ingrese el número de cuenta y su PIN de 4 dígitos.' });
+        const { numero_cuenta, pin, codigo_retiro } = req.body;
+        const authCode = (codigo_retiro || pin || '').toString().trim();
+
+        if (!numero_cuenta || !authCode) {
+            return res.status(400).json({ error: 'Ingrese el número de cuenta y su PIN o Código de Retiro.' });
         }
 
         const cleanId = numero_cuenta.trim().replace(/[-\s]/g, '');
@@ -155,9 +158,17 @@ async function loginCajero(req, res) {
             return res.status(403).json({ error: 'La cuenta se encuentra BLOQUEADA o INACTIVA. Operación rechazada.' });
         }
 
-        const pinValido = await bcrypt.compare(pin.toString().trim(), cuenta.pin_hash);
-        if (!pinValido) {
-            return res.status(401).json({ error: 'PIN de seguridad incorrecto.' });
+        // 1. Probar primero si es un código de retiro de 6 dígitos válido (OTP sin tarjeta)
+        const esOtpValido = validarCodigoRetiro(authCode, cuenta.numero_cuenta);
+
+        let pinValido = false;
+        if (!esOtpValido) {
+            // 2. Probar si es el PIN físico de 4 dígitos
+            pinValido = await bcrypt.compare(authCode, cuenta.pin_hash);
+        }
+
+        if (!esOtpValido && !pinValido) {
+            return res.status(401).json({ error: 'PIN o Código de Retiro incorrecto o expirado.' });
         }
 
         req.session.cajero = {
@@ -166,12 +177,15 @@ async function loginCajero(req, res) {
             titular: `${cuenta.nombres} ${cuenta.apellidos}`,
             numero_cuenta: cuenta.numero_cuenta,
             tipo_cuenta: cuenta.tipo_cuenta,
-            saldo: parseFloat(cuenta.saldo)
+            saldo: parseFloat(cuenta.saldo),
+            tipo_retiro: esOtpValido ? 'SIN_TARJETA_OTP' : 'TARJETA_PIN'
         };
         req.session.cajeroCuenta = req.session.cajero;
 
         return res.json({
-            mensaje: 'Identificación correcta en cajero automático.',
+            mensaje: esOtpValido 
+                ? '¡Código de retiro verificado exitosamente! Bienvenido al Cajero Virtual.' 
+                : 'Tarjeta aceptada. Bienvenido al Cajero ATM.',
             cuenta: req.session.cajero
         });
     } catch (error) {

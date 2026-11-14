@@ -12,5 +12,6 @@ router.post('/perfil', requireCliente, usuarioController.actualizarPerfil);
 router.post('/password', requireCliente, usuarioController.cambiarPassword);
 router.post('/pago-tarjeta', requireCliente, usuarioController.pagoTarjeta);
 router.post('/ajustar-tarjeta', requireCliente, usuarioController.ajustarPlataTarjeta);
+router.post('/generar-codigo-retiro', requireCliente, usuarioController.solicitarCodigoRetiro);
 
 module.exports = router;

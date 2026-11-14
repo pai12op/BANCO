@@ -14,8 +14,11 @@ import { AjustesView } from "./views/AjustesView";
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, CreditCard,
   PiggyBank, Landmark, Settings, MoreHorizontal, LogOut, X,
-  Menu, ChevronRight, ShieldCheck, DollarSign, FileText
+  Menu, ChevronRight, ShieldCheck, DollarSign, FileText, Copy, Check
 } from "lucide-react";
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
 
 export function BancaVirtualView() {
   const [loading, setLoading] = useState(true);
@@ -27,6 +30,10 @@ export function BancaVirtualView() {
   const [activeTab, setActiveTab] = useState<BancaTab>("inicio");
   const [loginLoading, setLoginLoading] = useState(false);
   const [showMobileMore, setShowMobileMore] = useState(false);
+  const [showModalSacarPlata, setShowModalSacarPlata] = useState(false);
+  const [codigoRetiro, setCodigoRetiro] = useState<string | null>(null);
+  const [loadingCodigo, setLoadingCodigo] = useState(false);
+  const [copiadoCodigo, setCopiadoCodigo] = useState(false);
 
   // Cargar datos de resumen desde MySQL
   const cargarResumen = async () => {
@@ -194,6 +201,28 @@ export function BancaVirtualView() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleGenerarCodigoRetiro = async () => {
+    try {
+      setLoadingCodigo(true);
+      setShowModalSacarPlata(true);
+      const res = await fetch("/api/banca/generar-codigo-retiro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCodigoRetiro(data.codigo);
+      } else {
+        toast.error("No se pudo generar el código de retiro.");
+      }
+    } catch (err) {
+      toast.error("Error al conectar con el servidor.");
+    } finally {
+      setLoadingCodigo(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#070b13] font-sans text-slate-100 w-full max-w-full overflow-x-hidden">
       {/* SIDEBAR DESKTOP PERMANENTE */}
@@ -228,6 +257,7 @@ export function BancaVirtualView() {
               onOpenCuentas={() => selectTab("cuentas")}
               onOpenAjustes={() => selectTab("ajustes")}
               onOpenTarjetas={() => selectTab("tarjetas")}
+              onOpenSacarPlata={handleGenerarCodigoRetiro}
               onRefreshMovimientos={() => cuentaActiva && cargarMovimientos(cuentaActiva.id)}
               onSelectCuenta={(c) => {
                 setCuentaActiva(c);
@@ -393,20 +423,20 @@ export function BancaVirtualView() {
                     );
                   })}
 
-                  {/* ACCESO A CAJERO AUTOMÁTICO */}
+                  {/* ACCESO A CAJERO AUTOMÁTICO - SACAR PLATA */}
                   <button
                     onClick={() => {
                       setShowMobileMore(false);
-                      window.location.href = "/cajero";
+                      handleGenerarCodigoRetiro();
                     }}
                     className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold text-cyan-300 hover:bg-[#111e38] hover:text-white transition-all border border-cyan-500/20 bg-cyan-950/20"
                   >
                     <div className="flex items-center gap-2.5">
-                      <DollarSign className="h-4 w-4 text-cyan-400" />
-                      <span>Cajero Automático ATM</span>
+                      <Landmark className="h-4 w-4 text-cyan-400" />
+                      <span>Sacar Dinero (Código Cajero)</span>
                     </div>
                     <span className="text-[9px] font-bold bg-cyan-500/30 text-cyan-200 px-1.5 py-0.5 rounded-full">
-                      ATM
+                      CÓDIGO
                     </span>
                   </button>
                 </div>
@@ -447,6 +477,108 @@ export function BancaVirtualView() {
                 Banca Rota Móvil · v2.4.0
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL MODERNO: SACAR DINERO EN CAJERO CON CÓDIGO OTP */}
+      {showModalSacarPlata && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-sm rounded-3xl border border-[#1d2f50] bg-[#091224] p-5 sm:p-6 shadow-2xl space-y-4 text-left animate-in zoom-in-95 duration-200">
+            {/* ENCABEZADO MODAL */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                  <Landmark className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-base text-white leading-tight">
+                    Sacar Dinero en Cajero
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Retiro sin tarjeta con código único</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowModalSacarPlata(false)}
+                className="grid h-8 w-8 place-items-center rounded-full bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {loadingCodigo ? (
+              <div className="py-8 text-center space-y-2">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+                <p className="text-xs text-slate-400">Generando tu código de retiro seguro...</p>
+              </div>
+            ) : (
+              <div className="space-y-3.5 text-xs">
+                {/* CAJA DESTACADA DEL CÓDIGO */}
+                <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-[#0b1b36] to-[#071122] p-4 text-center space-y-2 shadow-inner">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-cyan-300">
+                    Tu Código de Retiro (Válido 30 min)
+                  </p>
+                  <div className="flex items-center justify-center gap-3">
+                    <p className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-white">
+                      {codigoRetiro ? `${codigoRetiro.slice(0, 3)} ${codigoRetiro.slice(3)}` : "------"}
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (codigoRetiro) {
+                          navigator.clipboard.writeText(codigoRetiro);
+                          setCopiadoCodigo(true);
+                          setTimeout(() => setCopiadoCodigo(false), 2000);
+                          toast.success("Código copiado al portapapeles");
+                        }
+                      }}
+                      className="grid h-8 w-8 place-items-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                      title="Copiar código"
+                    >
+                      {copiadoCodigo ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-emerald-400 font-medium">
+                    ● Código activo de un solo uso en Cajeros ATM
+                  </p>
+                </div>
+
+                {/* DETALLE DE CUENTA */}
+                <div className="rounded-xl border border-slate-800 bg-[#060b14] p-3 space-y-1.5">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span>Número de Cuenta:</span>
+                    <span className="font-mono font-bold text-white">
+                      {cuentaActiva?.numero_cuenta || "400150181053"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span>Saldo Disponible:</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      {fmt(saldoReal)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* PASOS DE INSTRUCCIÓN */}
+                <div className="rounded-xl bg-slate-900/60 p-3 space-y-1 text-slate-300 text-[11px]">
+                  <p className="font-bold text-white mb-0.5">¿Cómo retirar en el Cajero?</p>
+                  <p>1. Ingresa a la pantalla del Cajero Virtual.</p>
+                  <p>2. Ingresa tu número de cuenta: <span className="font-mono font-bold text-cyan-300">{cuentaActiva?.numero_cuenta || "400150181053"}</span></p>
+                  <p>3. Digita tu código generado: <span className="font-mono font-bold text-cyan-300">{codigoRetiro}</span></p>
+                </div>
+
+                {/* BOTÓN PARA ENTRAR DIRECTO AL CAJERO CON DATOS */}
+                <button
+                  onClick={() => {
+                    const cNum = cuentaActiva?.numero_cuenta || "400150181053";
+                    window.location.href = `/cajero?cuenta=${cNum}&codigo=${codigoRetiro}`;
+                  }}
+                  className="w-full rounded-xl bg-gradient-to-r from-[#0e76fd] to-[#00d2ff] hover:opacity-95 active:scale-95 py-3 text-xs font-bold text-white transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
+                >
+                  <Landmark className="h-4 w-4" />
+                  <span>Entrar al Cajero Virtual con este Código →</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

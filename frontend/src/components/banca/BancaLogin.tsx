@@ -268,31 +268,22 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                 </div>
               </div>
 
-              {/* FILA DE BOTONES EXACTA A LA IMAGEN 2: "ENTRA" + BOTÓN "$" */}
-              <div className="flex items-center gap-2 pt-2">
+              {/* BOTÓN PRINCIPAL: "ENTRA" LIMPIO */}
+              <div className="pt-2">
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 rounded-2xl h-12 text-sm font-bold bg-[#0e76fd] hover:bg-[#0b63d6] text-white shadow-lg shadow-blue-500/25 active:scale-98 transition-all"
+                  className="w-full rounded-2xl h-12 text-sm font-bold bg-[#0e76fd] hover:bg-[#0b63d6] text-white shadow-lg shadow-blue-500/25 active:scale-98 transition-all"
                 >
                   {loading && <RefreshCw className="h-4 w-4 animate-spin mr-2" />}
                   Entra
                 </Button>
-
-                {/* BOTÓN "$" CUADRADO DE NEQUI */}
-                <button
-                  type="submit"
-                  aria-label="Acceso rápido"
-                  className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-[#0e76fd] to-[#00d2ff] text-white font-black text-xl shadow-lg shadow-blue-500/30 border border-cyan-300/40 active:scale-95 transition-all"
-                >
-                  $
-                </button>
               </div>
 
-              {/* ENLACES DE AYUDA DE NEQUI */}
+              {/* ENLACES RÁPIDOS */}
               <div className="text-center pt-2 space-y-1 text-xs text-slate-400">
                 <a href="/cajero" className="hover:text-cyan-400 transition-colors block">
-                  🏧 Ir a la Terminal del Cajero ATM
+                  🏧 Ir al Cajero Virtual ATM (Retiro con Código / Tarjeta)
                 </a>
               </div>
 

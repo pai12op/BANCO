@@ -23,6 +23,7 @@ interface InicioViewProps {
   onOpenCuentas: () => void;
   onOpenAjustes: () => void;
   onOpenTarjetas: () => void;
+  onOpenSacarPlata: () => void;
   onRefreshMovimientos: () => void;
   onSelectCuenta: (cuenta: Cuenta) => void;
 }
@@ -39,6 +40,7 @@ export function InicioView({
   onOpenCuentas,
   onOpenAjustes,
   onOpenTarjetas,
+  onOpenSacarPlata,
   onRefreshMovimientos,
   onSelectCuenta,
 }: InicioViewProps) {
@@ -158,15 +160,13 @@ export function InicioView({
           </button>
 
           <button
-            onClick={() => {
-              window.location.href = "/cajero";
-            }}
+            onClick={onOpenSacarPlata}
             className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 hover:bg-cyan-900/40 active:scale-95 py-2.5 px-1.5 text-center transition-all shadow-sm group"
           >
             <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-500/20 text-cyan-300 group-hover:scale-105 transition-transform">
               <Landmark className="h-4 w-4" />
             </div>
-            <span className="text-[11px] font-bold text-cyan-200">Cajero ATM</span>
+            <span className="text-[11px] font-bold text-cyan-200">Sacar plata</span>
           </button>
         </div>
       </section>

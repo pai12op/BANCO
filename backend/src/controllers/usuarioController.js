@@ -1,6 +1,7 @@
 // src/controllers/usuarioController.js
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const { generarCodigoRetiro } = require('../config/otpStore');
 
 function getCliente(req) {
     return req.session.cliente || req.session.usuario;
@@ -440,6 +441,38 @@ async function ajustarPlataTarjeta(req, res) {
     }
 }
 
+// 8. Generar código OTP de 6 dígitos para sacar dinero en cajero ATM
+async function solicitarCodigoRetiro(req, res) {
+    try {
+        const cliente = getCliente(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const usuarioId = cliente.id;
+
+        const [cuentas] = await db.query(
+            'SELECT id, numero_cuenta, saldo FROM cuentas WHERE usuario_id = ? AND estado_id = 1 LIMIT 1',
+            [usuarioId]
+        );
+
+        if (cuentas.length === 0) {
+            return res.status(404).json({ error: 'No se encontró cuenta activa para generar código de retiro.' });
+        }
+
+        const cuenta = cuentas[0];
+        const { codigo, expiraMinutos } = generarCodigoRetiro(usuarioId, cuenta.id, cuenta.numero_cuenta);
+
+        return res.json({
+            mensaje: 'Código de retiro para cajero ATM generado exitosamente.',
+            codigo,
+            expira_minutos: expiraMinutos,
+            numero_cuenta: cuenta.numero_cuenta,
+            saldo: parseFloat(cuenta.saldo)
+        });
+    } catch (error) {
+        console.error('Error al generar código de retiro:', error);
+        return res.status(500).json({ error: 'Error al generar código de retiro.' });
+    }
+}
+
 module.exports = {
     getResumen,
     getMovimientos,
@@ -447,5 +480,6 @@ module.exports = {
     actualizarPerfil,
     cambiarPassword,
     pagoTarjeta,
-    ajustarPlataTarjeta
+    ajustarPlataTarjeta,
+    solicitarCodigoRetiro
 };
