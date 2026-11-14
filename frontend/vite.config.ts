@@ -10,13 +10,16 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  nitro: {
+    preset: 'node-server',
+  },
   vite: {
     server: {
       host: true,
       allowedHosts: true,
       proxy: {
         '/api': {
-          target: 'http://localhost:3000',
+          target: 'http://localhost:3050',
           changeOrigin: true,
         },
       },

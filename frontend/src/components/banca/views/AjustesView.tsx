@@ -84,13 +84,13 @@ export function AjustesView({ usuario, onUpdateTelefono, onCambiarPassword }: Aj
             <div className="flex justify-between border-b border-border/40 pb-2">
               <span className="text-muted-foreground">Tipo y No. Documento:</span>
               <span className="font-mono text-foreground font-semibold">
-                {usuario?.tipo_documento || "CC"} {usuario?.numero_documento || "1001234567"}
+                {usuario ? `${usuario?.tipo_documento || "CC"} ${usuario?.numero_documento}` : "Sin información"}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Correo Registrado:</span>
               <span className="font-mono text-foreground font-semibold">
-                {usuario?.correo || "andres@cliente.com"}
+                {usuario?.correo || "correo@ejemplo.com"}
               </span>
             </div>
           </div>

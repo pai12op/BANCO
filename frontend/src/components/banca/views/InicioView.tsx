@@ -200,7 +200,7 @@ export function InicioView({
           <div className="min-w-0 pr-2">
             <span className="text-[9px] uppercase tracking-wider text-slate-500 block">Titular</span>
             <span className="font-semibold text-slate-200 truncate block text-xs">
-              {usuario ? `${usuario.nombres} ${usuario.apellidos}`.toUpperCase() : "JAIRO PAI"}
+              {usuario ? `${usuario.nombres} ${usuario.apellidos}`.toUpperCase() : "TITULAR"}
             </span>
           </div>
           <div className="text-right shrink-0">

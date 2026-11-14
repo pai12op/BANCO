@@ -20,8 +20,8 @@ export function AdminVentanillaView({ onConsignar }: AdminVentanillaViewProps) {
   const [recibo, setRecibo] = useState<any>(null);
 
   const cuentasSugeridas = [
-    { nombre: "Andrés Pai", cuenta: "400110203040", doc: "1001234567" },
-    { nombre: "Valentina Gómez", cuenta: "500190807060", doc: "1002345678" },
+    { nombre: "Cuenta Ahorros Principal", cuenta: "400110203040", doc: "1001234567" },
+    { nombre: "Cuenta Corriente Empresarial", cuenta: "500190807060", doc: "1002345678" },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {

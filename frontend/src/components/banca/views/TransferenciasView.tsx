@@ -32,10 +32,10 @@ export function TransferenciasView({
   // Lista dinámica de contactos del equipo
   // Se excluye la cuenta activa del usuario actual para evitar transferencias a sí mismo
   const listaContactos = [
-    { nombre: "Jairo Andrés Pai", cuenta: "400110203040", banco: "Banco Digital Andino" },
-    { nombre: "Valentina Gómez", cuenta: "500190807060", banco: "Banco Digital Andino" },
-    { nombre: "Melisa Pinilla", cuenta: "400122334455", banco: "Banco Digital Andino" },
-    { nombre: "Isabella Caviedes", cuenta: "400166778899", banco: "Banco Digital Andino" },
+    { nombre: "Cuenta Principal", cuenta: "400110203040", banco: "Banca Rota" },
+    { nombre: "Valentina Gómez", cuenta: "500190807060", banco: "Banca Rota" },
+    { nombre: "Melisa Pinilla", cuenta: "400122334455", banco: "Banca Rota" },
+    { nombre: "Isabella Caviedes", cuenta: "400166778899", banco: "Banca Rota" },
   ];
 
   const contactosFrecuentes = listaContactos.filter(

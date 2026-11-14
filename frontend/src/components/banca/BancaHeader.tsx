@@ -22,8 +22,8 @@ export function BancaHeader({
 
   const nombreCompleto = usuario
     ? `${usuario.nombres} ${usuario.apellidos}`
-    : "Andrés Pai";
-  const primerNombre = usuario ? usuario.nombres.split(" ")[0] : "Andrés";
+    : "Cliente Bancario";
+  const primerNombre = usuario ? usuario.nombres.split(" ")[0] : "Cliente";
 
   return (
     <header className="border-b border-[#141d2f] bg-[#070b13]/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3 sticky top-0 z-30 w-full max-w-full overflow-x-hidden">

@@ -47,7 +47,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
     correo: "",
     telefono: "",
     tipo_cuenta_id: 1,
-    saldo_inicial: "150000",
+    saldo_inicial: "",
     password: "",
     password_confirm: "",
     pin_cajero: "",
@@ -236,7 +236,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                     type="text"
                     value={identificador}
                     onChange={(e) => setIdentificador(e.target.value)}
-                    placeholder="314 555 905 o 1130766219"
+                    placeholder="Número de documento o celular"
                     required
                     className="w-full pl-3 bg-transparent font-mono text-sm text-cyan-300 placeholder:text-slate-600 outline-none"
                   />
@@ -310,7 +310,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   <Input
                     value={regData.numero_documento}
                     onChange={(e) => setRegData({ ...regData, numero_documento: e.target.value })}
-                    placeholder="1001998877"
+                    placeholder="Ej: 1020304050"
                     required
                     className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
                   />
@@ -323,7 +323,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   <Input
                     value={regData.nombres}
                     onChange={(e) => setRegData({ ...regData, nombres: e.target.value })}
-                    placeholder="Andrés"
+                    placeholder="Nombres completos"
                     required
                     className="mt-1 text-xs bg-slate-900 border-slate-700"
                   />
@@ -333,7 +333,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   <Input
                     value={regData.apellidos}
                     onChange={(e) => setRegData({ ...regData, apellidos: e.target.value })}
-                    placeholder="Pai"
+                    placeholder="Apellidos completos"
                     required
                     className="mt-1 text-xs bg-slate-900 border-slate-700"
                   />
@@ -347,7 +347,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                     type="email"
                     value={regData.correo}
                     onChange={(e) => setRegData({ ...regData, correo: e.target.value })}
-                    placeholder="correo@ejemplo.com"
+                    placeholder="nombre@ejemplo.com"
                     required
                     className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
                   />
@@ -357,7 +357,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   <Input
                     value={regData.telefono}
                     onChange={(e) => setRegData({ ...regData, telefono: e.target.value })}
-                    placeholder="3234594161"
+                    placeholder="Ej: 3001234567"
                     className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
                   />
                 </div>
@@ -380,6 +380,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   <Input
                     type="number"
                     step="10000"
+                    placeholder="0"
                     value={regData.saldo_inicial}
                     onChange={(e) => setRegData({ ...regData, saldo_inicial: e.target.value })}
                     className="mt-1 font-mono text-xs bg-slate-900 border-slate-700 text-emerald-400 font-bold"
@@ -395,7 +396,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                     type={showRegPass ? "text" : "password"}
                     value={regData.password}
                     onChange={(e) => setRegData({ ...regData, password: e.target.value })}
-                    placeholder="Mínimo 6 chars"
+                    placeholder="Mínimo 6 caracteres"
                     required
                     className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
                   />
@@ -406,7 +407,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                     type={showRegPass ? "text" : "password"}
                     value={regData.password_confirm}
                     onChange={(e) => setRegData({ ...regData, password_confirm: e.target.value })}
-                    placeholder="Repite clave"
+                    placeholder="Confirme su contraseña"
                     required
                     className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
                   />
@@ -420,7 +421,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   maxLength={4}
                   value={regData.pin_cajero}
                   onChange={(e) => setRegData({ ...regData, pin_cajero: e.target.value.replace(/\D/g, "") })}
-                  placeholder="Ej: 9876"
+                  placeholder="••••"
                   required
                   className="mt-1 font-mono text-xs bg-slate-900 border-slate-700 text-center tracking-widest"
                 />

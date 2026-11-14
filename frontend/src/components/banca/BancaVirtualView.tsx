@@ -379,14 +379,14 @@ export function BancaVirtualView() {
               <div className="flex items-center justify-between border-b border-[#14233e] pb-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-[#0e76fd] to-[#00d2ff] font-display font-black text-sm text-white shadow-lg shadow-blue-500/30">
-                    {usuario ? `${usuario.nombres[0]}${usuario.apellidos[0]}`.toUpperCase() : "JP"}
+                    {usuario ? `${usuario.nombres[0]}${usuario.apellidos[0]}`.toUpperCase() : "CB"}
                   </div>
                   <div className="min-w-0">
                     <p className="font-display font-bold text-sm text-white truncate leading-tight">
-                      {usuario ? `${usuario.nombres} ${usuario.apellidos}` : "Jairo Andrés Pai"}
+                      {usuario ? `${usuario.nombres} ${usuario.apellidos}` : "Cliente Bancario"}
                     </p>
                     <p className="text-[11px] text-slate-400 font-mono truncate">
-                      C.C. {usuario?.numero_documento || "1130766219"}
+                      {usuario?.tipo_documento || "C.C."} {usuario?.numero_documento || "----------"}
                     </p>
                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 mt-0.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Cuenta Activa

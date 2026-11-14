@@ -58,7 +58,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
   const saldoDisponible = cuentaActiva ? (parseFloat(cuentaActiva.saldo as any) || 0) : 0;
   const nombreTitular = usuario
     ? `${usuario.nombres.split(" ")[0]} ${usuario.apellidos.split(" ")[0]}`.toUpperCase()
-    : "ANDRÉS PAI";
+    : "TITULAR DE CUENTA";
 
   const numCuenta = cuentaActiva?.numero_cuenta || "4093882177343040";
   // Generar número estándar de 16 dígitos para la tarjeta (frecuente en Colombia: prefijo 4001/4093)

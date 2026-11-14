@@ -113,13 +113,13 @@ export function CuentasView({
               <div>
                 <p className="text-[11px] text-muted-foreground">Titular</p>
                 <p className="font-semibold text-slate-200 truncate">
-                  {usuario ? `${usuario.nombres} ${usuario.apellidos}` : "Andrés Pai"}
+                  {usuario ? `${usuario.nombres} ${usuario.apellidos}` : "Titular de la Cuenta"}
                 </p>
               </div>
               <div>
                 <p className="text-[11px] text-muted-foreground">Identificación</p>
                 <p className="font-mono text-slate-200">
-                  {usuario?.tipo_documento || "CC"} {usuario?.numero_documento || "1001234567"}
+                  {usuario ? `${usuario.tipo_documento || "CC"} ${usuario.numero_documento}` : "Sin información"}
                 </p>
               </div>
             </div>
@@ -227,7 +227,7 @@ export function CuentasView({
 
             <div className="bg-white text-slate-900 p-6 rounded-lg font-sans text-xs space-y-3 border">
               <div className="text-center border-b pb-2">
-                <p className="font-bold text-sm tracking-wider">BANCO DIGITAL ANDINO S.A.</p>
+                <p className="font-bold text-sm tracking-wider">BANCA ROTA S.A.</p>
                 <p className="text-[10px] text-slate-600">NIT: 901.458.789-2 · Manizales, Caldas</p>
               </div>
 
