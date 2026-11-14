@@ -539,7 +539,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                   {/* PAPEL TÉRMICO CONTINUO DE CAJERO */}
                   <div className="mx-auto max-w-sm bg-white p-6 text-slate-900 rounded-sm shadow-2xl font-mono text-xs border-dashed border-2 border-slate-300">
                     <div className="text-center border-b border-slate-300 pb-3">
-                      <p className="font-bold text-base tracking-wider">BANCA VERDE</p>
+                      <p className="font-bold text-base tracking-wider">BANCA ROTA</p>
                       <p className="text-[11px] text-slate-600">RED DE CAJEROS AUTOMÁTICOS ATM</p>
                       <p className="text-[10px] text-slate-500">TERMINAL: ATM-BOG-004 · MANIZALES</p>
                       <p className="text-[10px] text-slate-500">{new Date(recibo.fecha).toLocaleString("es-CO")}</p>

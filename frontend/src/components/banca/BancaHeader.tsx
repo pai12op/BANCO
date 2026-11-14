@@ -52,7 +52,7 @@ export function BancaHeader({
             </div>
             <div className="min-w-0">
               <span className="font-display text-sm font-bold text-white tracking-tight block leading-tight truncate">
-                Banca Verde
+                Banca Rota
               </span>
               <p className="text-[10px] text-slate-400 leading-tight truncate">
                 {saludo} {primerNombre}

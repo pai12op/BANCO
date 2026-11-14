@@ -214,7 +214,7 @@ export function BancaVirtualView() {
         />
 
         {/* CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
-        <main className="mx-auto w-full max-w-6xl px-3 sm:px-6 lg:px-8 pb-24 pt-3.5 sm:pt-6 flex-1">
+        <main className="mx-auto w-full max-w-6xl px-3 sm:px-6 lg:px-8 pb-8 sm:pb-12 pt-3.5 sm:pt-6 flex-1">
           {activeTab === "inicio" && (
             <InicioView
               usuario={usuario}
@@ -444,67 +444,12 @@ export function BancaVirtualView() {
                 <span>Cerrar sesión segura</span>
               </button>
               <p className="text-[10px] text-center text-slate-500 font-mono">
-                Banca Verde Móvil · v2.4.0
+                Banca Rota Móvil · v2.4.0
               </p>
             </div>
           </div>
         </div>
       )}
-
-      {/* BARRA DE NAVEGACIÓN MÓVIL DOCK INFERIOR LIMPIO */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#14233e] bg-[#070b13]/98 px-2 py-1 backdrop-blur-xl lg:hidden w-full max-w-full">
-        <div className="mx-auto flex max-w-md items-center justify-around">
-          <button
-            onClick={() => selectTab("inicio")}
-            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
-              activeTab === "inicio" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <LayoutDashboard className="h-4.5 w-4.5" />
-            <span className="text-[10px]">Inicio</span>
-          </button>
-
-          <button
-            onClick={() => selectTab("cuentas")}
-            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
-              activeTab === "cuentas" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Wallet className="h-4.5 w-4.5" />
-            <span className="text-[10px]">Cuentas</span>
-          </button>
-
-          <button
-            onClick={() => selectTab("transferencias")}
-            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
-              activeTab === "transferencias" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <ArrowLeftRight className="h-4.5 w-4.5" />
-            <span className="text-[10px]">Transferir</span>
-          </button>
-
-          <button
-            onClick={() => selectTab("tarjetas")}
-            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
-              activeTab === "tarjetas" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <CreditCard className="h-4.5 w-4.5" />
-            <span className="text-[10px]">Tarjetas</span>
-          </button>
-
-          <button
-            onClick={() => setShowMobileMore(true)}
-            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
-              showMobileMore ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <MoreHorizontal className="h-4.5 w-4.5" />
-            <span className="text-[10px]">Más</span>
-          </button>
-        </div>
-      </nav>
     </div>
   );
 }

@@ -4,9 +4,9 @@ import { CajeroAtmView } from "@/components/cajero/CajeroAtmView";
 export const Route = createFileRoute("/cajero")({
   head: () => ({
     meta: [
-      { title: "Cajero Automático ATM — Banca Verde" },
+      { title: "Cajero Automático ATM — Banca Rota" },
       { name: "description", content: "Terminal ATM de autoservicio para retiros de efectivo y consultas con tarjeta y PIN." },
-      { property: "og:title", content: "Cajero Automático ATM — Banca Verde" },
+      { property: "og:title", content: "Cajero Automático ATM — Banca Rota" },
       { property: "og:description", content: "Terminal ATM de autoservicio" },
     ],
   }),

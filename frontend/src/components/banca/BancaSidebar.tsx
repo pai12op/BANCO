@@ -29,7 +29,7 @@ export function BancaSidebar({ activeTab, onSelectTab, onLogout }: BancaSidebarP
           <Landmark className="h-5 w-5" />
         </div>
         <span className="truncate font-display text-xl font-bold tracking-tight text-white">
-          Banca Verde
+          Banca Rota
         </span>
       </div>
 

@@ -16,7 +16,7 @@ export function PortalHeader({ activeModule, onSwitchModule }: PortalHeaderProps
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-display text-base font-bold text-foreground">Banca Verde</span>
+              <span className="font-display text-base font-bold text-foreground">Banca Rota</span>
               <span className="hidden sm:inline-block rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
                 3NF · ACID
               </span>

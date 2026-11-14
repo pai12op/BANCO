@@ -5,9 +5,9 @@ import { Landmark, CreditCard, ShieldCheck } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Banca Virtual — Banca Verde" },
+      { title: "Banca Virtual — Banca Rota" },
       { name: "description", content: "Portal transaccional de clientes: saldos, tarjetas, transferencias con 4x1000 y extractos." },
-      { property: "og:title", content: "Banca Virtual — Banca Verde" },
+      { property: "og:title", content: "Banca Virtual — Banca Rota" },
       { property: "og:description", content: "Portal transaccional de clientes" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

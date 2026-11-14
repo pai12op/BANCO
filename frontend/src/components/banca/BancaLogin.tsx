@@ -165,11 +165,11 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
         <div aria-hidden className="pointer-events-none absolute inset-0 hero-sheen" />
 
         <div className="relative">
-          {/* LOGOTIPO EXACTO A LA IMAGEN 2 (■ BANCA VERDE) */}
+          {/* LOGOTIPO EXACTO A LA IMAGEN 2 (■ BANCA ROTA) */}
           <div className="text-center py-4">
             <h1 className="font-display text-3xl font-black tracking-tight text-white flex items-center justify-center gap-1.5">
               <span className="text-cyan-400 inline-block text-2xl font-black">■</span>
-              <span>Banca Verde</span>
+              <span>Banca Rota</span>
             </h1>
             <p className="mt-1 text-xs text-slate-400">
               Tu banco digital seguro y en tiempo real

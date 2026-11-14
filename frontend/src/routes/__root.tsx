@@ -81,10 +81,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
-      { title: "Banca Verde — Sistema Bancario" },
+      { title: "Banca Rota — Sistema Bancario" },
       { name: "description", content: "Plantilla de sistema bancario" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Banca Verde — Sistema Bancario" },
+      { property: "og:title", content: "Banca Rota — Sistema Bancario" },
       { property: "og:description", content: "Plantilla de sistema bancario" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
