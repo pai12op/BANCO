@@ -96,8 +96,8 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
 
       toast.success(data.mensaje);
       setCuentaCreada(data.cuenta);
-      // Precargar correo en el login
-      setIdentificador(regData.correo.trim());
+      // Precargar documento (cédula) como usuario en el login
+      setIdentificador(regData.numero_documento.trim());
       setPassword(regData.password);
     } catch (err) {
       toast.error("Error de conexión con el banco.");
@@ -175,22 +175,25 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                     <CheckCircle2 className="h-4 w-4 text-emerald-400" /> ¡Cuenta creada exitosamente!
                   </div>
                   <p>
-                    Número de Cuenta: <span className="font-mono font-bold text-white">{cuentaCreada.numero_cuenta}</span>
+                    Usuario (Documento): <span className="font-mono font-bold text-white">{cuentaCreada.numero_documento}</span>
+                  </p>
+                  <p>
+                    Tarjeta / Cuenta: <span className="font-mono font-bold text-white">{cuentaCreada.numero_cuenta}</span>
                   </p>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Ingresa tus credenciales a continuación para acceder a tu Banca Virtual.
+                    Ingresa con tu cédula o número de tarjeta y tu contraseña a continuación.
                   </p>
                 </div>
               )}
 
               <div>
-                <Label className="text-xs text-slate-300">Correo Electrónico o No. Documento</Label>
+                <Label className="text-xs text-slate-300">Número de Documento (Cédula) o Tarjeta</Label>
                 <Input
                   value={identificador}
                   onChange={(e) => setIdentificador(e.target.value)}
-                  placeholder="andres@cliente.com o C.C."
+                  placeholder="Ej: 1001234567 o 400110203040"
                   required
-                  className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
+                  className="mt-1 font-mono text-xs bg-slate-900 border-slate-700 text-cyan-300"
                 />
               </div>
 
@@ -236,12 +239,12 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    setIdentificador("andres@cliente.com");
+                    setIdentificador("1001234567");
                     setPassword("Banco123*");
                   }}
                   className="w-full rounded-lg bg-slate-900 py-1.5 text-center text-[11px] font-semibold text-primary hover:bg-slate-800 border border-slate-700/80 transition-colors"
                 >
-                  ⚡ Cargar Cliente Andrés Pai ($1.000.000)
+                  ⚡ Cargar Andrés Pai (C.C. 1001234567)
                 </button>
               </div>
             </form>

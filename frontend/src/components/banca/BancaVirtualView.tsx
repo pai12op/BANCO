@@ -164,8 +164,18 @@ export function BancaVirtualView() {
     );
   });
 
-  // SI NO HAY USUARIO AUTENTICADO: LOGIN LIMPIO Y AISLADO
-  if (!usuario && !loading) {
+  // 1. ESTADO DE CARGA: PANTALLA OSCURA CON SPINNER (EVITA DESTELLOS DEL DASHBOARD INTERNO)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#070b13] flex flex-col items-center justify-center text-slate-400">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent shadow-lg shadow-primary/20" />
+        <span className="mt-4 text-xs font-mono tracking-wider text-slate-500">Verificando sesión bancaria...</span>
+      </div>
+    );
+  }
+
+  // 2. SI NO HAY USUARIO AUTENTICADO: LOGIN LIMPIO Y AISLADO
+  if (!usuario) {
     return <BancaLogin onLogin={handleLogin} loading={loginLoading} />;
   }
 

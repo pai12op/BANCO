@@ -5,18 +5,24 @@ const bcrypt = require('bcryptjs');
 // 1. Iniciar sesión en Banca Virtual (Cliente)
 async function loginCliente(req, res) {
     try {
-        const { identificador, password } = req.body; // Correo o número de documento
+        const { identificador, password } = req.body; // Número de documento (Cédula), tarjeta/cuenta o correo
         if (!identificador || !password) {
-            return res.status(400).json({ error: 'Debe ingresar su correo o documento y contraseña.' });
+            return res.status(400).json({ error: 'Debe ingresar su número de documento o tarjeta y contraseña.' });
         }
 
+        const valorLimpio = identificador.trim().replace(/[-\s]/g, '');
+
         const [usuarios] = await db.query(`
-            SELECT u.*, r.nombre AS rol_nombre, e.nombre AS estado_nombre
+            SELECT DISTINCT u.*, r.nombre AS rol_nombre, e.nombre AS estado_nombre
             FROM usuarios u
             JOIN roles r ON u.rol_id = r.id
             JOIN estados_usuario e ON u.estado_id = e.id
-            WHERE u.correo = ? OR u.numero_documento = ?
-        `, [identificador.trim(), identificador.trim()]);
+            LEFT JOIN cuentas c ON u.id = c.usuario_id
+            WHERE u.numero_documento = ? 
+               OR c.numero_cuenta = ? 
+               OR u.correo = ?
+            LIMIT 1
+        `, [valorLimpio, valorLimpio, identificador.trim()]);
 
         if (usuarios.length === 0) {
             return res.status(401).json({ error: 'Credenciales inválidas.' });
@@ -296,8 +302,9 @@ async function registroCliente(req, res) {
 
         return res.json({
             exito: true,
-            mensaje: '¡Tu cuenta bancaria ha sido creada exitosamente! Ya puedes iniciar sesión con tu correo y clave.',
+            mensaje: '¡Tu cuenta bancaria ha sido creada exitosamente! Ya puedes iniciar sesión con tu número de documento o tarjeta.',
             cuenta: {
+                numero_documento: numero_documento.trim(),
                 numero_cuenta: numeroCuenta,
                 titular: `${nombres} ${apellidos}`,
                 correo: correo.trim(),
