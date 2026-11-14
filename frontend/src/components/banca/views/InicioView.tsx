@@ -2,7 +2,8 @@ import { useState } from "react";
 import {
   Send, Receipt, Plus, CreditCard, ArrowDownLeft,
   ArrowUpRight, Search, Wallet, FileText, ShieldCheck,
-  ChevronRight, Copy, Check
+  ChevronRight, Copy, Check, Eye, EyeOff, ChevronDown, ChevronUp,
+  Store, Heart, Edit3, Radio, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { Cuenta, Movimiento, Usuario } from "../types";
@@ -42,6 +43,8 @@ export function InicioView({
   onSelectCuenta,
 }: InicioViewProps) {
   const [copiedAccount, setCopiedAccount] = useState(false);
+  const [saldoVisible, setSaldoVisible] = useState(true);
+  const [tuPlataAbierto, setTuPlataAbierto] = useState(false);
   const bars = [42, 65, 38, 80, 55, 72, 90, 48, 60, 76, 52, 68];
   const months = ["E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
@@ -75,114 +78,186 @@ export function InicioView({
 
   return (
     <div className="space-y-6">
-      {/* BARRA DE BÚSQUEDA SUPERIOR */}
-      <div className="relative flex items-center rounded-xl border border-[#172236] bg-[#09101c] px-4 py-2.5 shadow-inner transition-colors focus-within:border-[#0e76fd]">
-        <Search className="h-4 w-4 mr-3 text-slate-400 shrink-0" />
-        <input
-          type="text"
-          placeholder="Buscar movimientos por descripción o valor..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none"
-        />
-      </div>
+      {/* ======================================================== */}
+      {/* SECCIÓN HERO NEQUI EN MODO OBSIDIANA (IMAGEN 1)          */}
+      {/* ======================================================== */}
+      <section className="relative overflow-hidden rounded-3xl border border-[#1a2d4e] bg-gradient-to-b from-[#0e1d3a] via-[#091326] to-[#060b14] p-5 sm:p-7 text-center shadow-2xl space-y-3">
+        {/* CUENTA Y OJO PARA OCULTAR SALDO */}
+        <div className="flex items-center justify-center gap-2 text-xs text-slate-300 font-medium">
+          <span>{cuentasAMostrar[0]?.tipo_cuenta || "Cuenta de Ahorros"}</span>
+          <button
+            onClick={() => setSaldoVisible(!saldoVisible)}
+            className="text-slate-400 hover:text-cyan-400 transition-colors p-1"
+            title={saldoVisible ? "Ocultar saldo" : "Mostrar saldo"}
+          >
+            {saldoVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </button>
+        </div>
 
-      {/* FILA 1: SALDO TOTAL DISPONIBLE Y TARJETA DÉBITO VINCULADA */}
-      <div className="grid items-stretch gap-4 sm:gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-        {/* CARD HERO SALDO */}
-        <section className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-[#1371ff]/30 bg-gradient-to-br from-[#0c2445] via-[#09152a] to-[#060a14] p-4 sm:p-6 shadow-2xl">
-          <div className="relative w-full">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                  SALDO TOTAL DISPONIBLE
-                </p>
-                <p className="mt-1.5 truncate font-display text-2xl font-bold tracking-tight text-white sm:text-4xl">
-                  {fmt(totalDisponible)}
-                </p>
-              </div>
-              <span className="shrink-0 rounded-full bg-emerald-500/20 px-2.5 py-1 text-[11px] sm:text-xs font-bold text-emerald-400 border border-emerald-500/30">
-                ● Al día
+        {/* MONTO GIGANTE CENTRAL */}
+        <div className="py-1">
+          <p className="font-display text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+            {saldoVisible ? fmt(totalDisponible) : "$ ••••••"}
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Total {saldoVisible ? fmt(totalDisponible) : "$ ••••••"}
+          </p>
+        </div>
+
+        {/* BOTÓN DESPLEGABLE "TU PLATA ∨" */}
+        <div className="flex justify-center pt-1">
+          <button
+            onClick={() => setTuPlataAbierto(!tuPlataAbierto)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/90 hover:bg-slate-800 px-4 py-1.5 text-xs font-semibold text-slate-200 hover:text-white transition-all shadow-md active:scale-95"
+          >
+            <span>Tu plata</span>
+            <ChevronDown className={`h-3.5 w-3.5 text-cyan-400 transition-transform duration-200 ${tuPlataAbierto ? "rotate-180" : ""}`} />
+          </button>
+        </div>
+
+        {/* DESGLOSE DESPLEGABLE DE SALDOS */}
+        {tuPlataAbierto && (
+          <div className="mt-3 rounded-2xl border border-cyan-500/20 bg-[#081222] p-4 text-xs text-left space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400">Saldo Disponible:</span>
+              <span className="font-mono font-bold text-emerald-400">{fmt(totalDisponible)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400">En bolsillos de ahorro:</span>
+              <span className="font-mono font-semibold text-slate-400">$ 0 COP</span>
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+              <span className="text-slate-400">Tarjeta Débito Vinculada:</span>
+              <span className="font-mono font-bold text-cyan-300">
+                {cuentaActiva ? `${cuentaActiva.numero_cuenta.slice(0, 4)} •••• ${cuentaActiva.numero_cuenta.slice(-4)}` : "4001 •••• 1053"}
               </span>
             </div>
-
-            <p className="mt-1.5 text-xs text-slate-400">
-              {cuentasAMostrar.length} {cuentasAMostrar.length === 1 ? "cuenta activa" : "cuentas activas"} · saldo en línea
-            </p>
-
-            {/* BOTONES DE ACCIÓN RÁPIDA RESPONSIVOS */}
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              <button
-                onClick={onOpenTransferir}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 border border-white/10 px-2 py-2.5 text-[11px] sm:text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-all shadow-sm"
-              >
-                <Send className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
-                <span className="truncate">Transferir</span>
-              </button>
-
-              <button
-                onClick={onOpenTarjetas}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 border border-white/10 px-2 py-2.5 text-[11px] sm:text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-all shadow-sm"
-              >
-                <Receipt className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
-                <span className="truncate">Pagar</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  window.location.href = "/cajero";
-                }}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-[#0e76fd]/15 border border-[#0e76fd]/30 px-2 py-2.5 text-[11px] sm:text-xs font-semibold text-cyan-300 hover:bg-[#0e76fd]/25 transition-all shadow-sm"
-              >
-                <Landmark className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Cajero ATM</span>
-              </button>
-            </div>
           </div>
-        </section>
+        )}
+      </section>
 
-        {/* CARD TARJETA DÉBITO VINCULADA */}
-        <section
-          onClick={onOpenTarjetas}
-          className="cursor-pointer flex flex-col justify-between rounded-2xl border border-[#162339] bg-[#080e1b] p-4 sm:p-6 shadow-xl transition-all hover:border-[#0e76fd]/50 group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#00d2ff] flex items-center gap-1.5">
-              <CreditCard className="h-4 w-4" /> Tarjeta Débito Digital
-            </span>
-            <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
-              ● ACTIVA
-            </span>
+      {/* ======================================================== */}
+      {/* CARRUSEL DE BANNERS "ORGANIZA TU PLATA" (IMAGEN 1)       */}
+      {/* ======================================================== */}
+      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
+        {/* CARD 1: Organiza tu plata */}
+        <div className="min-w-[270px] sm:min-w-[310px] snap-center rounded-2xl border border-[#1b2b4a] bg-gradient-to-r from-[#0d1c3a] to-[#071124] p-4 flex items-center justify-between shadow-lg">
+          <div className="space-y-1 pr-2">
+            <p className="font-display font-bold text-sm text-white">Organiza tu plata</p>
+            <p className="text-[11px] text-slate-400 leading-snug">Separa tus gastos y ahorra con metas</p>
+            <button
+              onClick={onOpenAjustes}
+              className="mt-2.5 inline-block rounded-xl bg-cyan-500 hover:bg-cyan-400 px-3.5 py-1.5 text-[11px] font-bold text-slate-950 transition-colors shadow-md shadow-cyan-500/20"
+            >
+              Hazlo aquí
+            </button>
           </div>
-
-          <div className="my-4">
-            <p className="font-mono text-xl sm:text-2xl font-bold tracking-widest text-[#00d2ff]">
-              {cuentaActiva
-                ? `${cuentaActiva.numero_cuenta.slice(0, 4)} •••• •••• ${cuentaActiva.numero_cuenta.slice(-4)}`
-                : "4001 •••• •••• 1053"}
-            </p>
+          <div className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <Wallet className="h-6 w-6" />
           </div>
+        </div>
 
-          <div className="space-y-3">
-            <div className="flex justify-between text-xs">
-              <div>
-                <p className="text-[10px] uppercase text-slate-500">Titular</p>
-                <p className="font-semibold text-slate-200">
-                  {usuario ? `${usuario.nombres} ${usuario.apellidos}`.toUpperCase() : "ANDRÉS PAI"}
-                </p>
+        {/* CARD 2: Tarjeta Débito Digital */}
+        <div className="min-w-[270px] sm:min-w-[310px] snap-center rounded-2xl border border-[#1b2b4a] bg-gradient-to-r from-[#0d1c3a] to-[#071124] p-4 flex items-center justify-between shadow-lg">
+          <div className="space-y-1 pr-2">
+            <p className="font-display font-bold text-sm text-white">Tarjeta Débito Digital</p>
+            <p className="text-[11px] text-slate-400 leading-snug">Paga en datáfono y compras en línea</p>
+            <button
+              onClick={onOpenTarjetas}
+              className="mt-2.5 inline-block rounded-xl bg-blue-600 hover:bg-blue-500 px-3.5 py-1.5 text-[11px] font-bold text-white transition-colors shadow-md shadow-blue-600/20"
+            >
+              Ver tarjeta
+            </button>
+          </div>
+          <div className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <CreditCard className="h-6 w-6" />
+          </div>
+        </div>
+
+        {/* CARD 3: Domicilios Llorente */}
+        <div className="min-w-[270px] sm:min-w-[310px] snap-center rounded-2xl border border-amber-500/30 bg-gradient-to-r from-[#1c1808] to-[#0b0c16] p-4 flex items-center justify-between shadow-lg">
+          <div className="space-y-1 pr-2">
+            <p className="font-display font-bold text-sm text-amber-300">🛵 Domicilios Llorente</p>
+            <p className="text-[11px] text-slate-400 leading-snug">Prueba el pago en datáfono contactless</p>
+            <button
+              onClick={onOpenTarjetas}
+              className="mt-2.5 inline-block rounded-xl bg-amber-500 hover:bg-amber-400 px-3.5 py-1.5 text-[11px] font-bold text-slate-950 transition-colors shadow-md shadow-amber-500/20"
+            >
+              Pagar $35.000
+            </button>
+          </div>
+          <div className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <Store className="h-6 w-6" />
+          </div>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* SECCIÓN SUGERIDOS (IMAGEN 1)                             */}
+      {/* ======================================================== */}
+      <div className="space-y-2.5">
+        <h3 className="font-display text-sm font-bold text-slate-200">Sugeridos</h3>
+        <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-4">
+          {[
+            { label: "Envía plata", icon: Send, action: onOpenTransferir, color: "text-[#38bdf8]" },
+            { label: "Datáfono POS", icon: Radio, action: onOpenTarjetas, color: "text-cyan-400" },
+            { label: "Cajero ATM", icon: Landmark, action: () => { window.location.href = "/cajero"; }, color: "text-emerald-400" },
+            { label: "Mis Cuentas", icon: Wallet, action: onOpenCuentas, color: "text-indigo-400" },
+          ].map((s, idx) => {
+            const Icon = s.icon;
+            return (
+              <button
+                key={idx}
+                onClick={s.action}
+                className="flex flex-col items-center gap-1.5 rounded-2xl border border-[#162544] bg-[#091122] hover:bg-[#0e1c36] p-3 text-center transition-all group shadow-sm active:scale-95"
+              >
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#111e38] group-hover:scale-105 transition-transform">
+                  <Icon className={`h-5 w-5 ${s.color}`} />
+                </div>
+                <span className="text-[10px] font-medium text-slate-300 leading-tight truncate w-full">
+                  {s.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* SECCIÓN TUS FAVORITOS (IMAGEN 1)                         */}
+      {/* ======================================================== */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-sm font-bold text-slate-200 flex items-center gap-1.5">
+            <Heart className="h-4 w-4 text-rose-400" /> Tus favoritos
+          </h3>
+          <button
+            onClick={onOpenTarjetas}
+            className="text-slate-400 hover:text-white p-1"
+            title="Editar favoritos"
+          >
+            <Edit3 className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+          {[
+            { name: "Domicilios Llorente", emoji: "🛵", tag: "Llorente" },
+            { name: "Juan Valdez Café", emoji: "☕", tag: "Café" },
+            { name: "Éxito Manizales", emoji: "🛒", tag: "Éxito" },
+            { name: "Cine Colombia", emoji: "🎬", tag: "Cine" },
+          ].map((fav, i) => (
+            <button
+              key={i}
+              onClick={onOpenTarjetas}
+              className="flex flex-col items-center gap-1 rounded-2xl border border-[#162544] bg-[#091122] hover:bg-[#0e1c36] p-2.5 min-w-[76px] text-center shrink-0 active:scale-95 transition-all shadow-sm"
+            >
+              <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#12203a] text-xl shadow-inner">
+                <span>{fav.emoji}</span>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] uppercase text-slate-500">Vence</p>
-                <p className="font-mono text-slate-200">12/30</p>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-              <span className="text-slate-400">Saldo Disponible:</span>
-              <span className="font-mono font-bold text-emerald-400">{fmt(saldoReal)}</span>
-            </div>
-          </div>
-        </section>
+              <span className="text-[10px] font-semibold text-slate-300 truncate w-16">{fav.tag}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* SECCIÓN PRINCIPAL: 2 COLUMNAS ARMONIZADAS */}

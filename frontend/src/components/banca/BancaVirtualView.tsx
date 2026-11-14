@@ -27,6 +27,7 @@ export function BancaVirtualView() {
   const [activeTab, setActiveTab] = useState<BancaTab>("inicio");
   const [loginLoading, setLoginLoading] = useState(false);
   const [showMobileMore, setShowMobileMore] = useState(false);
+  const [showFabModal, setShowFabModal] = useState(false);
 
   // Cargar datos de resumen desde MySQL
   const cargarResumen = async () => {
@@ -451,45 +452,144 @@ export function BancaVirtualView() {
         </div>
       )}
 
-      {/* BARRA DE NAVEGACIÓN MÓVIL INFERIOR ULTRA LIMPIA */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-[#152033] bg-[#070b13]/95 py-2 backdrop-blur-lg lg:hidden">
-        {[
-          { id: "inicio", label: "Inicio", icon: LayoutDashboard },
-          { id: "transferencias", label: "Transferir", icon: ArrowLeftRight },
-          { id: "tarjetas", label: "Tarjetas", icon: CreditCard },
-          { id: "cuentas", label: "Cuentas", icon: Wallet },
-        ].map((n) => {
-          const isActive = activeTab === n.id && !showMobileMore;
-          const Icon = n.icon;
-          return (
-            <button
-              key={n.id}
-              onClick={() => selectTab(n.id as BancaTab)}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${
-                isActive
-                  ? "text-[#0e76fd] font-bold"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{n.label}</span>
-            </button>
-          );
-        })}
+      {/* ======================================================== */}
+      {/* MODAL RADIAL RÁPIDO DEL BOTÓN "$" (ESTILO NEQUI)         */}
+      {/* ======================================================== */}
+      {showFabModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-md p-4 lg:hidden animate-in fade-in duration-150">
+          <div className="w-full max-w-sm rounded-3xl border border-[#1d2f50] bg-[#0a1224] p-5 shadow-2xl space-y-4 text-center animate-in slide-in-from-bottom-4 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-display font-bold text-base text-white flex items-center gap-2">
+                <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-r from-[#0e76fd] to-[#00d2ff] text-xs font-black text-white">
+                  $
+                </span>
+                ¿Qué deseas hacer hoy?
+              </span>
+              <button
+                onClick={() => setShowFabModal(false)}
+                className="grid h-7 w-7 place-items-center rounded-full bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-        {/* BOTÓN MENÚ HAMBURGUESA EN LA BARRA INFERIOR */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1 text-left">
+              <button
+                onClick={() => {
+                  setShowFabModal(false);
+                  selectTab("transferencias");
+                }}
+                className="flex items-center gap-3 rounded-2xl border border-[#162544] bg-[#0c162b] hover:bg-[#122240] p-3 transition-all active:scale-95 group"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-500/20 text-[#38bdf8] group-hover:scale-105 transition-transform">
+                  <ArrowLeftRight className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Envía plata</p>
+                  <p className="text-[10px] text-slate-400">A cualquier cuenta</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowFabModal(false);
+                  selectTab("tarjetas");
+                }}
+                className="flex items-center gap-3 rounded-2xl border border-[#162544] bg-[#0c162b] hover:bg-[#122240] p-3 transition-all active:scale-95 group"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-500/20 text-cyan-400 group-hover:scale-105 transition-transform">
+                  <CreditCard className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Paga en Datáfono</p>
+                  <p className="text-[10px] text-slate-400">Contactless con PIN</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowFabModal(false);
+                  window.location.href = "/cajero";
+                }}
+                className="flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-950/20 hover:bg-emerald-900/30 p-3 transition-all active:scale-95 group"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-105 transition-transform">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-emerald-300">Saca en Cajero</p>
+                  <p className="text-[10px] text-slate-400">Terminal ATM</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowFabModal(false);
+                  selectTab("ahorros");
+                }}
+                className="flex items-center gap-3 rounded-2xl border border-[#162544] bg-[#0c162b] hover:bg-[#122240] p-3 transition-all active:scale-95 group"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-purple-500/20 text-purple-400 group-hover:scale-105 transition-transform">
+                  <PiggyBank className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Ahorros y CDT</p>
+                  <p className="text-[10px] text-slate-400">Metas y bolsillos</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* BARRA DE NAVEGACIÓN MÓVIL EXACTA A NEQUI (IMAGEN 1)      */}
+      {/* ======================================================== */}
+      <div className="fixed inset-x-0 bottom-4 z-40 px-4 flex items-center justify-center gap-2.5 lg:hidden">
+        {/* PÍLDORA DE NAVEGACIÓN PRINCIPAL */}
+        <nav className="flex-1 max-w-[280px] flex items-center justify-around rounded-3xl border border-[#1a2d4e] bg-[#091122]/95 py-2.5 px-3 backdrop-blur-xl shadow-2xl">
+          <button
+            onClick={() => selectTab("inicio")}
+            className={`flex flex-col items-center gap-0.5 text-[10px] font-semibold transition-all ${
+              activeTab === "inicio" ? "text-cyan-400 font-bold scale-105" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            <span>Inicio</span>
+          </button>
+
+          <button
+            onClick={() => selectTab("cuentas")}
+            className={`flex flex-col items-center gap-0.5 text-[10px] font-semibold transition-all ${
+              activeTab === "cuentas" ? "text-cyan-400 font-bold scale-105" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            <span>Movimientos</span>
+          </button>
+
+          <button
+            onClick={() => setShowMobileMore(true)}
+            className={`flex flex-col items-center gap-0.5 text-[10px] font-semibold transition-all ${
+              showMobileMore || ["ahorros", "prestamos", "ajustes"].includes(activeTab)
+                ? "text-cyan-400 font-bold scale-105"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Menu className="h-4 w-4" />
+            <span>Servicios</span>
+          </button>
+        </nav>
+
+        {/* BOTÓN INSIGNIA "$" CUADRADO REDONDEADO DE NEQUI */}
         <button
-          onClick={() => setShowMobileMore((prev) => !prev)}
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${
-            showMobileMore || ["ahorros", "prestamos", "ajustes"].includes(activeTab)
-              ? "text-cyan-400 font-bold"
-              : "text-slate-400 hover:text-slate-200"
-          }`}
+          onClick={() => setShowFabModal(true)}
+          aria-label="Operaciones rápidas"
+          className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-[#0e76fd] to-[#00d2ff] hover:opacity-95 active:scale-95 text-white font-black text-xl shadow-lg shadow-blue-500/30 transition-all border border-cyan-300/40"
         >
-          <Menu className="h-4 w-4" />
-          <span>Menú</span>
+          $
         </button>
-      </nav>
+      </div>
     </div>
   );
 }

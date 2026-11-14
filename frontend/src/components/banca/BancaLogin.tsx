@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Landmark, RefreshCw, UserPlus, LogIn, KeyRound, Shield, Eye, EyeOff, Sparkles, CheckCircle2, CreditCard, ShieldCheck } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Landmark, RefreshCw, UserPlus, LogIn, KeyRound, Shield, Eye, EyeOff, Sparkles, CheckCircle2, CreditCard, ShieldCheck, HelpCircle, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +13,30 @@ interface BancaLoginProps {
 export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
   const [tab, setTab] = useState<"login" | "registro">("login");
 
-  // Formulario de Login (arranca limpio sin texto plano quemado)
+  // Clave dinámica de 6 dígitos estilo Nequi
+  const [claveDinamica, setClaveDinamica] = useState("892874");
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [showAyuda, setShowAyuda] = useState(false);
+
+  // Formulario de Login
   const [identificador, setIdentificador] = useState("");
   const [password, setPassword] = useState("");
   const [showLoginPass, setShowLoginPass] = useState(false);
+
+  useEffect(() => {
+    // Generar clave dinámica cada 30 segundos
+    const timer = setInterval(() => {
+      setClaveDinamica(Math.floor(100000 + Math.random() * 900000).toString());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleCopyClave = () => {
+    navigator.clipboard.writeText(claveDinamica);
+    setCopiedKey(true);
+    toast.success(`Clave dinámica copiada: ${claveDinamica}`);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
 
   // Formulario de Registro Público
   const [regData, setRegData] = useState({
@@ -108,46 +128,65 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
 
   return (
     <div className="min-h-screen bg-[#070b13] flex flex-col items-center justify-center p-4">
-      {/* BARRA SUPERIOR DE SELECTOR DE CANALES PÚBLICOS */}
-      <div className="w-full max-w-md mb-4 flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 p-1.5 text-xs">
-        <span className="font-semibold text-primary px-3 flex items-center gap-1.5">
-          <Landmark className="h-3.5 w-3.5" /> Banca Personas
-        </span>
-        <div className="flex items-center gap-1">
-          <a
-            href="/cajero"
-            className="rounded-lg px-2.5 py-1 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/80 transition-colors flex items-center gap-1"
-          >
-            <CreditCard className="h-3 w-3" /> Terminal Cajero ATM
-          </a>
-        </div>
+      {/* ======================================================== */}
+      {/* BARRA SUPERIOR ESTILO NEQUI (CLAVE DINÁMICA & AYUDA)     */}
+      {/* ======================================================== */}
+      <div className="w-full max-w-sm mb-4 flex items-center justify-between gap-2">
+        {/* PÍLDORA CLAVE DINÁMICA CON CONTADOR */}
+        <button
+          type="button"
+          onClick={handleCopyClave}
+          className="flex items-center gap-2 rounded-2xl border border-cyan-500/30 bg-[#0c1830] px-3.5 py-1.5 text-xs text-white shadow-md shadow-blue-500/10 hover:border-cyan-400 active:scale-95 transition-all"
+        >
+          <div className="relative h-4 w-4 grid place-items-center">
+            <span className="absolute inset-0 rounded-full border border-cyan-400/40 animate-ping" />
+            <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
+          </div>
+          <div className="text-left font-mono">
+            <span className="text-[10px] text-slate-400 block leading-tight">Clave dinámica</span>
+            <span className="font-bold text-cyan-300 tracking-wider text-xs">{claveDinamica}</span>
+          </div>
+          <Copy className="h-3.5 w-3.5 text-slate-400 ml-1" />
+        </button>
+
+        {/* BOTÓN AYUDA (?) */}
+        <button
+          type="button"
+          onClick={() => setShowAyuda(true)}
+          className="flex items-center gap-1.5 rounded-2xl border border-slate-800 bg-[#0c1424] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-700 transition-all shadow-sm"
+        >
+          <HelpCircle className="h-3.5 w-3.5 text-cyan-400" />
+          <span>Ayuda</span>
+        </button>
       </div>
 
-      <div className="w-full max-w-md rounded-2xl border border-primary/30 bg-[#0e1626] p-6 sm:p-8 shadow-2xl relative overflow-hidden text-slate-100">
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="w-full max-w-sm rounded-3xl border border-[#1b2b4a] bg-[#091222] p-6 sm:p-7 shadow-2xl relative overflow-hidden text-slate-100">
         <div aria-hidden className="pointer-events-none absolute inset-0 hero-sheen" />
 
         <div className="relative">
-          <div className="text-center">
-            <div className="mx-auto mb-3 grid h-13 w-13 place-items-center rounded-2xl bg-primary/20 text-primary border border-primary/40 shadow-inner">
-              <Landmark className="h-6 w-6" />
-            </div>
-            <h2 className="font-display text-2xl font-bold">Banco Digital Andino</h2>
+          {/* LOGOTIPO EXACTO A LA IMAGEN 2 (■ BANCA VERDE) */}
+          <div className="text-center py-4">
+            <h1 className="font-display text-3xl font-black tracking-tight text-white flex items-center justify-center gap-1.5">
+              <span className="text-cyan-400 inline-block text-2xl font-black">■</span>
+              <span>Banca Verde</span>
+            </h1>
             <p className="mt-1 text-xs text-slate-400">
-              Sistema bancario centralizado con transacciones seguras en tiempo real
+              Tu banco digital seguro y en tiempo real
             </p>
           </div>
 
           {/* SELECTOR ENTRE INICIAR SESIÓN Y ABRIR CUENTA */}
-          <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl bg-slate-950/80 p-1 border border-slate-800 text-xs font-semibold">
+          <div className="mt-2 grid grid-cols-2 gap-1 rounded-2xl bg-slate-950/80 p-1 border border-slate-800 text-xs font-semibold">
             <button
               type="button"
               onClick={() => {
                 setTab("login");
                 setCuentaCreada(null);
               }}
-              className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
+              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 transition-all ${
                 tab === "login"
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-[#0e76fd] text-white shadow-md shadow-blue-500/20"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -156,9 +195,9 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
             <button
               type="button"
               onClick={() => setTab("registro")}
-              className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
+              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 transition-all ${
                 tab === "registro"
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-[#0e76fd] text-white shadow-md shadow-blue-500/20"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -166,11 +205,11 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
             </button>
           </div>
 
-          {/* VISTA 1: INICIO DE SESIÓN */}
+          {/* VISTA 1: INICIO DE SESIÓN ESTILO NEQUI */}
           {tab === "login" && (
             <form onSubmit={handleLoginSubmit} className="mt-5 space-y-4">
               {cuentaCreada && (
-                <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-300">
+                <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-300">
                   <div className="flex items-center gap-1.5 font-bold mb-1">
                     <CheckCircle2 className="h-4 w-4 text-emerald-400" /> ¡Cuenta creada exitosamente!
                   </div>
@@ -181,22 +220,30 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                     Tarjeta / Cuenta: <span className="font-mono font-bold text-white">{cuentaCreada.numero_cuenta}</span>
                   </p>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Ingresa con tu cédula o número de tarjeta y tu contraseña a continuación.
+                    Ingresa con tu cédula y tu contraseña a continuación.
                   </p>
                 </div>
               )}
 
+              {/* INPUT ESTILO NEQUI: +57 | NÚMERO */}
               <div>
-                <Label className="text-xs text-slate-300">Número de Documento (Cédula) o Tarjeta</Label>
-                <Input
-                  value={identificador}
-                  onChange={(e) => setIdentificador(e.target.value)}
-                  placeholder="Ej: 1001234567 o 400110203040"
-                  required
-                  className="mt-1 font-mono text-xs bg-slate-900 border-slate-700 text-cyan-300"
-                />
+                <Label className="text-xs text-slate-300">Cédula o Número de Celular</Label>
+                <div className="mt-1 flex items-center rounded-2xl border border-[#223558] bg-[#0c162b] px-3.5 py-3 text-xs text-white focus-within:border-cyan-400 transition-colors shadow-inner">
+                  <span className="font-semibold text-slate-400 pr-2.5 border-r border-slate-700 select-none">
+                    +57
+                  </span>
+                  <input
+                    type="text"
+                    value={identificador}
+                    onChange={(e) => setIdentificador(e.target.value)}
+                    placeholder="314 555 905 o 1130766219"
+                    required
+                    className="w-full pl-3 bg-transparent font-mono text-sm text-cyan-300 placeholder:text-slate-600 outline-none"
+                  />
+                </div>
               </div>
 
+              {/* INPUT CONTRASEÑA */}
               <div>
                 <div className="flex items-center justify-between">
                   <Label className="text-xs text-slate-300">Contraseña Bancaria</Label>
@@ -209,24 +256,45 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                     {showLoginPass ? "Ocultar" : "Mostrar"}
                   </button>
                 </div>
-                <Input
-                  type={showLoginPass ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
-                />
+                <div className="mt-1 flex items-center rounded-2xl border border-[#223558] bg-[#0c162b] px-3.5 py-3 text-xs text-white focus-within:border-cyan-400 transition-colors shadow-inner">
+                  <input
+                    type={showLoginPass ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="w-full bg-transparent font-mono text-sm placeholder:text-slate-600 outline-none"
+                  />
+                </div>
               </div>
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full gap-2 mt-2 h-10 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
-              >
-                {loading && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
-                Ingresar a Banca Virtual
-              </Button>
+              {/* FILA DE BOTONES EXACTA A LA IMAGEN 2: "ENTRA" + BOTÓN "$" */}
+              <div className="flex items-center gap-2 pt-2">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 rounded-2xl h-12 text-sm font-bold bg-[#0e76fd] hover:bg-[#0b63d6] text-white shadow-lg shadow-blue-500/25 active:scale-98 transition-all"
+                >
+                  {loading && <RefreshCw className="h-4 w-4 animate-spin mr-2" />}
+                  Entra
+                </Button>
+
+                {/* BOTÓN "$" CUADRADO DE NEQUI */}
+                <button
+                  type="submit"
+                  aria-label="Acceso rápido"
+                  className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-[#0e76fd] to-[#00d2ff] text-white font-black text-xl shadow-lg shadow-blue-500/30 border border-cyan-300/40 active:scale-95 transition-all"
+                >
+                  $
+                </button>
+              </div>
+
+              {/* ENLACES DE AYUDA DE NEQUI */}
+              <div className="text-center pt-2 space-y-1 text-xs text-slate-400">
+                <a href="/cajero" className="hover:text-cyan-400 transition-colors block">
+                  🏧 Ir a la Terminal del Cajero ATM
+                </a>
+              </div>
 
               {/* ACCESO RÁPIDO PARA SUSTENTACIÓN (BOTÓN OPCIONAL) */}
               <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
