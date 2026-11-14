@@ -32,7 +32,7 @@ export function AdminCrearClienteModal({
     correo: "",
     telefono: "",
     tipo_cuenta_id: 1,
-    saldo_inicial: "1500000",
+    saldo_inicial: "150000",
     password: "",
     pin_cajero: "",
   });

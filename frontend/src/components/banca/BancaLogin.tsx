@@ -27,7 +27,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
     correo: "",
     telefono: "",
     tipo_cuenta_id: 1,
-    saldo_inicial: "1000000",
+    saldo_inicial: "150000",
     password: "",
     password_confirm: "",
     pin_cajero: "",
