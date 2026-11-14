@@ -195,7 +195,7 @@ export function BancaVirtualView() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b13] font-sans text-slate-100">
+    <div className="min-h-screen bg-[#070b13] font-sans text-slate-100 w-full max-w-full overflow-x-hidden">
       {/* SIDEBAR DESKTOP PERMANENTE */}
       <BancaSidebar
         activeTab={activeTab}
@@ -204,7 +204,7 @@ export function BancaVirtualView() {
       />
 
       {/* ÁREA CENTRAL CON PADDING IZQUIERDO EN DESKTOP */}
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <div className="lg:pl-64 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
         {/* HEADER LIMPIO */}
         <BancaHeader
           usuario={usuario}
@@ -214,7 +214,7 @@ export function BancaVirtualView() {
         />
 
         {/* CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
-        <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-12 flex-1">
+        <main className="mx-auto w-full max-w-6xl px-3 sm:px-6 lg:px-8 pb-24 pt-3.5 sm:pt-6 flex-1">
           {activeTab === "inicio" && (
             <InicioView
               usuario={usuario}
@@ -452,55 +452,55 @@ export function BancaVirtualView() {
       )}
 
       {/* BARRA DE NAVEGACIÓN MÓVIL DOCK INFERIOR LIMPIO */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#14233e] bg-[#070b13]/95 px-3 py-2 backdrop-blur-xl lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#14233e] bg-[#070b13]/98 px-2 py-1 backdrop-blur-xl lg:hidden w-full max-w-full">
         <div className="mx-auto flex max-w-md items-center justify-around">
           <button
             onClick={() => selectTab("inicio")}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
               activeTab === "inicio" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
             }`}
           >
-            <LayoutDashboard className="h-5 w-5" />
+            <LayoutDashboard className="h-4.5 w-4.5" />
             <span className="text-[10px]">Inicio</span>
           </button>
 
           <button
             onClick={() => selectTab("cuentas")}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
               activeTab === "cuentas" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
             }`}
           >
-            <Wallet className="h-5 w-5" />
+            <Wallet className="h-4.5 w-4.5" />
             <span className="text-[10px]">Cuentas</span>
           </button>
 
           <button
             onClick={() => selectTab("transferencias")}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
               activeTab === "transferencias" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
             }`}
           >
-            <ArrowLeftRight className="h-5 w-5" />
+            <ArrowLeftRight className="h-4.5 w-4.5" />
             <span className="text-[10px]">Transferir</span>
           </button>
 
           <button
             onClick={() => selectTab("tarjetas")}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
               activeTab === "tarjetas" ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
             }`}
           >
-            <CreditCard className="h-5 w-5" />
+            <CreditCard className="h-4.5 w-4.5" />
             <span className="text-[10px]">Tarjetas</span>
           </button>
 
           <button
             onClick={() => setShowMobileMore(true)}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
               showMobileMore ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-white"
             }`}
           >
-            <MoreHorizontal className="h-5 w-5" />
+            <MoreHorizontal className="h-4.5 w-4.5" />
             <span className="text-[10px]">Más</span>
           </button>
         </div>

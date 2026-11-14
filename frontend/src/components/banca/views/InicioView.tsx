@@ -77,11 +77,11 @@ export function InicioView({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
       {/* ======================================================== */}
       {/* SECCIÓN HERO SALDO OBSIDIANA LIMPIO Y ORDENADO           */}
       {/* ======================================================== */}
-      <section className="relative overflow-hidden rounded-3xl border border-[#1a2d4e] bg-gradient-to-b from-[#0e1d3a] via-[#091326] to-[#060b14] p-5 sm:p-7 text-center shadow-2xl space-y-4">
+      <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[#1a2d4e] bg-gradient-to-b from-[#0e1d3a] via-[#091326] to-[#060b14] p-4 sm:p-6 text-center shadow-xl space-y-3 sm:space-y-4">
         {/* CUENTA Y OJO PARA OCULTAR SALDO */}
         <div className="flex items-center justify-center gap-2 text-xs text-slate-300 font-medium">
           <span>{cuentasAMostrar[0]?.tipo_cuenta || "Cuenta de Ahorros"}</span>
@@ -95,11 +95,11 @@ export function InicioView({
         </div>
 
         {/* MONTO GIGANTE CENTRAL */}
-        <div className="py-1">
-          <p className="font-display text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+        <div className="py-0.5">
+          <p className="font-display text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
             {saldoVisible ? fmt(totalDisponible) : "$ ••••••"}
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 font-mono">
             Total {saldoVisible ? fmt(totalDisponible) : "$ ••••••"}
           </p>
         </div>
@@ -108,7 +108,7 @@ export function InicioView({
         <div className="flex justify-center pt-0.5">
           <button
             onClick={() => setTuPlataAbierto(!tuPlataAbierto)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/90 hover:bg-slate-800 px-4 py-1.5 text-xs font-semibold text-slate-200 hover:text-white transition-all shadow-md active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/90 hover:bg-slate-800 px-3.5 py-1 text-xs font-semibold text-slate-200 hover:text-white transition-all shadow-md active:scale-95"
           >
             <span>Tu plata</span>
             <ChevronDown className={`h-3.5 w-3.5 text-cyan-400 transition-transform duration-200 ${tuPlataAbierto ? "rotate-180" : ""}`} />
@@ -117,7 +117,7 @@ export function InicioView({
 
         {/* DESGLOSE DESPLEGABLE DE SALDOS */}
         {tuPlataAbierto && (
-          <div className="mt-3 rounded-2xl border border-cyan-500/20 bg-[#081222] p-4 text-xs text-left space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="mt-2.5 rounded-xl border border-cyan-500/20 bg-[#081222] p-3.5 text-xs text-left space-y-2 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex justify-between items-center">
               <span className="text-slate-400">Saldo Disponible:</span>
               <span className="font-mono font-bold text-emerald-400">{fmt(totalDisponible)}</span>
@@ -135,91 +135,97 @@ export function InicioView({
           </div>
         )}
 
-        {/* LOS 3 BOTONES DE ACCIÓN RÁPIDA PRINCIPALES */}
-        <div className="grid grid-cols-3 gap-2.5 pt-2">
+        {/* LOS 3 BOTONES DE ACCIÓN RÁPIDA PRINCIPALES EN MODO MÓVIL APILADO (NATIVE MOBILE FEEL) */}
+        <div className="grid grid-cols-3 gap-2 pt-1">
           <button
             onClick={onOpenTransferir}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-[#0f1d38] border border-[#1f3763] hover:bg-[#152a52] active:scale-95 px-3 py-3 text-xs font-bold text-white shadow transition-all"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-[#0f1d38]/90 border border-[#1f3763] hover:bg-[#152a52] active:scale-95 py-2.5 px-1.5 text-center transition-all shadow-sm group"
           >
-            <Send className="h-4 w-4 text-[#38bdf8]" />
-            <span>Transferir</span>
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/15 text-[#38bdf8] group-hover:scale-105 transition-transform">
+              <Send className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-bold text-white">Transferir</span>
           </button>
 
           <button
             onClick={onOpenTarjetas}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-[#0f1d38] border border-[#1f3763] hover:bg-[#152a52] active:scale-95 px-3 py-3 text-xs font-bold text-white shadow transition-all"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-[#0f1d38]/90 border border-[#1f3763] hover:bg-[#152a52] active:scale-95 py-2.5 px-1.5 text-center transition-all shadow-sm group"
           >
-            <CreditCard className="h-4 w-4 text-cyan-400" />
-            <span>Datáfono</span>
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-500/15 text-cyan-400 group-hover:scale-105 transition-transform">
+              <CreditCard className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-bold text-white">Datáfono</span>
           </button>
 
           <button
             onClick={() => {
               window.location.href = "/cajero";
             }}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-cyan-950/40 border border-cyan-500/40 hover:bg-cyan-900/40 active:scale-95 px-3 py-3 text-xs font-bold text-cyan-300 shadow transition-all"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 hover:bg-cyan-900/40 active:scale-95 py-2.5 px-1.5 text-center transition-all shadow-sm group"
           >
-            <Landmark className="h-4 w-4 text-cyan-400" />
-            <span>Cajero ATM</span>
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-500/20 text-cyan-300 group-hover:scale-105 transition-transform">
+              <Landmark className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-bold text-cyan-200">Cajero ATM</span>
           </button>
         </div>
       </section>
 
-      {/* CARD TARJETA DÉBITO DIGITAL DESTACADA */}
+      {/* CARD TARJETA DÉBITO DIGITAL DESTACADA (RESPONSIVE SEGURO) */}
       <section
         onClick={onOpenTarjetas}
-        className="cursor-pointer flex flex-col justify-between rounded-3xl border border-[#182845] bg-gradient-to-r from-[#091224] to-[#0d1c3a] p-5 shadow-xl hover:border-[#0e76fd]/50 transition-all active:scale-[0.99] group"
+        className="cursor-pointer flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-[#182845] bg-gradient-to-r from-[#091224] to-[#0d1c3a] p-4 sm:p-5 shadow-xl hover:border-[#0e76fd]/50 transition-all active:scale-[0.99] group"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
             <CreditCard className="h-4 w-4" /> Tarjeta Débito Digital
           </span>
-          <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
+          <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
             ● ACTIVA
           </span>
         </div>
 
-        <div className="my-3 flex items-center justify-between">
-          <p className="font-mono text-xl sm:text-2xl font-bold tracking-widest text-white">
+        <div className="my-2.5 flex items-center justify-between gap-2 min-w-0">
+          <p className="font-mono text-base sm:text-xl font-bold tracking-wider text-white truncate">
             {cuentaActiva
               ? `${cuentaActiva.numero_cuenta.slice(0, 4)} •••• •••• ${cuentaActiva.numero_cuenta.slice(-4)}`
               : "4001 •••• •••• 1053"}
           </p>
-          <span className="text-xs text-cyan-400 font-semibold group-hover:underline">
+          <span className="text-xs text-cyan-400 font-semibold shrink-0 group-hover:underline">
             Gestionar →
           </span>
         </div>
 
         <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-800/80">
-          <div>
-            <span className="text-[10px] uppercase text-slate-500 block">Titular</span>
-            <span className="font-semibold text-slate-200">
+          <div className="min-w-0 pr-2">
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 block">Titular</span>
+            <span className="font-semibold text-slate-200 truncate block text-xs">
               {usuario ? `${usuario.nombres} ${usuario.apellidos}`.toUpperCase() : "JAIRO PAI"}
             </span>
           </div>
-          <div className="text-right">
-            <span className="text-[10px] uppercase text-slate-500 block">Saldo en Tarjeta</span>
-            <span className="font-mono font-bold text-emerald-400">{fmt(saldoReal)}</span>
+          <div className="text-right shrink-0">
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 block">Saldo en Tarjeta</span>
+            <span className="font-mono font-bold text-emerald-400 text-xs sm:text-sm">{fmt(saldoReal)}</span>
           </div>
         </div>
       </section>
 
       {/* SECCIÓN PRINCIPAL: 2 COLUMNAS ARMONIZADAS */}
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         {/* ======================================================== */}
         {/* COLUMNA IZQUIERDA: CUENTAS + ÚLTIMOS MOVIMIENTOS        */}
         {/* ======================================================== */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 min-w-0">
           {/* CUENTAS REGISTRADAS */}
-          <section className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <section className="space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
               <h2 className="font-display text-base sm:text-lg font-bold text-white flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-[#0e76fd]" />
                 <span>Tus Cuentas Bancarias</span>
               </h2>
               <button
                 onClick={onOpenCuentas}
-                className="text-xs font-semibold text-[#0e76fd] hover:text-[#38bdf8] bg-[#0e76fd]/10 px-2.5 py-1 rounded-lg border border-[#0e76fd]/20 transition-colors"
+                className="text-xs font-semibold text-[#0e76fd] hover:text-[#38bdf8] bg-[#0e76fd]/10 px-2.5 py-1 rounded-lg border border-[#0e76fd]/20 transition-colors shrink-0"
               >
                 Administrar
               </button>
@@ -229,15 +235,15 @@ export function InicioView({
             {cuentasAMostrar.length === 1 ? (
               <div
                 onClick={() => onSelectCuenta(cuentasAMostrar[0])}
-                className="rounded-2xl border border-[#1a2d4f] bg-gradient-to-r from-[#091120] to-[#0c172c] p-5 shadow-lg ring-1 ring-[#0e76fd]/30 transition-all hover:border-[#0e76fd]/60 cursor-pointer"
+                className="rounded-2xl border border-[#1a2d4f] bg-gradient-to-r from-[#091120] to-[#0c172c] p-4 sm:p-5 shadow-lg ring-1 ring-[#0e76fd]/30 transition-all hover:border-[#0e76fd]/60 cursor-pointer"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-0.5 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-slate-200">
+                      <span className="font-medium text-sm text-slate-200 truncate">
                         {cuentasAMostrar[0].tipo_cuenta || "Cuenta de Ahorros"}
                       </span>
-                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.2 text-[10px] font-bold text-emerald-400 border border-emerald-500/20 shrink-0">
                         ● ACTIVA
                       </span>
                     </div>
@@ -261,9 +267,9 @@ export function InicioView({
                     </div>
                   </div>
 
-                  <div className="text-left sm:text-right">
+                  <div className="text-left sm:text-right pt-1 sm:pt-0 shrink-0">
                     <p className="text-[10px] uppercase tracking-wider text-slate-400">Saldo Disponible</p>
-                    <p className="font-display text-2xl font-bold text-white tracking-tight">
+                    <p className="font-display text-xl sm:text-2xl font-bold text-white tracking-tight">
                       {fmt(parseFloat(cuentasAMostrar[0].saldo as any) || 0)}
                     </p>
                   </div>
@@ -278,18 +284,18 @@ export function InicioView({
                     <div
                       key={c.id}
                       onClick={() => onSelectCuenta(c)}
-                      className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-4 transition-all ${
+                      className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-3.5 sm:p-4 transition-all ${
                         isActive
                           ? "border-[#1a2d4f] bg-[#091120] shadow-lg ring-1 ring-[#0e76fd]/30"
                           : "border-[#141d2f] bg-[#080d19] hover:border-[#1a2d4f]"
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-slate-300">{c.tipo_cuenta || "Cuenta de Ahorros"}</span>
-                        <span className="font-mono text-slate-400">•••• {c.numero_cuenta ? c.numero_cuenta.slice(-4) : "0000"}</span>
+                        <span className="font-medium text-slate-300 truncate">{c.tipo_cuenta || "Cuenta de Ahorros"}</span>
+                        <span className="font-mono text-slate-400 shrink-0">•••• {c.numero_cuenta ? c.numero_cuenta.slice(-4) : "0000"}</span>
                       </div>
-                      <div className="my-2">
-                        <p className="font-display text-xl font-bold text-white tracking-tight">
+                      <div className="my-1.5">
+                        <p className="font-display text-lg sm:text-xl font-bold text-white tracking-tight">
                           {fmt(parseFloat(c.saldo as any) || 0)}
                         </p>
                       </div>
@@ -305,10 +311,10 @@ export function InicioView({
           </section>
 
           {/* ÚLTIMOS MOVIMIENTOS */}
-          <section className="rounded-2xl border border-[#141d2f] bg-[#080d19] p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+          <section className="rounded-2xl border border-[#141d2f] bg-[#080d19] p-4 sm:p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="font-display text-lg font-bold text-white">
+                <h2 className="font-display text-base sm:text-lg font-bold text-white">
                   Últimos movimientos
                 </h2>
                 <p className="text-[11px] text-slate-400">
@@ -317,21 +323,21 @@ export function InicioView({
               </div>
               <button
                 onClick={onOpenCuentas}
-                className="text-xs font-semibold text-[#0e76fd] hover:text-[#38bdf8] transition-colors"
+                className="text-xs font-semibold text-[#0e76fd] hover:text-[#38bdf8] transition-colors shrink-0"
               >
                 Ver extracto completo
               </button>
             </div>
 
-            <div className="divide-y divide-[#131b2c]">
+            <div className="divide-y divide-slate-800/40">
               {movimientosFiltrados.length > 0 ? (
                 movimientosFiltrados.slice(0, 5).map((m) => {
                   const esIngreso = m.sentido === "CREDITO" || m.tipo_movimiento === "CREDITO";
                   return (
-                    <div key={m.id} className="flex items-center justify-between py-3">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div key={m.id} className="flex items-center justify-between py-2.5 gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <div
-                          className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+                          className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${
                             esIngreso
                               ? "bg-emerald-500/15 text-emerald-400"
                               : "bg-[#111929] text-slate-400"
@@ -343,11 +349,11 @@ export function InicioView({
                             <ArrowUpRight className="h-4 w-4" />
                           )}
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-100">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs sm:text-sm font-medium text-slate-100">
                             {m.descripcion || m.tipo_operacion}
                           </p>
-                          <p className="text-[11px] text-slate-400 font-mono">
+                          <p className="text-[10px] text-slate-400 font-mono truncate">
                             {m.tipo_operacion} ·{" "}
                             {new Date(m.fecha_hora).toLocaleDateString("es-CO", {
                               day: "2-digit",
@@ -359,9 +365,9 @@ export function InicioView({
                         </div>
                       </div>
 
-                      <div className="text-right pl-3">
+                      <div className="text-right pl-2 shrink-0">
                         <p
-                          className={`font-mono text-sm font-bold ${
+                          className={`font-mono text-xs sm:text-sm font-bold ${
                             esIngreso ? "text-emerald-400" : "text-slate-200"
                           }`}
                         >
@@ -372,7 +378,7 @@ export function InicioView({
                   );
                 })
               ) : (
-                <div className="py-8 text-center text-slate-500 text-xs">
+                <div className="py-6 text-center text-slate-500 text-xs">
                   No hay movimientos registrados en esta cuenta.
                 </div>
               )}
@@ -383,122 +389,121 @@ export function InicioView({
         {/* ======================================================== */}
         {/* COLUMNA DERECHA: RESUMEN DE GASTOS + ACCESOS RÁPIDOS    */}
         {/* ======================================================== */}
-        <div className="space-y-6">
-          {/* ANÁLISIS DE INGRESOS Y GASTOS */}
-          <section className="rounded-2xl border border-[#141d2f] bg-[#080d19] p-5 shadow-sm space-y-4">
+        <div className="space-y-4 sm:space-y-6 min-w-0">
+          {/* ANÁLISIS DE INGRESOS Y GASTOS (COMPACTO Y ELEGANTE) */}
+          <section className="rounded-2xl border border-[#141d2f] bg-[#080d19] p-4 sm:p-5 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display text-lg font-bold text-white">Resumen Mensual</h2>
-                <p className="text-xs text-slate-400">Flujo de efectivo · Noviembre 2026</p>
+                <h2 className="font-display text-base sm:text-lg font-bold text-white">Resumen Mensual</h2>
+                <p className="text-[11px] text-slate-400">Flujo de efectivo · Noviembre 2026</p>
               </div>
-              <span className="rounded-xl bg-[#111b2c] px-2.5 py-1 text-xs font-semibold text-slate-300 border border-[#1b2a45]">
+              <span className="rounded-lg bg-[#111b2c] px-2.5 py-0.5 text-[10px] font-semibold text-slate-300 border border-[#1b2a45]">
                 Mes Actual
               </span>
             </div>
 
             {/* TARJETAS DE MÉTRICAS */}
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="rounded-xl bg-[#091120] border border-[#162238] p-3 space-y-1">
-                <span className="text-[11px] text-slate-400 flex items-center gap-1">
+            <div className="grid grid-cols-2 gap-2.5 text-xs">
+              <div className="rounded-xl bg-[#091120] border border-[#162238] p-3 space-y-0.5">
+                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
                   <ArrowDownLeft className="h-3 w-3 text-emerald-400" /> Ingresos
                 </span>
-                <p className="font-mono text-base font-bold text-emerald-400">
+                <p className="font-mono text-sm sm:text-base font-bold text-emerald-400">
                   {fmt(totalIngresos)}
                 </p>
               </div>
-              <div className="rounded-xl bg-[#091120] border border-[#162238] p-3 space-y-1">
-                <span className="text-[11px] text-slate-400 flex items-center gap-1">
+              <div className="rounded-xl bg-[#091120] border border-[#162238] p-3 space-y-0.5">
+                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
                   <ArrowUpRight className="h-3 w-3 text-rose-400" /> Gastos
                 </span>
-                <p className="font-mono text-base font-bold text-slate-200">
+                <p className="font-mono text-sm sm:text-base font-bold text-slate-200">
                   {fmt(totalGastos)}
                 </p>
               </div>
             </div>
 
-            {/* BARRAS MENSUALES */}
-            <div className="flex h-36 items-end justify-between gap-1.5 pt-2">
-              {bars.map((h, i) => {
-                const isCurrentMonth = i === 10;
-                const barHeight = isCurrentMonth ? Math.max(35, Math.min(100, (totalIngresos / 200000) * 80)) : h;
-                return (
-                  <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
-                    <div
-                      style={{ height: `${barHeight}%` }}
-                      className={`w-full rounded-t-md transition-all ${
-                        isCurrentMonth
-                          ? "bg-[#00d2ff] shadow-lg shadow-cyan-500/40"
-                          : "bg-[#12427a]/60 hover:bg-[#1a559d]"
-                      }`}
-                    />
-                    <span className="font-mono text-[10px] text-slate-400">
-                      {months[i]}
-                    </span>
-                  </div>
-                );
-              })}
+            {/* BARRA DE PROPORCIÓN VISUAL SIN ESPACIOS NULOS */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between text-[10px] text-slate-400">
+                <span>Balance neto disponible</span>
+                <span className="font-mono font-bold text-emerald-400">
+                  +{fmt(Math.max(0, totalIngresos - totalGastos))}
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden flex">
+                <div
+                  style={{ width: `${Math.min(100, Math.max(10, (totalIngresos / (totalIngresos + totalGastos || 1)) * 100))}%` }}
+                  className="bg-emerald-400 h-full transition-all"
+                  title="Ingresos"
+                />
+                <div
+                  style={{ width: `${Math.min(100, Math.max(10, (totalGastos / (totalIngresos + totalGastos || 1)) * 100))}%` }}
+                  className="bg-rose-500/70 h-full transition-all"
+                  title="Gastos"
+                />
+              </div>
             </div>
           </section>
 
-          {/* ACCESOS RÁPIDOS Y SERVICIOS */}
-          <section className="rounded-2xl border border-[#141d2f] bg-[#080d19] p-5 shadow-sm space-y-3">
-            <h3 className="font-display text-sm font-bold text-white uppercase tracking-wider">
+          {/* ACCESOS RÁPIDOS Y SERVICIOS INTEGRADOS */}
+          <section className="rounded-2xl border border-[#141d2f] bg-[#080d19] p-4 sm:p-5 shadow-sm space-y-2.5">
+            <h3 className="font-display text-xs font-bold text-slate-400 uppercase tracking-wider">
               Servicios & Certificaciones
             </h3>
 
-            <div className="space-y-2">
+            <div className="divide-y divide-slate-800/60 rounded-xl border border-[#162238] bg-[#091120] overflow-hidden">
               <button
                 onClick={onOpenCuentas}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-[#091120] border border-[#162238] hover:border-[#0e76fd]/50 transition-all text-xs group text-left"
+                className="w-full flex items-center justify-between p-3 hover:bg-[#0e1b33] transition-all text-xs group text-left"
               >
-                <div className="flex items-center gap-3">
-                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <FileText className="h-4 w-4" />
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
+                    <FileText className="h-3.5 w-3.5" />
                   </div>
-                  <div>
-                    <p className="font-semibold text-slate-200 group-hover:text-primary transition-colors">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-200 group-hover:text-primary transition-colors text-xs truncate">
                       Certificado Bancario
                     </p>
-                    <p className="text-[10px] text-slate-400">Descargar carta oficial de tu cuenta</p>
+                    <p className="text-[10px] text-slate-400 truncate">Descargar carta oficial de tu cuenta</p>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+                <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0 group-hover:text-white transition-colors" />
               </button>
 
               <button
                 onClick={onOpenTarjetas}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-[#091120] border border-[#162238] hover:border-[#0e76fd]/50 transition-all text-xs group text-left"
+                className="w-full flex items-center justify-between p-3 hover:bg-[#0e1b33] transition-all text-xs group text-left"
               >
-                <div className="flex items-center gap-3">
-                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-400">
-                    <CreditCard className="h-4 w-4" />
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-emerald-500/15 text-emerald-400">
+                    <CreditCard className="h-3.5 w-3.5" />
                   </div>
-                  <div>
-                    <p className="font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors text-xs truncate">
                       Tarjeta & PIN Cajero
                     </p>
-                    <p className="text-[10px] text-slate-400">Ver datos seguros, CVV o compras POS</p>
+                    <p className="text-[10px] text-slate-400 truncate">Ver datos seguros, CVV o compras POS</p>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+                <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0 group-hover:text-white transition-colors" />
               </button>
 
               <button
                 onClick={onOpenAjustes}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-[#091120] border border-[#162238] hover:border-[#0e76fd]/50 transition-all text-xs group text-left"
+                className="w-full flex items-center justify-between p-3 hover:bg-[#0e1b33] transition-all text-xs group text-left"
               >
-                <div className="flex items-center gap-3">
-                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-500/10 text-cyan-400">
-                    <ShieldCheck className="h-4 w-4" />
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-cyan-500/15 text-cyan-400">
+                    <ShieldCheck className="h-3.5 w-3.5" />
                   </div>
-                  <div>
-                    <p className="font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors text-xs truncate">
                       Seguridad y Perfil
                     </p>
-                    <p className="text-[10px] text-slate-400">Actualizar teléfono o cambiar contraseña</p>
+                    <p className="text-[10px] text-slate-400 truncate">Actualizar teléfono o cambiar contraseña</p>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+                <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0 group-hover:text-white transition-colors" />
               </button>
             </div>
           </section>
