@@ -24,11 +24,30 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
   const [pin, setPin] = useState("");
   const [cuentaInfo, setCuentaInfo] = useState<any>(null);
 
-  // Estados de pantalla del cajero: 'menu' | 'saldo' | 'retirar' | 'movimientos' | 'recibo'
-  const [pantalla, setPantalla] = useState<"menu" | "saldo" | "retirar" | "movimientos" | "recibo">("menu");
+  // Estados de pantalla del cajero: 'menu' | 'saldo' | 'retirar' | 'confirmar_retiro' | 'movimientos' | 'recibo'
+  const [pantalla, setPantalla] = useState<"menu" | "saldo" | "retirar" | "confirmar_retiro" | "movimientos" | "recibo">("menu");
+  const [montoARetirar, setMontoARetirar] = useState<number>(50000);
   const [recibo, setRecibo] = useState<any>(null);
   const [movimientos, setMovimientos] = useState<any[]>([]);
   const [otroValor, setOtroValor] = useState("");
+
+  const handleSeleccionarMonto = (m: number) => {
+    if (isNaN(m) || m <= 0) {
+      toast.error("Por favor ingrese un monto válido.");
+      return;
+    }
+    if (m % 10000 !== 0) {
+      toast.error("El monto debe ser múltiplo de $10.000 COP.");
+      return;
+    }
+    const saldoActual = Number(cuentaInfo?.saldo) || 0;
+    if (m > saldoActual) {
+      toast.error(`Fondos insuficientes. Su saldo disponible es de ${fmt(saldoActual)}.`);
+      return;
+    }
+    setMontoARetirar(m);
+    setPantalla("confirmar_retiro");
+  };
 
   // Verificar sesión existente en cajero
   useEffect(() => {
@@ -352,26 +371,26 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                 </div>
               )}
 
-              {/* VISTA 2: RETIRO RÁPIDO Y MONTOS PREDEFINIDOS */}
+              {/* VISTA 2: SELECCIÓN DE MONTO A RETIRAR */}
               {pantalla === "retirar" && (
                 <div className="py-4">
                   <h3 className="font-display text-lg font-bold text-center text-cyan-300">Seleccione el Monto a Retirar</h3>
-                  <p className="text-xs text-center text-slate-400 mb-6">Saldo actual: {fmt(cuentaInfo?.saldo || 0)}</p>
+                  <p className="text-xs text-center text-slate-400 mb-6">Saldo actual disponible: {fmt(cuentaInfo?.saldo || 0)}</p>
 
                   <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-                    {[50000, 100000, 200000, 400000].map((monto) => (
+                    {[20000, 50000, 100000, 200000].map((monto) => (
                       <Button
                         key={monto}
                         disabled={loading || monto > (cuentaInfo?.saldo || 0)}
-                        onClick={() => handleRetiro(monto)}
-                        className="h-14 font-mono font-bold text-base bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-800 text-cyan-200"
+                        onClick={() => handleSeleccionarMonto(monto)}
+                        className="h-14 font-mono font-bold text-base bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-800 text-cyan-200 shadow-md"
                       >
                         {fmt(monto)}
                       </Button>
                     ))}
 
                     <div className="col-span-2 rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-3">
-                      <Label className="text-xs text-slate-400">Otro Monto (Múltiplos de $10.000)</Label>
+                      <Label className="text-xs text-slate-400">Otro Monto (Múltiplos de $10.000 COP)</Label>
                       <div className="flex gap-2 mt-1.5">
                         <Input
                           type="number"
@@ -383,10 +402,10 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                         />
                         <Button
                           disabled={loading || !otroValor}
-                          onClick={() => handleRetiro(parseFloat(otroValor))}
-                          className="h-9 px-4 bg-cyan-600 hover:bg-cyan-500 font-semibold text-xs"
+                          onClick={() => handleSeleccionarMonto(parseFloat(otroValor))}
+                          className="h-9 px-4 bg-cyan-600 hover:bg-cyan-500 font-semibold text-xs text-white"
                         >
-                          Dispensar
+                          Continuar
                         </Button>
                       </div>
                     </div>
@@ -394,7 +413,79 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
 
                   <div className="mt-6 text-center">
                     <Button variant="outline" size="sm" onClick={() => setPantalla("menu")}>
-                      Volver al Menú
+                      ← Volver al Menú
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* VISTA 2.1: CONFIRMACIÓN DEL RETIRO CON BOTÓN DE RETIRAR */}
+              {pantalla === "confirmar_retiro" && (
+                <div className="py-2 max-w-md mx-auto text-center space-y-4">
+                  <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-inner">
+                    <DollarSign className="h-7 w-7" />
+                  </div>
+
+                  <div>
+                    <h3 className="font-display text-xl font-bold text-cyan-300">
+                      Confirmación de Retiro en Efectivo
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Verifique los datos de la transacción antes de que el cajero dispense el dinero
+                    </p>
+                  </div>
+
+                  {/* FICHA TÉRMICA DE CONFIRMACIÓN */}
+                  <div className="rounded-2xl border border-cyan-500/40 bg-black/60 p-4 text-xs font-mono space-y-2.5 text-left shadow-lg">
+                    <div className="flex justify-between items-center text-sm border-b border-cyan-500/30 pb-2">
+                      <span className="text-slate-400 font-sans">Monto Solicitado:</span>
+                      <span className="font-bold text-2xl text-emerald-400">{fmt(montoARetirar)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 font-sans">Cuenta de Origen:</span>
+                      <span className="text-slate-200">
+                        •••• •••• {cuentaInfo?.numero_cuenta ? cuentaInfo.numero_cuenta.slice(-4) : "1053"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 font-sans">Saldo Actual Disponible:</span>
+                      <span className="text-slate-200">{fmt(cuentaInfo?.saldo || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 font-sans">Saldo Después del Retiro:</span>
+                      <span className="text-cyan-300 font-bold">
+                        {fmt(Math.max(0, (cuentaInfo?.saldo || 0) - montoARetirar))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-cyan-500/30 pt-2 text-[11px]">
+                      <span className="text-slate-400 font-sans">Costo de Operación:</span>
+                      <span className="text-emerald-400 font-bold">$ 0 COP (Sin Costo)</span>
+                    </div>
+                  </div>
+
+                  {/* BOTONES DE CONFIRMACIÓN Y CANCELACIÓN */}
+                  <div className="space-y-2.5 pt-2">
+                    <Button
+                      disabled={loading}
+                      onClick={() => handleRetiro(montoARetirar)}
+                      className="h-12 w-full text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/30 gap-2"
+                    >
+                      {loading ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-5 w-5" />
+                      )}
+                      Confirmar y Retirar {fmt(montoARetirar)}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={loading}
+                      onClick={() => setPantalla("retirar")}
+                      className="w-full text-xs text-slate-300 hover:text-white"
+                    >
+                      ← Cambiar Monto o Cancelar
                     </Button>
                   </div>
                 </div>
@@ -456,15 +547,17 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                       </div>
                       <div className="flex justify-between">
                         <span>AUTORIZACIÓN:</span>
-                        <span className="font-bold">#{recibo.numero_operacion}</span>
+                        <span className="font-bold">#{recibo.numero_operacion || recibo.transaccion_id || "1001"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>CUENTA:</span>
-                        <span>•••• •••• {recibo.numero_cuenta.slice(-4)}</span>
+                        <span>•••• •••• {recibo.numero_cuenta ? recibo.numero_cuenta.slice(-4) : "1053"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>VALOR RETIRADO:</span>
-                        <span className="font-bold text-sm">{fmt(recibo.valor)}</span>
+                        <span className="font-bold text-sm text-emerald-600">
+                          {fmt(parseFloat(recibo.valor_retirado || recibo.valor) || 0)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span>COSTO TRANSACCIÓN:</span>
@@ -472,7 +565,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                       </div>
                       <div className="flex justify-between font-bold pt-1 border-t border-slate-200">
                         <span>SALDO DISPONIBLE:</span>
-                        <span>{fmt(recibo.nuevo_saldo)}</span>
+                        <span className="text-emerald-700">{fmt(parseFloat(recibo.nuevo_saldo) || 0)}</span>
                       </div>
                     </div>
 

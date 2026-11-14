@@ -119,8 +119,10 @@ async function retirar(req, res) {
             recibo: {
                 cajero_id: 'ATM-BOG-004',
                 transaccion_id: operacionId,
+                numero_operacion: operacionId,
                 fecha: new Date(),
                 numero_cuenta: cuenta.numero_cuenta,
+                valor: valor,
                 valor_retirado: valor,
                 nuevo_saldo: nuevoSaldo
             }
