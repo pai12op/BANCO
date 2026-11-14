@@ -143,11 +143,11 @@ export function AdminConsignacionModal({
             <div className="space-y-2 rounded-lg border border-border/80 bg-secondary/30 p-4 text-xs font-mono">
               <div className="flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Operación:</span>
-                <span className="font-bold">#{recibo.numero_operacion}</span>
+                <span className="font-bold">#{recibo.transaccion_id || recibo.numero_operacion || "001"}</span>
               </div>
               <div className="flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Fecha:</span>
-                <span>{new Date(recibo.fecha).toLocaleString("es-CO")}</span>
+                <span>{new Date(recibo.fecha || Date.now()).toLocaleString("es-CO")}</span>
               </div>
               <div className="flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Cuenta:</span>
@@ -159,7 +159,7 @@ export function AdminConsignacionModal({
               </div>
               <div className="flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Valor Depositado:</span>
-                <span className="font-bold text-emerald-400">{fmt(recibo.valor)}</span>
+                <span className="font-bold text-emerald-400">{fmt(recibo.valor_consignado || recibo.valor || 0)}</span>
               </div>
               <div className="flex justify-between pt-1 font-bold">
                 <span className="text-muted-foreground">Nuevo Saldo:</span>

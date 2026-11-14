@@ -1,18 +1,24 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { DollarSign, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AdminHeader } from "./AdminHeader";
+import { AdminSidebar, AdminTab } from "./AdminSidebar";
 import { AdminLogin } from "./AdminLogin";
 import { AdminKpis } from "./AdminKpis";
 import { AdminClientesTable } from "./AdminClientesTable";
 import { AdminConsignacionModal } from "./AdminConsignacionModal";
 import { AdminCrearClienteModal } from "./AdminCrearClienteModal";
 import { AdminAuditoriaTable } from "./AdminAuditoriaTable";
+import { AdminVentanillaView } from "./AdminVentanillaView";
+import {
+  LayoutDashboard, Users, DollarSign, History,
+  UserPlus, Plus, ShieldCheck, RefreshCw, Landmark
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function AdminPanelView() {
   const [autenticado, setAutenticado] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
 
   // KPIs
   const [kpis, setKpis] = useState({
@@ -22,7 +28,7 @@ export function AdminPanelView() {
     totalBoveda: 0,
   });
 
-  // Clientes y Movimientos
+  // Clientes y Auditoría
   const [clientes, setClientes] = useState<any[]>([]);
   const [auditoria, setAuditoria] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -77,7 +83,7 @@ export function AdminPanelView() {
       cargarClientes();
       cargarAuditoria();
     } catch (err) {
-      toast.error("Error de conexión.");
+      toast.error("Error de conexión con la consola administrativa.");
     } finally {
       setLoading(false);
     }
@@ -174,7 +180,6 @@ export function AdminPanelView() {
         return null;
       }
 
-      toast.success("¡Consignación aplicada con éxito!");
       cargarDashboard();
       cargarClientes();
       cargarAuditoria();
@@ -191,10 +196,15 @@ export function AdminPanelView() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...nuevoCliente,
-          password: "Banco123*",
-          pin_cajero: "1234",
-          tipo_cuenta_id: 1,
+          tipo_documento_id: nuevoCliente.tipo_documento_id || 1,
+          numero_documento: nuevoCliente.numero_documento.trim(),
+          nombres: nuevoCliente.nombres.trim(),
+          apellidos: nuevoCliente.apellidos.trim(),
+          correo: nuevoCliente.correo.trim(),
+          telefono: nuevoCliente.telefono ? nuevoCliente.telefono.trim() : null,
+          password: nuevoCliente.password,
+          pin_cajero: nuevoCliente.pin_cajero,
+          tipo_cuenta_id: nuevoCliente.tipo_cuenta_id || 1,
           saldo_inicial: parseFloat(nuevoCliente.saldo_inicial) || 0,
         }),
         credentials: "include",
@@ -206,9 +216,10 @@ export function AdminPanelView() {
         return false;
       }
 
-      toast.success("Cliente y cuenta creados exitosamente.");
+      toast.success("Cliente y cuenta creados exitosamente con cifrado seguro.");
       cargarDashboard();
       cargarClientes();
+      setActiveTab("clientes");
       return true;
     } catch (err) {
       toast.error("Error de comunicación.");
@@ -220,80 +231,203 @@ export function AdminPanelView() {
     try {
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       setAutenticado(false);
-      toast.info("Sesión administrativa cerrada.");
+      toast.info("Sesión administrativa finalizada.");
     } catch (err) {
       console.error(err);
     }
   };
 
+  if (!autenticado) {
+    return <AdminLogin onLogin={handleLogin} loading={loading} />;
+  }
+
+  // NAVEGACIÓN MÓVIL INFERIOR PARA ADMIN
+  const mobileNavItems: { id: AdminTab; label: string; icon: any }[] = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "clientes", label: "Clientes", icon: Users },
+    { id: "ventanilla", label: "Ventanilla", icon: DollarSign },
+    { id: "auditoria", label: "Auditoría", icon: History },
+  ];
+
   return (
-    <div className="min-h-[calc(100vh-53px)] bg-background font-sans text-foreground">
-      {/* HEADER ADMIN */}
-      <AdminHeader autenticado={autenticado} onLogout={handleLogout} />
+    <div className="min-h-screen bg-[#070b13] font-sans text-slate-100 flex flex-col">
+      {/* SIDEBAR ADMIN DESKTOP */}
+      <AdminSidebar
+        activeTab={activeTab}
+        onSelectTab={(t) => {
+          if (t === "nueva_cuenta") {
+            setOpenCrearCliente(true);
+          } else {
+            setActiveTab(t);
+          }
+        }}
+        onLogout={handleLogout}
+      />
 
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-24">
-        {!autenticado ? (
-          <AdminLogin onLogin={handleLogin} loading={loading} />
-        ) : (
-          <div className="space-y-6">
-            {/* 4 KPIS OBLIGATORIOS */}
-            <AdminKpis kpis={kpis} />
+      {/* ÁREA CENTRAL CON PADDING IZQUIERDO EN DESKTOP */}
+      <div className="lg:pl-64 flex flex-col min-h-screen">
+        <AdminHeader
+          autenticado={autenticado}
+          onLogout={handleLogout}
+          onRefresh={() => {
+            cargarDashboard();
+            cargarClientes();
+            cargarAuditoria();
+            toast.success("Datos administrativos actualizados.");
+          }}
+        />
 
-            {/* ACCIONES RÁPIDAS: VENTANILLA Y NUEVO CLIENTE */}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4">
-              <div>
-                <h3 className="font-display text-lg font-bold">Ventanilla Bancaria</h3>
-                <p className="text-xs text-muted-foreground">
-                  Aplica depósitos presenciales y crea nuevas cuentas
+        <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-12 flex-1">
+          {/* TAB 1: DASHBOARD Y KPIS */}
+          {activeTab === "dashboard" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-white">Dashboard Central</h2>
+                  <p className="text-xs text-slate-400">
+                    4 Indicadores normativos de control financiero y solvencia en bóveda.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setActiveTab("ventanilla")}
+                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md shadow-emerald-600/25"
+                  >
+                    <DollarSign className="h-4 w-4" /> Ventanilla
+                  </Button>
+                  <Button
+                    onClick={() => setOpenCrearCliente(true)}
+                    className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-md shadow-primary/25"
+                  >
+                    <Plus className="h-4 w-4" /> Nueva Cuenta
+                  </Button>
+                </div>
+              </div>
+
+              {/* 4 KPIS OBLIGATORIOS (PÁG 3 PDF) */}
+              <AdminKpis kpis={kpis} />
+
+              {/* VISTA RÁPIDA DE CLIENTES */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-lg font-bold text-white">Clientes Recientes</h3>
+                  <button
+                    onClick={() => setActiveTab("clientes")}
+                    className="text-xs text-primary hover:underline font-semibold"
+                  >
+                    Ver todos los clientes →
+                  </button>
+                </div>
+                <AdminClientesTable
+                  clientes={clientes.slice(0, 5)}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  onToggleEstado={toggleEstadoCliente}
+                />
+              </div>
+
+              {/* VISTA RÁPIDA DE AUDITORÍA */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-lg font-bold text-white">Últimas Transacciones del Banco</h3>
+                  <button
+                    onClick={() => setActiveTab("auditoria")}
+                    className="text-xs text-purple-400 hover:underline font-semibold"
+                  >
+                    Ver libro de auditoría completo →
+                  </button>
+                </div>
+                <AdminAuditoriaTable
+                  auditoria={auditoria.slice(0, 8)}
+                  onRefresh={cargarAuditoria}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: CLIENTES */}
+          {activeTab === "clientes" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-white">Directorio de Clientes</h2>
+                  <p className="text-xs text-slate-400">
+                    Búsqueda, control de estados (Activo, Inactivo, Bloqueado) y consulta de saldos.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setOpenCrearCliente(true)}
+                  className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-md shadow-primary/25"
+                >
+                  <Plus className="h-4 w-4" /> Registrar Cliente
+                </Button>
+              </div>
+
+              <AdminClientesTable
+                clientes={clientes}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onToggleEstado={toggleEstadoCliente}
+              />
+            </div>
+          )}
+
+          {/* TAB 3: VENTANILLA DE CAJA */}
+          {activeTab === "ventanilla" && (
+            <AdminVentanillaView onConsignar={handleConsignar} />
+          )}
+
+          {/* TAB 4: AUDITORÍA GLOBAL */}
+          {activeTab === "auditoria" && (
+            <div className="space-y-6">
+              <div className="border-b border-slate-800 pb-4">
+                <h2 className="font-display text-2xl font-bold text-white">Libro de Auditoría y Movimientos</h2>
+                <p className="text-xs text-slate-400">
+                  Trazabilidad inmutable de todas las operaciones realizadas por Cajero ATM, Banca Web y Ventanilla.
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setOpenConsignar(true)}
-                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs"
-                >
-                  <DollarSign className="h-4 w-4" /> Consignar en Ventanilla
-                </Button>
-
-                <Button
-                  onClick={() => setOpenCrearCliente(true)}
-                  className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs"
-                >
-                  <Plus className="h-4 w-4" /> Nuevo Cliente
-                </Button>
-              </div>
+              <AdminAuditoriaTable
+                auditoria={auditoria}
+                onRefresh={cargarAuditoria}
+              />
             </div>
+          )}
+        </main>
+      </div>
 
-            {/* TABLA DE CLIENTES Y CONTROL DE BLOQUEO */}
-            <AdminClientesTable
-              clientes={clientes}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onToggleEstado={toggleEstadoCliente}
-            />
-
-            {/* TABLA DE AUDITORÍA GENERAL */}
-            <AdminAuditoriaTable
-              auditoria={auditoria}
-              onRefresh={cargarAuditoria}
-            />
-          </div>
-        )}
-      </main>
-
-      {/* MODAL CONSIGNAR */}
-      <AdminConsignacionModal
-        open={openConsignar}
-        onOpenChange={setOpenConsignar}
-        onConsignar={handleConsignar}
-      />
+      {/* BARRA INFERIOR MÓVIL EXACTA AL PANEL DE USUARIOS */}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around border-t border-[#1a2333] bg-[#070b13]/95 backdrop-blur-lg px-2 py-2 lg:hidden">
+        {mobileNavItems.map((item) => {
+          const isActive = activeTab === item.id;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-medium transition-colors ${
+                isActive ? "text-purple-400 font-bold" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {/* MODAL CREAR CLIENTE */}
       <AdminCrearClienteModal
         open={openCrearCliente}
         onOpenChange={setOpenCrearCliente}
         onCrearCliente={handleCrearCliente}
+      />
+
+      {/* MODAL CONSIGNAR (RÁPIDO) */}
+      <AdminConsignacionModal
+        open={openConsignar}
+        onOpenChange={setOpenConsignar}
+        onConsignar={handleConsignar}
       />
     </div>
   );

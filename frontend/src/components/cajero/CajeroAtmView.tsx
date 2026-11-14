@@ -20,8 +20,8 @@ interface CajeroAtmProps {
 export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: CajeroAtmProps) {
   const [autenticado, setAutenticado] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [cuentaNumero, setCuentaNumero] = useState("400110203040");
-  const [pin, setPin] = useState("1234");
+  const [cuentaNumero, setCuentaNumero] = useState("");
+  const [pin, setPin] = useState("");
   const [cuentaInfo, setCuentaInfo] = useState<any>(null);
 
   // Estados de pantalla del cajero: 'menu' | 'saldo' | 'retirar' | 'movimientos' | 'recibo'
@@ -167,12 +167,18 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <a
               href="/"
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors"
+              className="text-xs font-semibold text-muted-foreground hover:text-primary px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors"
             >
-              ← Volver a Banca Clientes
+              ← Banca Clientes
+            </a>
+            <a
+              href="/admin"
+              className="text-xs font-semibold text-muted-foreground hover:text-purple-400 px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors"
+            >
+              Consola Admin
             </a>
             {autenticado && (
               <Button

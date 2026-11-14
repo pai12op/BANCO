@@ -190,10 +190,117 @@ function checkSession(req, res) {
     });
 }
 
+// 6. Registro / Apertura de Cuenta Pública (Cliente desde el panel principal con todos sus datos)
+async function registroCliente(req, res) {
+    const connection = await db.getConnection();
+    try {
+        const {
+            tipo_documento_id,
+            numero_documento,
+            nombres,
+            apellidos,
+            correo,
+            telefono,
+            tipo_cuenta_id,
+            saldo_inicial,
+            password,
+            pin_cajero
+        } = req.body;
+
+        if (!numero_documento || !nombres || !apellidos || !correo || !password || !pin_cajero) {
+            return res.status(400).json({ error: 'Por favor diligencie todos los campos obligatorios del registro.' });
+        }
+
+        const pinStr = pin_cajero.toString().trim();
+        if (pinStr.length !== 4 || !/^\d{4}$/.test(pinStr)) {
+            return res.status(400).json({ error: 'El PIN de seguridad del cajero debe ser de exactamente 4 dígitos numéricos.' });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'La contraseña debe contener al menos 6 caracteres.' });
+        }
+
+        const saldoNum = parseFloat(saldo_inicial) || 0;
+        if (saldoNum < 0) {
+            return res.status(400).json({ error: 'El saldo inicial no puede ser negativo.' });
+        }
+
+        await connection.beginTransaction();
+
+        // Validar unicidad
+        const [existentes] = await connection.query(`
+            SELECT id FROM usuarios WHERE correo = ? OR (tipo_documento_id = ? AND numero_documento = ?)
+        `, [correo.trim(), tipo_documento_id || 1, numero_documento.trim()]);
+
+        if (existentes.length > 0) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Ya existe una cuenta registrada con este correo o número de documento.' });
+        }
+
+        // Hashing seguro de contraseña y PIN con bcrypt (10 salt rounds)
+        const passwordHash = await bcrypt.hash(password, 10);
+        const pinHash = await bcrypt.hash(pinStr, 10);
+
+        // 1. Insertar usuario cliente (rol_id = 2, estado_id = 1 ACTIVO)
+        const [resUser] = await connection.query(`
+            INSERT INTO usuarios (tipo_documento_id, numero_documento, nombres, apellidos, correo, telefono, password_hash, rol_id, estado_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 2, 1)
+        `, [tipo_documento_id || 1, numero_documento.trim(), nombres.trim(), apellidos.trim(), correo.trim(), telefono ? telefono.trim() : null, passwordHash]);
+
+        const nuevoUsuarioId = resUser.insertId;
+
+        // 2. Generar número de cuenta bancaria
+        const prefix = (tipo_cuenta_id == 2) ? '5001' : '4001';
+        const randomDigits = Math.floor(10000000 + Math.random() * 90000000);
+        const numeroCuenta = `${prefix}${randomDigits}`;
+
+        // 3. Crear cuenta bancaria activa (estado_id = 1)
+        const [resCuenta] = await connection.query(`
+            INSERT INTO cuentas (usuario_id, numero_cuenta, tipo_id, estado_id, pin_hash, saldo)
+            VALUES (?, ?, ?, 1, ?, ?)
+        `, [nuevoUsuarioId, numeroCuenta, tipo_cuenta_id || 1, pinHash, saldoNum]);
+
+        const nuevaCuentaId = resCuenta.insertId;
+
+        // 4. Si hay saldo inicial, registrar operación contable de apertura (Canal 2: Banca Virtual)
+        if (saldoNum > 0) {
+            const [resOp] = await connection.query(`
+                INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
+                VALUES (1, 1, 2, ?, ?, 'Apertura de cuenta con depósito inicial en línea')
+            `, [nuevoUsuarioId, saldoNum]);
+
+            await connection.query(`
+                INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
+                VALUES (?, ?, 'CREDITO', ?)
+            `, [resOp.insertId, nuevaCuentaId, saldoNum]);
+        }
+
+        await connection.commit();
+
+        return res.json({
+            exito: true,
+            mensaje: '¡Tu cuenta bancaria ha sido creada exitosamente! Ya puedes iniciar sesión con tu correo y clave.',
+            cuenta: {
+                numero_cuenta: numeroCuenta,
+                titular: `${nombres} ${apellidos}`,
+                correo: correo.trim(),
+                saldo: saldoNum
+            }
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error en registroCliente:', error);
+        return res.status(500).json({ error: 'Error al procesar la apertura de la cuenta.' });
+    } finally {
+        connection.release();
+    }
+}
+
 module.exports = {
     loginCliente,
     loginAdmin,
     loginCajero,
     logout,
-    checkSession
+    checkSession,
+    registroCliente
 };
