@@ -270,7 +270,7 @@ async function pagoTarjeta(req, res) {
         const cliente = getCliente(req);
         if (!cliente) return res.status(401).json({ error: 'No autorizado' });
         const usuarioId = cliente.id;
-        let { cuenta_id, valor, establecimiento } = req.body;
+        let { cuenta_id, valor, establecimiento, pin } = req.body;
 
         valor = parseFloat(valor);
         if (!valor || isNaN(valor) || valor <= 0) {
@@ -300,6 +300,15 @@ async function pagoTarjeta(req, res) {
         if (cuenta.estado_nombre !== 'ACTIVA') {
             await connection.rollback();
             return res.status(403).json({ error: 'La tarjeta o cuenta se encuentra inactiva o bloqueada.' });
+        }
+
+        // Validación de PIN en el datáfono si se provee
+        if (pin) {
+            const pinValido = await bcrypt.compare(pin.toString().trim(), cuenta.pin_hash);
+            if (!pinValido) {
+                await connection.rollback();
+                return res.status(401).json({ error: 'PIN incorrecto. Transacción rechazada por el datáfono.' });
+            }
         }
 
         const saldoActual = parseFloat(cuenta.saldo);
@@ -334,12 +343,14 @@ async function pagoTarjeta(req, res) {
         return res.json({
             mensaje: '¡Pago aprobado en datáfono exitosamente!',
             comprobante: {
+                operacion_id: operacionId,
                 autorizacion: `AUTH-${Math.floor(100000 + Math.random() * 900000)}`,
                 establecimiento: comercio,
                 franquicia: 'VISA DÉBITO',
                 monto: valor,
                 nuevo_saldo: nuevoSaldo,
-                fecha_hora: new Date()
+                fecha_hora: new Date(),
+                numero_cuenta: cuenta.numero_cuenta
             }
         });
     } catch (error) {
