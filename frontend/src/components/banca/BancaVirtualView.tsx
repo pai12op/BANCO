@@ -34,6 +34,7 @@ export function BancaVirtualView() {
   const [codigoRetiro, setCodigoRetiro] = useState<string | null>(null);
   const [loadingCodigo, setLoadingCodigo] = useState(false);
   const [copiadoCodigo, setCopiadoCodigo] = useState(false);
+  const [copiadoCuenta, setCopiadoCuenta] = useState(false);
 
   // Cargar datos de resumen desde MySQL
   const cargarResumen = async () => {
@@ -220,6 +221,55 @@ export function BancaVirtualView() {
       toast.error("Error al conectar con el servidor.");
     } finally {
       setLoadingCodigo(false);
+    }
+  };
+
+  // Función universal para copiar al portapapeles (compatible con HTTP local y móviles)
+  const copiarTexto = async (texto: string, tipo: "codigo" | "cuenta") => {
+    if (!texto) return;
+    let copiado = false;
+
+    // 1. Intentar API moderna de Clipboard
+    if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(texto);
+        copiado = true;
+      } catch (e) {
+        // Fallback abajo
+      }
+    }
+
+    // 2. Fallback para HTTP en red local (Android / iOS / PC)
+    if (!copiado && typeof document !== "undefined") {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = texto;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "-9999px";
+        textArea.setAttribute("readonly", "");
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        copiado = document.execCommand("copy");
+        document.body.removeChild(textArea);
+      } catch (err) {
+        console.error("Error en fallback de copiado:", err);
+      }
+    }
+
+    if (tipo === "codigo") {
+      setCopiadoCodigo(true);
+      setTimeout(() => setCopiadoCodigo(false), 3000);
+      toast.success("¡Código copiado al portapapeles!", {
+        description: `Código: ${texto}`,
+      });
+    } else {
+      setCopiadoCuenta(true);
+      setTimeout(() => setCopiadoCuenta(false), 3000);
+      toast.success("¡Número de cuenta copiado!", {
+        description: `Cuenta: ${texto}`,
+      });
     }
   };
 
@@ -514,41 +564,78 @@ export function BancaVirtualView() {
             ) : (
               <div className="space-y-3.5 text-xs">
                 {/* CAJA DESTACADA DEL CÓDIGO */}
-                <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-[#0b1b36] to-[#071122] p-4 text-center space-y-2 shadow-inner">
+                <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-[#0b1b36] to-[#071122] p-4 text-center space-y-2.5 shadow-inner">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-cyan-300">
                     Tu Código de Retiro (Válido 30 min)
                   </p>
+
                   <div className="flex items-center justify-center gap-3">
-                    <p className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-white">
+                    <p
+                      onClick={() => copiarTexto(codigoRetiro || "", "codigo")}
+                      title="Haz clic para copiar"
+                      className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-white cursor-pointer hover:text-cyan-300 transition-colors select-all"
+                    >
                       {codigoRetiro ? `${codigoRetiro.slice(0, 3)} ${codigoRetiro.slice(3)}` : "------"}
                     </p>
+
                     <button
-                      onClick={() => {
-                        if (codigoRetiro) {
-                          navigator.clipboard.writeText(codigoRetiro);
-                          setCopiadoCodigo(true);
-                          setTimeout(() => setCopiadoCodigo(false), 2000);
-                          toast.success("Código copiado al portapapeles");
-                        }
-                      }}
-                      className="grid h-8 w-8 place-items-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                      title="Copiar código"
+                      type="button"
+                      onClick={() => copiarTexto(codigoRetiro || "", "codigo")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-md ${
+                        copiadoCodigo
+                          ? "bg-emerald-500 text-slate-950 shadow-emerald-500/40 scale-105"
+                          : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-blue-500/25"
+                      }`}
+                      title="Copiar código de retiro"
                     >
-                      {copiadoCodigo ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                      {copiadoCodigo ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          <span>¡Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          <span>Copiar</span>
+                        </>
+                      )}
                     </button>
                   </div>
-                  <p className="text-[10px] text-emerald-400 font-medium">
-                    ● Código activo de un solo uso en Cajeros ATM
-                  </p>
+
+                  {/* MENSAJE DE CONFIRMACIÓN VISUAL DESTACADO */}
+                  {copiadoCodigo ? (
+                    <div className="rounded-xl bg-emerald-500/20 border border-emerald-500/50 py-1.5 px-3 text-center text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                      <Check className="h-4 w-4 text-emerald-400" />
+                      <span>¡Código copiado al portapapeles!</span>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-emerald-400 font-medium">
+                      ● Código activo de un solo uso en Cajeros ATM
+                    </p>
+                  )}
                 </div>
 
                 {/* DETALLE DE CUENTA */}
-                <div className="rounded-xl border border-slate-800 bg-[#060b14] p-3 space-y-1.5">
+                <div className="rounded-xl border border-slate-800 bg-[#060b14] p-3 space-y-2">
                   <div className="flex items-center justify-between text-slate-400">
                     <span>Número de Cuenta:</span>
-                    <span className="font-mono font-bold text-white">
-                      {cuentaActiva?.numero_cuenta || "400150181053"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-white">
+                        {cuentaActiva?.numero_cuenta || "400150181053"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copiarTexto(cuentaActiva?.numero_cuenta || "400150181053", "cuenta")}
+                        className={`grid h-6 w-6 place-items-center rounded-md text-[10px] transition-all ${
+                          copiadoCuenta
+                            ? "bg-emerald-500 text-slate-950 font-bold"
+                            : "bg-slate-800 hover:bg-slate-700 text-slate-300"
+                        }`}
+                        title="Copiar número de cuenta"
+                      >
+                        {copiadoCuenta ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between text-slate-400">
                     <span>Saldo Disponible:</span>
