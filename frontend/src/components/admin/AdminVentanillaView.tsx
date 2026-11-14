@@ -78,9 +78,9 @@ export function AdminVentanillaView({ onConsignar }: AdminVentanillaViewProps) {
                 className="mt-1 font-mono text-sm bg-slate-900 border-slate-700 text-cyan-300 tracking-wider"
               />
 
-              {/* CUENTAS RÁPIDAS PARA LA PRUEBA DEL PROFESOR */}
+              {/* CUENTAS SUGERIDAS */}
               <div className="mt-2.5">
-                <span className="text-[11px] text-slate-400 font-medium">Cuentas frecuentes de prueba:</span>
+                <span className="text-[11px] text-slate-400 font-medium">Cuentas activas del sistema:</span>
                 <div className="grid grid-cols-2 gap-2 mt-1.5">
                   {cuentasSugeridas.map((c) => (
                     <button

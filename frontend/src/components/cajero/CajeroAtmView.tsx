@@ -362,30 +362,11 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full gap-2 mt-4 h-11 text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/20"
+                  className="w-full gap-2 mt-4 h-11 text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/20 cursor-pointer"
                 >
                   {loading && <RefreshCw className="h-4 w-4 animate-spin" />}
                   {modoAcceso === "codigo" ? "Validar Código y Retirar Dinero" : "Validar Tarjeta y PIN"}
                 </Button>
-
-                {/* ACCESO RÁPIDO PARA PRUEBAS */}
-                <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-3 text-xs">
-                  <p className="font-semibold text-cyan-300">Credenciales Rápidas de Prueba:</p>
-                  <p className="mt-1">Cuenta: <span className="font-mono text-foreground font-bold">400150181053</span></p>
-                  <p>PIN Físico: <span className="font-mono text-cyan-300 font-bold">1234</span></p>
-                  <p className="text-[10px] text-muted-foreground mt-1">O genera tu código de 6 dígitos en Banca Rota desde "Sacar plata".</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCuentaNumero("400150181053");
-                      setPin("1234");
-                      setModoAcceso("tarjeta");
-                    }}
-                    className="mt-2 w-full rounded-lg bg-cyan-500/20 py-1.5 text-center text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/30 transition-colors"
-                  >
-                    ⚡ Cargar Tarjeta de Jairo Pai (PIN 1234)
-                  </button>
-                </div>
               </form>
             </div>
           </div>

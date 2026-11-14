@@ -104,25 +104,6 @@ export function AdminLogin({ onLogin, loading }: AdminLoginProps) {
               {loading && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
               Ingresar a la Consola
             </Button>
-
-            <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 text-xs text-slate-400">
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-purple-300">Sustentación Docente:</span>
-                <span className="rounded bg-purple-500/20 px-1.5 py-0.5 text-[10px] text-purple-300 font-mono font-bold">
-                  Admin
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminCorreo("admin@banco.com");
-                  setAdminPassword("Banco123*");
-                }}
-                className="w-full rounded-lg bg-purple-500/20 py-1.5 text-center text-[11px] font-semibold text-purple-200 hover:bg-purple-500/30 transition-colors"
-              >
-                ⚡ Cargar Credenciales Admin (Carlos Mendoza)
-              </button>
-            </div>
           </form>
         </div>
       </div>

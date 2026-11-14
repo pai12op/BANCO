@@ -281,30 +281,10 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
               </div>
 
               {/* ENLACES RÁPIDOS */}
-              <div className="text-center pt-2 space-y-1 text-xs text-slate-400">
-                <a href="/cajero" className="hover:text-cyan-400 transition-colors block">
-                  🏧 Ir al Cajero Virtual ATM (Retiro con Código / Tarjeta)
+              <div className="text-center pt-3 text-xs text-slate-400">
+                <a href="/cajero" className="hover:text-cyan-400 transition-colors inline-flex items-center gap-1.5 text-slate-400 hover:underline">
+                  <span>🏧 Terminal de Cajero Automático ATM</span>
                 </a>
-              </div>
-
-              {/* ACCESO RÁPIDO PARA SUSTENTACIÓN (BOTÓN OPCIONAL) */}
-              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-semibold text-slate-300">Sustentación Docente:</span>
-                  <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary font-mono font-bold">
-                    Caso Pág. 9
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIdentificador("1001234567");
-                    setPassword("Banco123*");
-                  }}
-                  className="w-full rounded-lg bg-slate-900 py-1.5 text-center text-[11px] font-semibold text-primary hover:bg-slate-800 border border-slate-700/80 transition-colors"
-                >
-                  ⚡ Cargar Andrés Pai (C.C. 1001234567)
-                </button>
               </div>
             </form>
           )}

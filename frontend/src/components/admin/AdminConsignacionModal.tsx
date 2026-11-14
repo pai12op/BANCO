@@ -26,9 +26,9 @@ export function AdminConsignacionModal({
   onOpenChange,
   onConsignar,
 }: AdminConsignacionModalProps) {
-  const [cuenta, setCuenta] = useState("400110203040");
-  const [monto, setMonto] = useState("100000");
-  const [concepto, setConcepto] = useState("Consignación de prueba académica");
+  const [cuenta, setCuenta] = useState("");
+  const [monto, setMonto] = useState("");
+  const [concepto, setConcepto] = useState("Consignación en ventanilla");
   const [loading, setLoading] = useState(false);
   const [recibo, setRecibo] = useState<any>(null);
 
@@ -60,20 +60,10 @@ export function AdminConsignacionModal({
               <Input
                 value={cuenta}
                 onChange={(e) => setCuenta(e.target.value)}
-                placeholder="400110203040"
+                placeholder="Ej: 400150181053"
                 required
                 className="mt-1 font-mono"
               />
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Cuenta de prueba del docente:{" "}
-                <button
-                  type="button"
-                  onClick={() => setCuenta("400110203040")}
-                  className="text-accent underline"
-                >
-                  400110203040 (Andrés)
-                </button>
-              </p>
             </div>
 
             <div>
