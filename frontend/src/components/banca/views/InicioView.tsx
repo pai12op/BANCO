@@ -88,54 +88,54 @@ export function InicioView({
       </div>
 
       {/* FILA 1: SALDO TOTAL DISPONIBLE Y TARJETA DÉBITO VINCULADA */}
-      <div className="grid items-stretch gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+      <div className="grid items-stretch gap-4 sm:gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         {/* CARD HERO SALDO */}
-        <section className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-[#1371ff]/30 bg-gradient-to-br from-[#0c2445] via-[#09152a] to-[#060a14] p-6 shadow-2xl">
+        <section className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-[#1371ff]/30 bg-gradient-to-br from-[#0c2445] via-[#09152a] to-[#060a14] p-4 sm:p-6 shadow-2xl">
           <div className="relative w-full">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                   SALDO TOTAL DISPONIBLE
                 </p>
-                <p className="mt-2 truncate font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                <p className="mt-1.5 truncate font-display text-2xl font-bold tracking-tight text-white sm:text-4xl">
                   {fmt(totalDisponible)}
                 </p>
               </div>
-              <span className="shrink-0 rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/30">
+              <span className="shrink-0 rounded-full bg-emerald-500/20 px-2.5 py-1 text-[11px] sm:text-xs font-bold text-emerald-400 border border-emerald-500/30">
                 ● Al día
               </span>
             </div>
 
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-1.5 text-xs text-slate-400">
               {cuentasAMostrar.length} {cuentasAMostrar.length === 1 ? "cuenta activa" : "cuentas activas"} · saldo en línea
             </p>
 
-            {/* BOTONES DE ACCIÓN RÁPIDA */}
-            <div className="mt-6 grid grid-cols-3 gap-2.5">
+            {/* BOTONES DE ACCIÓN RÁPIDA RESPONSIVOS */}
+            <div className="mt-5 grid grid-cols-3 gap-2">
               <button
                 onClick={onOpenTransferir}
-                className="flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-all shadow-sm"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 border border-white/10 px-2 py-2.5 text-[11px] sm:text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-all shadow-sm"
               >
-                <Send className="h-3.5 w-3.5 text-[#38bdf8]" />
-                <span>Transferir</span>
+                <Send className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
+                <span className="truncate">Transferir</span>
               </button>
 
               <button
-                onClick={onOpenTransferir}
-                className="flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-all shadow-sm"
+                onClick={onOpenTarjetas}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-white/5 border border-white/10 px-2 py-2.5 text-[11px] sm:text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-all shadow-sm"
               >
-                <Receipt className="h-3.5 w-3.5 text-[#38bdf8]" />
-                <span>Pagar</span>
+                <Receipt className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
+                <span className="truncate">Pagar</span>
               </button>
 
               <button
                 onClick={() => {
                   window.location.href = "/cajero";
                 }}
-                className="flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white transition-all shadow-sm"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-[#0e76fd]/15 border border-[#0e76fd]/30 px-2 py-2.5 text-[11px] sm:text-xs font-semibold text-cyan-300 hover:bg-[#0e76fd]/25 transition-all shadow-sm"
               >
-                <Plus className="h-3.5 w-3.5 text-[#38bdf8]" />
-                <span>Cajero ATM</span>
+                <Landmark className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Cajero ATM</span>
               </button>
             </div>
           </div>
@@ -144,7 +144,7 @@ export function InicioView({
         {/* CARD TARJETA DÉBITO VINCULADA */}
         <section
           onClick={onOpenTarjetas}
-          className="cursor-pointer flex flex-col justify-between rounded-2xl border border-[#162339] bg-[#080e1b] p-6 shadow-xl transition-all hover:border-[#0e76fd]/50 group"
+          className="cursor-pointer flex flex-col justify-between rounded-2xl border border-[#162339] bg-[#080e1b] p-4 sm:p-6 shadow-xl transition-all hover:border-[#0e76fd]/50 group"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#00d2ff] flex items-center gap-1.5">
@@ -193,14 +193,14 @@ export function InicioView({
         <div className="space-y-6">
           {/* CUENTAS REGISTRADAS */}
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-display text-base sm:text-lg font-bold text-white flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-[#0e76fd]" />
-                Tus Cuentas Bancarias
+                <span>Tus Cuentas Bancarias</span>
               </h2>
               <button
                 onClick={onOpenCuentas}
-                className="text-xs font-semibold text-[#0e76fd] hover:text-[#38bdf8] transition-colors"
+                className="text-xs font-semibold text-[#0e76fd] hover:text-[#38bdf8] bg-[#0e76fd]/10 px-2.5 py-1 rounded-lg border border-[#0e76fd]/20 transition-colors"
               >
                 Administrar
               </button>

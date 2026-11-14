@@ -13,7 +13,8 @@ import { PrestamosView } from "./views/PrestamosView";
 import { AjustesView } from "./views/AjustesView";
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, CreditCard,
-  PiggyBank, Landmark, Settings, MoreHorizontal, LogOut, X
+  PiggyBank, Landmark, Settings, MoreHorizontal, LogOut, X,
+  Menu, ChevronRight, ShieldCheck, DollarSign
 } from "lucide-react";
 
 export function BancaVirtualView() {
@@ -209,6 +210,7 @@ export function BancaVirtualView() {
           usuario={usuario}
           onRefresh={cargarResumen}
           onLogout={handleLogout}
+          onToggleMenu={() => setShowMobileMore((prev) => !prev)}
         />
 
         {/* CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
@@ -279,112 +281,213 @@ export function BancaVirtualView() {
         </main>
       </div>
 
-      {/* MODAL / DRAWER FLOTANTE DE OPCIONES ADICIONALES PARA MÓVIL (MÁS) */}
+      {/* ======================================================== */}
+      {/* MENÚ HAMBURGUESA LATERAL MÓVIL (DRAWER SLIDE-IN)        */}
+      {/* ======================================================== */}
       {showMobileMore && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm lg:hidden animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-t-3xl border-t border-[#1a273f] bg-[#0c1322] p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-[#182338]">
-              <span className="font-display font-bold text-base text-white">Más opciones</span>
-              <button
-                onClick={() => setShowMobileMore(false)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-slate-800 text-slate-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
+        <div className="fixed inset-0 z-50 flex lg:hidden animate-in fade-in duration-200">
+          {/* BACKDROP CON DESENFOQUE */}
+          <div
+            onClick={() => setShowMobileMore(false)}
+            className="fixed inset-0 bg-black/75 backdrop-blur-sm"
+          />
+
+          {/* PANEL LATERAL DESLIZANTE */}
+          <div className="relative w-4/5 max-w-[320px] h-full bg-[#0a1224] border-r border-[#1a2d4e] p-5 flex flex-col justify-between shadow-2xl z-10 overflow-y-auto animate-in slide-in-from-left duration-200">
+            {/* ENCABEZADO: PERFIL DEL CLIENTE */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-[#14233e] pb-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-[#0e76fd] to-[#00d2ff] font-display font-black text-sm text-white shadow-lg shadow-blue-500/30">
+                    {usuario ? `${usuario.nombres[0]}${usuario.apellidos[0]}`.toUpperCase() : "JP"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display font-bold text-sm text-white truncate leading-tight">
+                      {usuario ? `${usuario.nombres} ${usuario.apellidos}` : "Jairo Andrés Pai"}
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-mono truncate">
+                      C.C. {usuario?.numero_documento || "1130766219"}
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 mt-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Cuenta Activa
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowMobileMore(false)}
+                  className="grid h-8 w-8 place-items-center rounded-full bg-slate-800 text-slate-400 hover:text-white shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* LISTA DE FUNCIONALIDADES CLASIFICADAS */}
+              <div className="space-y-4 pt-1">
+                {/* GRUPO 1: OPERACIONES */}
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-2 mb-1">
+                    Operaciones
+                  </p>
+                  {[
+                    { id: "inicio", label: "Inicio / Resumen", icon: LayoutDashboard },
+                    { id: "cuentas", label: "Tus Cuentas Bancarias", icon: Wallet },
+                    { id: "transferencias", label: "Transferir Dinero", icon: ArrowLeftRight },
+                    { id: "tarjetas", label: "Tarjetas & Datáfono", icon: CreditCard, badge: "POS" },
+                  ].map((item) => {
+                    const isActive = activeTab === item.id;
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => selectTab(item.id as BancaTab)}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
+                          isActive
+                            ? "bg-[#0e76fd] text-white shadow-md shadow-blue-600/30"
+                            : "text-slate-300 hover:bg-[#111e38] hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-[#38bdf8]"}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                            isActive ? "bg-white/20 text-white" : "bg-cyan-500/20 text-cyan-300"
+                          }`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* GRUPO 2: PRODUCTOS & INVERSIÓN */}
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-2 mb-1">
+                    Productos & Inversión
+                  </p>
+                  {[
+                    { id: "ahorros", label: "Ahorros y CDT", icon: PiggyBank },
+                    { id: "prestamos", label: "Créditos y Préstamos", icon: Landmark },
+                  ].map((item) => {
+                    const isActive = activeTab === item.id;
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => selectTab(item.id as BancaTab)}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
+                          isActive
+                            ? "bg-[#0e76fd] text-white shadow-md shadow-blue-600/30"
+                            : "text-slate-300 hover:bg-[#111e38] hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-[#38bdf8]"}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+                      </button>
+                    );
+                  })}
+
+                  {/* ACCESO A CAJERO AUTOMÁTICO */}
+                  <button
+                    onClick={() => {
+                      setShowMobileMore(false);
+                      window.location.href = "/cajero";
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold text-cyan-300 hover:bg-[#111e38] hover:text-white transition-all border border-cyan-500/20 bg-cyan-950/20"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <DollarSign className="h-4 w-4 text-cyan-400" />
+                      <span>Cajero Automático ATM</span>
+                    </div>
+                    <span className="text-[9px] font-bold bg-cyan-500/30 text-cyan-200 px-1.5 py-0.5 rounded-full">
+                      ATM
+                    </span>
+                  </button>
+                </div>
+
+                {/* GRUPO 3: SEGURIDAD */}
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-2 mb-1">
+                    Configuración
+                  </p>
+                  <button
+                    onClick={() => selectTab("ajustes")}
+                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
+                      activeTab === "ajustes"
+                        ? "bg-[#0e76fd] text-white shadow-md shadow-blue-600/30"
+                        : "text-slate-300 hover:bg-[#111e38] hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Settings className={`h-4 w-4 ${activeTab === "ajustes" ? "text-white" : "text-[#38bdf8]"}`} />
+                      <span>Ajustes & Seguridad</span>
+                    </div>
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-4">
+            {/* PIE DEL MENÚ LATERAL: CERRAR SESIÓN */}
+            <div className="pt-4 mt-4 border-t border-[#14233e] space-y-2">
               <button
-                onClick={() => selectTab("ahorros")}
-                className={`flex flex-col items-center gap-2 rounded-2xl p-4 border transition-all ${
-                  activeTab === "ahorros"
-                    ? "bg-[#0e76fd]/20 border-[#0e76fd] text-white"
-                    : "bg-[#080d19] border-[#182338] text-slate-300 hover:text-white"
-                }`}
+                onClick={handleLogout}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-950/30 p-2.5 text-xs font-semibold text-rose-300 hover:bg-rose-900/40 transition-all"
               >
-                <PiggyBank className="h-6 w-6 text-[#38bdf8]" />
-                <span className="text-xs font-semibold">Ahorros y CDT</span>
+                <LogOut className="h-4 w-4" />
+                <span>Cerrar sesión segura</span>
               </button>
-
-              <button
-                onClick={() => selectTab("prestamos")}
-                className={`flex flex-col items-center gap-2 rounded-2xl p-4 border transition-all ${
-                  activeTab === "prestamos"
-                    ? "bg-[#0e76fd]/20 border-[#0e76fd] text-white"
-                    : "bg-[#080d19] border-[#182338] text-slate-300 hover:text-white"
-                }`}
-              >
-                <Landmark className="h-6 w-6 text-[#38bdf8]" />
-                <span className="text-xs font-semibold">Préstamos</span>
-              </button>
-
-              <button
-                onClick={() => selectTab("ajustes")}
-                className={`flex flex-col items-center gap-2 rounded-2xl p-4 border transition-all ${
-                  activeTab === "ajustes"
-                    ? "bg-[#0e76fd]/20 border-[#0e76fd] text-white"
-                    : "bg-[#080d19] border-[#182338] text-slate-300 hover:text-white"
-                }`}
-              >
-                <Settings className="h-6 w-6 text-[#38bdf8]" />
-                <span className="text-xs font-semibold">Ajustes / Perfil</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowMobileMore(false);
-                  window.location.href = "/cajero";
-                }}
-                className="flex flex-col items-center gap-2 rounded-2xl p-4 border border-[#182338] bg-[#080d19] text-cyan-300 hover:text-white transition-all"
-              >
-                <CreditCard className="h-6 w-6" />
-                <span className="text-xs font-semibold">Cajero ATM</span>
-              </button>
+              <p className="text-[10px] text-center text-slate-500 font-mono">
+                Banca Verde Móvil · v2.4.0
+              </p>
             </div>
-
-            <button
-              onClick={handleLogout}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-all"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Cerrar sesión</span>
-            </button>
           </div>
         </div>
       )}
 
-      {/* BARRA DE NAVEGACIÓN MÓVIL EXACTA A LA IMAGEN 3 */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-[#152033] bg-[#070b13]/95 py-2.5 backdrop-blur-lg lg:hidden">
-        {mobileNavItems.map((n) => {
-          const isActive = activeTab === n.id;
+      {/* BARRA DE NAVEGACIÓN MÓVIL INFERIOR ULTRA LIMPIA */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-[#152033] bg-[#070b13]/95 py-2 backdrop-blur-lg lg:hidden">
+        {[
+          { id: "inicio", label: "Inicio", icon: LayoutDashboard },
+          { id: "transferencias", label: "Transferir", icon: ArrowLeftRight },
+          { id: "tarjetas", label: "Tarjetas", icon: CreditCard },
+          { id: "cuentas", label: "Cuentas", icon: Wallet },
+        ].map((n) => {
+          const isActive = activeTab === n.id && !showMobileMore;
           const Icon = n.icon;
           return (
             <button
               key={n.id}
-              onClick={() => selectTab(n.id)}
-              className={`flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${
+              onClick={() => selectTab(n.id as BancaTab)}
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${
                 isActive
                   ? "text-[#0e76fd] font-bold"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4" />
               <span>{n.label}</span>
             </button>
           );
         })}
 
-        {/* BOTÓN MÁS CON LOS 3 PUNTOS DE LA IMAGEN 3 */}
+        {/* BOTÓN MENÚ HAMBURGUESA EN LA BARRA INFERIOR */}
         <button
-          onClick={() => setShowMobileMore(!showMobileMore)}
-          className={`flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${
+          onClick={() => setShowMobileMore((prev) => !prev)}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${
             showMobileMore || ["ahorros", "prestamos", "ajustes"].includes(activeTab)
-              ? "text-[#0e76fd] font-bold"
+              ? "text-cyan-400 font-bold"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          <MoreHorizontal className="h-5 w-5" />
-          <span>Más</span>
+          <Menu className="h-4 w-4" />
+          <span>Menú</span>
         </button>
       </nav>
     </div>
