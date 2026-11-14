@@ -29,7 +29,7 @@ export function AdminSidebar({ activeTab, onSelectTab, onLogout }: AdminSidebarP
         </div>
         <div className="truncate">
           <span className="truncate font-display text-lg font-bold tracking-tight text-white block">
-            Banco Andino
+            Banca Rota
           </span>
           <span className="text-[10px] text-purple-400 font-semibold tracking-wider uppercase block">
             Consola Backoffice

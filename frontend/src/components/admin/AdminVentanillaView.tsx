@@ -160,7 +160,7 @@ export function AdminVentanillaView({ onConsignar }: AdminVentanillaViewProps) {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                  <span className="font-display font-bold text-white text-base">Banco Andino — Comprobante</span>
+                  <span className="font-display font-bold text-white text-base">Banca Rota — Comprobante</span>
                 </div>
                 <button
                   type="button"
