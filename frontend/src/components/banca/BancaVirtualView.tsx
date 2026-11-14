@@ -14,7 +14,7 @@ import { AjustesView } from "./views/AjustesView";
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, CreditCard,
   PiggyBank, Landmark, Settings, MoreHorizontal, LogOut, X,
-  Menu, ChevronRight, ShieldCheck, DollarSign
+  Menu, ChevronRight, ShieldCheck, DollarSign, FileText
 } from "lucide-react";
 
 export function BancaVirtualView() {
