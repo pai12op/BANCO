@@ -27,11 +27,17 @@ async function getSaldo(req, res) {
         const saldoActual = parseFloat(cuentas[0].saldo);
         cajero.saldo = saldoActual;
 
-        return res.json({
+        const infoCuenta = {
+            id: cuentaId,
             titular: cajero.titular,
             numero_cuenta: cuentas[0].numero_cuenta,
             tipo_cuenta: cuentas[0].tipo_cuenta,
             saldo: saldoActual
+        };
+
+        return res.json({
+            cuenta: infoCuenta,
+            ...infoCuenta
         });
     } catch (error) {
         console.error('Error en getSaldo cajero:', error);

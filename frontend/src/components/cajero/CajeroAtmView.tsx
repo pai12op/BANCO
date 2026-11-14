@@ -59,12 +59,17 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
       const res = await fetch("/api/cajero/saldo", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        setCuentaInfo(data.cuenta);
+        setCuentaInfo(data.cuenta || data);
         setAutenticado(true);
       }
     } catch (err) {
       // No hay sesión
     }
+  };
+
+  const volverAlMenu = () => {
+    checkSesion();
+    setPantalla("menu");
   };
 
   const handleLogin = async (e?: React.FormEvent) => {
@@ -412,7 +417,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                   </div>
 
                   <div className="mt-6 text-center">
-                    <Button variant="outline" size="sm" onClick={() => setPantalla("menu")}>
+                    <Button variant="outline" size="sm" onClick={volverAlMenu}>
                       ← Volver al Menú
                     </Button>
                   </div>
@@ -521,7 +526,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                   </div>
 
                   <div className="mt-6 text-center">
-                    <Button variant="outline" size="sm" onClick={() => setPantalla("menu")}>
+                    <Button variant="outline" size="sm" onClick={volverAlMenu}>
                       Volver al Menú Principal
                     </Button>
                   </div>
@@ -586,7 +591,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => setPantalla("menu")}
+                      onClick={volverAlMenu}
                       className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold"
                     >
                       Realizar Otra Operación
