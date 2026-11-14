@@ -32,10 +32,6 @@ function Index() {
             <a href="/cajero" className="hover:text-cyan-400 hover:underline flex items-center gap-1">
               <CreditCard className="h-3 w-3" /> Red Cajeros ATM
             </a>
-            <span>·</span>
-            <a href="/admin" className="hover:text-purple-400 hover:underline flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3" /> Acceso Empleados / Admin
-            </a>
           </div>
         </div>
       </footer>

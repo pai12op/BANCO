@@ -463,16 +463,20 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
           </span>
         </button>
 
-        {/* 2. PON O QUITA PLATA */}
+        {/* 2. VER DATOS SEGUROS */}
         <button
-          onClick={() => setModalAjustarPlata(true)}
+          onClick={() => {
+            setShowNumeroCompleto((v) => !v);
+            setShowCvv((v) => !v);
+            toast.info("Seguridad: Número y CVV alternados en pantalla.");
+          }}
           className="flex flex-col items-center gap-2 rounded-2xl bg-[#091122] hover:bg-[#0e1b33] border border-[#162544] p-3 text-center transition-all group"
         >
           <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#132342] text-[#38bdf8] group-hover:scale-110 transition-transform">
-            <DollarSign className="h-5 w-5" />
+            <Eye className="h-5 w-5" />
           </div>
           <span className="text-[11px] font-semibold text-slate-200 leading-tight">
-            Pon o quita plata
+            Ver datos seguros
           </span>
         </button>
 

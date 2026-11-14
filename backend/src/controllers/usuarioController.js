@@ -1,11 +1,17 @@
-// src/controllers/bancaController.js
+// src/controllers/usuarioController.js
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+
+function getCliente(req) {
+    return req.session.cliente || req.session.usuario;
+}
 
 // 1. Obtener resumen de cuentas y saldo del cliente autenticado
 async function getResumen(req, res) {
     try {
-        const usuarioId = req.session.usuario.id;
+        const cliente = getCliente(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const usuarioId = cliente.id;
 
         const [cuentas] = await db.query(`
             SELECT c.id, c.numero_cuenta, c.saldo, tc.nombre AS tipo_cuenta, ec.nombre AS estado_cuenta
@@ -35,8 +41,10 @@ async function getResumen(req, res) {
 // 2. Historial de movimientos de una cuenta (exigido en PDF: Fecha, Tipo, Descripción, Valor, Saldo Resultante)
 async function getMovimientos(req, res) {
     try {
-        const usuarioId = req.session.usuario.id;
-        const cuentaId = req.query.cuenta_id || req.session.usuario.cuenta_principal_id;
+        const cliente = getCliente(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const usuarioId = cliente.id;
+        const cuentaId = req.query.cuenta_id || cliente.cuenta_principal_id;
 
         // Validar que la cuenta pertenezca al usuario logueado (Regla de negocio: no ver cuentas ajenas)
         const [verif] = await db.query('SELECT id, numero_cuenta, saldo FROM cuentas WHERE id = ? AND usuario_id = ?', [cuentaId, usuarioId]);
@@ -69,7 +77,9 @@ async function getMovimientos(req, res) {
 async function transferir(req, res) {
     const connection = await db.getConnection();
     try {
-        const usuarioId = req.session.usuario.id;
+        const cliente = getCliente(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const usuarioId = cliente.id;
         let { cuenta_origen_id, numero_cuenta_destino, valor, concepto } = req.body;
 
         valor = parseFloat(valor);
@@ -205,11 +215,14 @@ async function transferir(req, res) {
 // 4. Modificar perfil (teléfono)
 async function actualizarPerfil(req, res) {
     try {
-        const usuarioId = req.session.usuario.id;
+        const cliente = getCliente(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const usuarioId = cliente.id;
         const { telefono } = req.body;
 
         await db.query('UPDATE usuarios SET telefono = ? WHERE id = ?', [telefono ? telefono.trim() : null, usuarioId]);
-        req.session.usuario.telefono = telefono;
+        if (req.session.cliente) req.session.cliente.telefono = telefono;
+        if (req.session.usuario) req.session.usuario.telefono = telefono;
 
         return res.json({ mensaje: 'Información de perfil actualizada exitosamente.' });
     } catch (error) {
@@ -221,7 +234,9 @@ async function actualizarPerfil(req, res) {
 // 5. Cambiar contraseña
 async function cambiarPassword(req, res) {
     try {
-        const usuarioId = req.session.usuario.id;
+        const cliente = getCliente(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const usuarioId = cliente.id;
         const { password_actual, password_nuevo } = req.body;
 
         if (!password_actual || !password_nuevo) {
@@ -252,7 +267,9 @@ async function cambiarPassword(req, res) {
 async function pagoTarjeta(req, res) {
     const connection = await db.getConnection();
     try {
-        const usuarioId = req.session.usuario.id;
+        const cliente = getCliente(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const usuarioId = cliente.id;
         let { cuenta_id, valor, establecimiento } = req.body;
 
         valor = parseFloat(valor);
@@ -338,7 +355,9 @@ async function pagoTarjeta(req, res) {
 async function ajustarPlataTarjeta(req, res) {
     const connection = await db.getConnection();
     try {
-        const usuarioId = req.session.usuario.id;
+        const cliente = getCliente(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const usuarioId = cliente.id;
         let { cuenta_id, valor, tipo } = req.body; // tipo: 'PONER' o 'QUITAR'
 
         valor = parseFloat(valor);

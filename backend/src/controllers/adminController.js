@@ -136,7 +136,7 @@ async function crearCliente(req, res) {
 
         // 4. Si hay saldo inicial > 0, registrar operación y movimiento
         if (saldoNum > 0) {
-            const adminId = req.session.usuario ? req.session.usuario.id : null;
+            const adminId = req.session.admin?.id || req.session.usuario?.id || null;
             const [resOp] = await connection.query(`
                 INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
                 VALUES (1, 1, 3, ?, ?, 'Depósito de apertura de cuenta en ventanilla')
@@ -208,7 +208,7 @@ async function cambiarEstadoCliente(req, res) {
 async function consignar(req, res) {
     const connection = await db.getConnection();
     try {
-        const adminId = req.session.usuario.id;
+        const adminId = req.session.admin?.id || req.session.usuario?.id;
         let { numero_cuenta, valor, concepto } = req.body;
 
         valor = parseFloat(valor);

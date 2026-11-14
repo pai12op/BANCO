@@ -1,10 +1,17 @@
 // src/controllers/cajeroController.js
 const db = require('../config/db');
 
+function getCajero(req) {
+    return req.session.cajero || req.session.cajeroCuenta;
+}
+
 // 1. Consultar saldo en pantalla del cajero
 async function getSaldo(req, res) {
     try {
-        const cuentaId = req.session.cajeroCuenta.id;
+        const cajero = getCajero(req);
+        if (!cajero) return res.status(401).json({ error: 'Sesión no activa' });
+        const cuentaId = cajero.id;
+
         const [cuentas] = await db.query(`
             SELECT c.id, c.numero_cuenta, c.saldo, tc.nombre AS tipo_cuenta, ec.nombre AS estado_cuenta
             FROM cuentas c
@@ -18,10 +25,10 @@ async function getSaldo(req, res) {
         }
 
         const saldoActual = parseFloat(cuentas[0].saldo);
-        req.session.cajeroCuenta.saldo = saldoActual;
+        cajero.saldo = saldoActual;
 
         return res.json({
-            titular: req.session.cajeroCuenta.titular,
+            titular: cajero.titular,
             numero_cuenta: cuentas[0].numero_cuenta,
             tipo_cuenta: cuentas[0].tipo_cuenta,
             saldo: saldoActual
@@ -36,7 +43,9 @@ async function getSaldo(req, res) {
 async function retirar(req, res) {
     const connection = await db.getConnection();
     try {
-        const cuentaId = req.session.cajeroCuenta.id;
+        const cajero = getCajero(req);
+        if (!cajero) return res.status(401).json({ error: 'Sesión no activa' });
+        const cuentaId = cajero.id;
         let { valor } = req.body;
 
         valor = parseFloat(valor);
@@ -44,14 +53,14 @@ async function retirar(req, res) {
             return res.status(400).json({ error: 'El valor a retirar debe ser mayor a cero ($0).' });
         }
 
-        // Validación de múltiplos de denominación típica de cajero (opcional/deseable)
+        // Denominaciones de cajero
         if (valor % 10000 !== 0) {
             return res.status(400).json({ error: 'El valor debe ser múltiplo de $10.000 COP.' });
         }
 
         await connection.beginTransaction();
 
-        // Bloqueo de fila para evitar condiciones de carrera (Race Condition en cajero)
+        // Bloqueo de fila para evitar condiciones de carrera (Race Condition)
         const [cuentas] = await connection.query(`
             SELECT c.*, ec.nombre AS estado_nombre, u.id AS usuario_id
             FROM cuentas c
@@ -102,7 +111,7 @@ async function retirar(req, res) {
 
         await connection.commit();
 
-        req.session.cajeroCuenta.saldo = nuevoSaldo;
+        cajero.saldo = nuevoSaldo;
 
         return res.json({
             exito: true,
@@ -128,7 +137,10 @@ async function retirar(req, res) {
 // 3. Consultar últimos movimientos en pantalla de cajero
 async function getUltimosMovimientos(req, res) {
     try {
-        const cuentaId = req.session.cajeroCuenta.id;
+        const cajero = getCajero(req);
+        if (!cajero) return res.status(401).json({ error: 'Sesión no activa' });
+        const cuentaId = cajero.id;
+
         const [movimientos] = await db.query(`
             SELECT m.id, m.sentido, m.sentido AS tipo_movimiento, o.valor, m.saldo_resultante, m.creada_en AS fecha_hora,
                    o.descripcion, top.nombre AS tipo_operacion

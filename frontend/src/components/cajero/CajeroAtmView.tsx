@@ -170,15 +170,9 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
           <div className="flex items-center gap-2">
             <a
               href="/"
-              className="text-xs font-semibold text-muted-foreground hover:text-primary px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors"
+              className="text-xs font-semibold text-muted-foreground hover:text-cyan-400 px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors"
             >
-              ← Banca Clientes
-            </a>
-            <a
-              href="/admin"
-              className="text-xs font-semibold text-muted-foreground hover:text-purple-400 px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors"
-            >
-              Consola Admin
+              ← Portal Clientes
             </a>
             {autenticado && (
               <Button

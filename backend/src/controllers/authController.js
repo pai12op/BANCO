@@ -46,7 +46,7 @@ async function loginCliente(req, res) {
             WHERE c.usuario_id = ?
         `, [usuario.id]);
 
-        req.session.usuario = {
+        req.session.cliente = {
             id: usuario.id,
             nombres: usuario.nombres,
             apellidos: usuario.apellidos,
@@ -58,10 +58,11 @@ async function loginCliente(req, res) {
             cuenta_principal_id: cuentas.length > 0 ? cuentas[0].id : null,
             numero_cuenta: cuentas.length > 0 ? cuentas[0].numero_cuenta : null
         };
+        req.session.usuario = req.session.cliente;
 
         return res.json({
             mensaje: 'Inicio de sesión exitoso.',
-            usuario: req.session.usuario,
+            usuario: req.session.cliente,
             cuentas
         });
     } catch (error) {
@@ -100,7 +101,7 @@ async function loginAdmin(req, res) {
             return res.status(401).json({ error: 'Credenciales administrativas inválidas.' });
         }
 
-        req.session.usuario = {
+        req.session.admin = {
             id: admin.id,
             nombres: admin.nombres,
             apellidos: admin.apellidos,
@@ -111,7 +112,7 @@ async function loginAdmin(req, res) {
 
         return res.json({
             mensaje: 'Bienvenido al panel de administración bancaria.',
-            admin: req.session.usuario
+            admin: req.session.admin
         });
     } catch (error) {
         console.error('Error en loginAdmin:', error);
@@ -152,7 +153,7 @@ async function loginCajero(req, res) {
             return res.status(401).json({ error: 'PIN de seguridad incorrecto.' });
         }
 
-        req.session.cajeroCuenta = {
+        req.session.cajero = {
             id: cuenta.id,
             usuario_id: cuenta.usuario_id,
             titular: `${cuenta.nombres} ${cuenta.apellidos}`,
@@ -160,10 +161,11 @@ async function loginCajero(req, res) {
             tipo_cuenta: cuenta.tipo_cuenta,
             saldo: parseFloat(cuenta.saldo)
         };
+        req.session.cajeroCuenta = req.session.cajero;
 
         return res.json({
             mensaje: 'Identificación correcta en cajero automático.',
-            cuenta: req.session.cajeroCuenta
+            cuenta: req.session.cajero
         });
     } catch (error) {
         console.error('Error en loginCajero:', error);
@@ -171,8 +173,22 @@ async function loginCajero(req, res) {
     }
 }
 
-// 4. Cerrar sesión
+// 4. Cerrar sesión aislada por módulo (evita cerrar las otras pestañas)
 function logout(req, res) {
+    const modulo = req.body?.modulo || req.query?.modulo;
+    if (modulo === 'cliente') {
+        delete req.session.cliente;
+        return res.json({ mensaje: 'Sesión de Banca Virtual cerrada.' });
+    }
+    if (modulo === 'admin') {
+        delete req.session.admin;
+        return res.json({ mensaje: 'Sesión administrativa cerrada.' });
+    }
+    if (modulo === 'cajero') {
+        delete req.session.cajero;
+        delete req.session.cajeroCuenta;
+        return res.json({ mensaje: 'Tarjeta expulsada de la terminal.' });
+    }
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ error: 'No se pudo cerrar la sesión.' });
@@ -185,8 +201,9 @@ function logout(req, res) {
 // 5. Consultar estado de sesión actual
 function checkSession(req, res) {
     return res.json({
-        usuario: req.session.usuario || null,
-        cajero: req.session.cajeroCuenta || null
+        cliente: req.session.cliente || null,
+        admin: req.session.admin || null,
+        cajero: req.session.cajero || req.session.cajeroCuenta || null
     });
 }
 

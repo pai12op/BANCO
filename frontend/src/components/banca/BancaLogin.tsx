@@ -108,7 +108,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
 
   return (
     <div className="min-h-screen bg-[#070b13] flex flex-col items-center justify-center p-4">
-      {/* BARRA SUPERIOR DE SELECTOR DE MÓDULOS */}
+      {/* BARRA SUPERIOR DE SELECTOR DE CANALES PÚBLICOS */}
       <div className="w-full max-w-md mb-4 flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 p-1.5 text-xs">
         <span className="font-semibold text-primary px-3 flex items-center gap-1.5">
           <Landmark className="h-3.5 w-3.5" /> Banca Personas
@@ -118,13 +118,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
             href="/cajero"
             className="rounded-lg px-2.5 py-1 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/80 transition-colors flex items-center gap-1"
           >
-            <CreditCard className="h-3 w-3" /> Cajero ATM
-          </a>
-          <a
-            href="/admin"
-            className="rounded-lg px-2.5 py-1 text-slate-400 hover:text-purple-400 hover:bg-slate-800/80 transition-colors flex items-center gap-1"
-          >
-            <ShieldCheck className="h-3 w-3" /> Admin
+            <CreditCard className="h-3 w-3" /> Terminal Cajero ATM
           </a>
         </div>
       </div>
