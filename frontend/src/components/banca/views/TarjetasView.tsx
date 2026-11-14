@@ -45,10 +45,10 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
   const [searchMovimiento, setSearchMovimiento] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<"TODOS" | "COMPRAS" | "INGRESOS">("TODOS");
 
-  const saldoDisponible = cuentaActiva?.saldo || 1000000;
+  const saldoDisponible = cuentaActiva ? (parseFloat(cuentaActiva.saldo as any) || 0) : 0;
   const nombreTitular = usuario
     ? `${usuario.nombres.split(" ")[0]} ${usuario.apellidos.split(" ")[0]}`.toUpperCase()
-    : "JAIRO PAI";
+    : "ANDRÉS PAI";
 
   const numCuenta = cuentaActiva?.numero_cuenta || "4093882177343040";
   // Generar número estándar de 16 dígitos para la tarjeta (frecuente en Colombia: prefijo 4001/4093)
@@ -301,7 +301,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
               {/* PILL BLANCO DE SALDO */}
               <div className="rounded-2xl bg-white px-5 py-2 shadow-xl border border-slate-200">
                 <span className="font-display text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-                  {fmt(tipoTarjeta === "debito" ? saldoDisponible : 6200000)}
+                  {fmt(tipoTarjeta === "debito" ? saldoDisponible : 0)}
                 </span>
               </div>
             </div>
