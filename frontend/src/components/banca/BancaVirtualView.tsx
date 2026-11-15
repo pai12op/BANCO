@@ -209,13 +209,23 @@ export function BancaVirtualView() {
       const res = await fetch("/api/banca/generar-codigo-retiro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cuenta_id: cuentaActiva?.id,
+          numero_cuenta: cuentaActiva?.numero_cuenta
+        }),
         credentials: "include",
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
+      if (res.ok && data.codigo) {
         setCodigoRetiro(data.codigo);
       } else {
-        toast.error("No se pudo generar el código de retiro.");
+        if (res.status === 401) {
+          setShowModalSacarPlata(false);
+          toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
+          setAutenticado(false);
+        } else {
+          toast.error(data.error || "No se pudo generar el código de retiro.");
+        }
       }
     } catch (err) {
       toast.error("Error al conectar con el servidor.");
@@ -680,11 +690,16 @@ export function BancaVirtualView() {
 
                 {/* BOTÓN PARA ENTRAR DIRECTO AL CAJERO CON DATOS */}
                 <button
+                  disabled={loadingCodigo || !codigoRetiro || codigoRetiro === "null"}
                   onClick={() => {
-                    const cNum = cuentaActiva?.numero_cuenta || "400150181053";
+                    if (!codigoRetiro || codigoRetiro === "null") {
+                      toast.error("El código de retiro aún no ha sido generado.");
+                      return;
+                    }
+                    const cNum = cuentaActiva?.numero_cuenta || "400110203040";
                     window.location.href = `/cajero?cuenta=${cNum}&codigo=${codigoRetiro}`;
                   }}
-                  className="w-full rounded-xl bg-gradient-to-r from-[#0e76fd] to-[#00d2ff] hover:opacity-95 active:scale-95 py-3 text-xs font-bold text-white transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
+                  className="w-full rounded-xl bg-gradient-to-r from-[#0e76fd] to-[#00d2ff] hover:opacity-95 active:scale-95 py-3 text-xs font-bold text-white transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Landmark className="h-4 w-4" />
                   <span>Entrar al Cajero Virtual con este Código →</span>

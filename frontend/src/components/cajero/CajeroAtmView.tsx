@@ -58,12 +58,22 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
       const params = new URLSearchParams(window.location.search);
       const cParam = params.get("cuenta");
       const codParam = params.get("codigo");
-      if (cParam) setCuentaNumero(cParam);
-      if (codParam) {
-        setPin(codParam);
-        setCodigoOtpRetiro(codParam);
+      if (cParam && cParam !== "null" && cParam !== "undefined") {
+        setCuentaNumero(cParam.trim());
+      }
+      if (
+        codParam &&
+        codParam !== "null" &&
+        codParam !== "undefined" &&
+        /^\d{4,6}$/.test(codParam.trim())
+      ) {
+        setPin(codParam.trim());
+        setCodigoOtpRetiro(codParam.trim());
         setModoAcceso("codigo");
-        toast.info("¡Código de retiro de Banca Rota cargado!");
+        toast.info("Código de retiro OTP cargado en el cajero.");
+      } else {
+        setPin("");
+        setCodigoOtpRetiro("");
       }
     }
   }, []);

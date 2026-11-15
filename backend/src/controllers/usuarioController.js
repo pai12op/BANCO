@@ -445,13 +445,32 @@ async function ajustarPlataTarjeta(req, res) {
 async function solicitarCodigoRetiro(req, res) {
     try {
         const cliente = getCliente(req);
-        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        if (!cliente) return res.status(401).json({ error: 'No autorizado. Debe iniciar sesión en la Banca Virtual.' });
         const usuarioId = cliente.id;
 
-        const [cuentas] = await db.query(
-            'SELECT id, numero_cuenta, saldo FROM cuentas WHERE usuario_id = ? AND estado_id = 1 LIMIT 1',
-            [usuarioId]
-        );
+        const { cuenta_id, numero_cuenta } = req.body || {};
+
+        let query = 'SELECT id, numero_cuenta, saldo FROM cuentas WHERE usuario_id = ? AND estado_id = 1';
+        let params = [usuarioId];
+
+        if (cuenta_id) {
+            query += ' AND id = ?';
+            params.push(cuenta_id);
+        } else if (numero_cuenta) {
+            query += ' AND numero_cuenta = ?';
+            params.push(numero_cuenta.toString().trim());
+        }
+        query += ' ORDER BY id ASC LIMIT 1';
+
+        let [cuentas] = await db.query(query, params);
+
+        // Si no encontró por id/número específico, buscar cualquier cuenta activa del usuario
+        if (cuentas.length === 0) {
+            [cuentas] = await db.query(
+                'SELECT id, numero_cuenta, saldo FROM cuentas WHERE usuario_id = ? AND estado_id = 1 ORDER BY id ASC LIMIT 1',
+                [usuarioId]
+            );
+        }
 
         if (cuentas.length === 0) {
             return res.status(404).json({ error: 'No se encontró cuenta activa para generar código de retiro.' });
