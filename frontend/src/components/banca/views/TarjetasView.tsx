@@ -36,7 +36,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
   // Estados de formularios
   const [ajusteTipo, setAjusteTipo] = useState<"PONER" | "QUITAR">("PONER");
   const [ajusteMonto, setAjusteMonto] = useState("");
-  const [datafonoComercio, setDatafonoComercio] = useState("🛵 Domicilios Llorente");
+  const [datafonoComercio, setDatafonoComercio] = useState("Domicilios Llorente");
   const [datafonoMonto, setDatafonoMonto] = useState("35000");
   const [datafonoProcesando, setDatafonoProcesando] = useState(false);
   const [datafonoExito, setDatafonoExito] = useState(false);
@@ -360,7 +360,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
 
               <div className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-md border border-white/10">
                 <span>Toca para girar</span>
-                <span className="text-xs">🔄</span>
+                <RefreshCw className="h-3 w-3 text-cyan-300" />
               </div>
             </div>
 
@@ -878,10 +878,10 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
                 {!otroComercioActivo ? (
                   <div className="grid grid-cols-2 gap-2 text-left">
                     {[
-                      { name: "🛵 Domicilios Llorente", val: "35000", badge: "Destacado" },
-                      { name: "☕ Juan Valdez Café", val: "18500" },
-                      { name: "🛒 Éxito Manizales", val: "48900" },
-                      { name: "🎬 Cine Colombia", val: "28000" },
+                      { name: "Domicilios Llorente", val: "35000", badge: "Destacado" },
+                      { name: "Juan Valdez Café", val: "18500" },
+                      { name: "Éxito Manizales", val: "48900" },
+                      { name: "Cine Colombia", val: "28000" },
                     ].map((c) => (
                       <button
                         key={c.name}
@@ -984,7 +984,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
                           <p className="text-base font-black text-white">{fmt(parseFloat(datafonoMonto) || 0)}</p>
                         </div>
                         <p className="text-[11px] text-amber-300/90 font-medium">
-                          ⚠ POR FAVOR NO RETIRE SU TARJETA
+                          POR FAVOR NO RETIRE SU TARJETA
                         </p>
                       </div>
                     ) : (
@@ -1002,7 +1002,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
                           <p className="text-xl font-black text-white">{fmt(parseFloat(datafonoMonto) || 0)}</p>
                         </div>
                         <p className="text-xs text-emerald-300 font-bold bg-emerald-950/60 py-2 px-3 rounded-xl border border-emerald-500/40">
-                          ✓ RETIRE SU TARJETA DEL LECTOR
+                          RETIRE SU TARJETA DEL LECTOR
                         </p>
                       </div>
                     )}
@@ -1050,7 +1050,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
                     </div>
 
                     <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 px-3 py-1.5 text-[11px] text-cyan-300 flex items-center justify-between">
-                      <span>💡 Clave de tu tarjeta:</span>
+                      <span>Clave de tu tarjeta:</span>
                       <span className="font-mono font-bold text-white bg-cyan-500/30 px-2 py-0.5 rounded">1234</span>
                     </div>
 
@@ -1285,17 +1285,17 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
 
             <div className="space-y-3 text-xs">
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-3.5 space-y-1">
-                <p className="font-bold text-emerald-400">🎉 Cero cuota de manejo</p>
+                <p className="font-bold text-emerald-400">Cero cuota de manejo</p>
                 <p className="text-slate-300 text-[11px]">No pagas mensualidades por tener o usar tu tarjeta virtual o física.</p>
               </div>
 
               <div className="rounded-2xl border border-blue-500/30 bg-blue-950/20 p-3.5 space-y-1">
-                <p className="font-bold text-blue-400">☕ 20% Descuento en Cafeterías</p>
+                <p className="font-bold text-blue-400">20% Descuento en Cafeterías</p>
                 <p className="text-slate-300 text-[11px]">Pagando con tu tarjeta en Juan Valdez y marcas seleccionadas.</p>
               </div>
 
               <div className="rounded-2xl border border-purple-500/30 bg-purple-950/20 p-3.5 space-y-1">
-                <p className="font-bold text-purple-400">🛡️ Protección de compras Visa</p>
+                <p className="font-bold text-purple-400">Protección de compras Visa</p>
                 <p className="text-slate-300 text-[11px]">Seguro contra fraude y clonación respaldado por la franquicia Visa.</p>
               </div>
             </div>

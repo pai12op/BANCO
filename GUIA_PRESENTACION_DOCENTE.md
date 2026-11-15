@@ -1,4 +1,4 @@
-# 📋 Guion de Presentación y Sustentación — Simulador Bancario Web
+# Guion de Presentación y Sustentación — Simulador Bancario Web
 
 **Estudiante:** Jairo Andrés Pai Guanga  
 **Carrera:** Ingeniería en Ciberseguridad — Universidad de Manizales  
@@ -7,12 +7,12 @@
 
 ---
 
-## 🎯 Resumen Ejecutivo del Proyecto (Pitch de 60 segundos)
+## Resumen Ejecutivo del Proyecto (Pitch de 60 segundos)
 > *"Profesor, para este proyecto integrador no solo cumplí con los 3 módulos obligatorios (**Banca Virtual, Cajero ATM y Consola Administrativa**), sino que estructuré la base de datos bajo un estricto modelo relacional en **Tercera Forma Normal (3NF)** con 13 tablas en MySQL (motor InnoDB), garantizando integridad referencial y propiedades ACID. En el backend implementé **Node.js con Express**, transacciones concurrentes con bloqueo `FOR UPDATE`, y hashing unidireccional de contraseñas y PINs con **Bcrypt (10 salt rounds)**. En el frontend construí una interfaz fintech moderna con **React 19 y Tailwind CSS**, 100% responsiva (Mobile, Tablet y Desktop), e integré valor agregado como el cálculo del impuesto colombiano 4x1000 y tarjeta débito interactiva con simulación de datáfono POS."*
 
 ---
 
-## ⏱️ Flujo de Prueba Mínima Obligatoria (Páginas 9 y 10 del PDF)
+## Flujo de Prueba Mínima Obligatoria (Páginas 9 y 10 del PDF)
 
 Sigue exactamente estos 9 pasos para demostrar la integración en vivo en menos de 3 minutos:
 
@@ -30,7 +30,7 @@ Sigue exactamente estos 9 pasos para demostrar la integración en vivo en menos 
 
 ---
 
-## 🛡️ Preguntas Clave que puede hacer el Docente y Cómo Responderlas
+## Preguntas Clave que puede hacer el Docente y Cómo Responderlas
 
 ### 1. ¿Cómo garantizan que si dos personas retiran al mismo tiempo no quede el saldo negativo?
 > *"En el backend (`cajeroController.js` y `usuarioController.js`), toda transacción inicia con `connection.beginTransaction()` y una consulta `SELECT saldo FROM cuentas WHERE id = ? FOR UPDATE`. Esto bloquea la fila a nivel de motor InnoDB en MySQL hasta que se ejecute el `COMMIT`. Si otra transacción intenta leer o modificar el mismo saldo, queda en cola atómica, previniendo condiciones de carrera (Race Conditions)."*
@@ -49,7 +49,7 @@ Sigue exactamente estos 9 pasos para demostrar la integración en vivo en menos 
 
 ---
 
-## 💎 Características Adicionales (Puntos Extra)
+## Características Adicionales (Puntos Extra)
 1. **Tarjeta Interactiva 3D tipo Nequi:** Giro frontal y reverso, botón para copiar número, revelar CVV con autenticación visual.
 2. **Datáfono POS Simulado:** Simulación de cobro en comercios (Juan Valdez, Éxito) con impacto en saldo y movimiento real.
 3. **Simulador Tributario Colombiano 4x1000 (GMF):** Cálculo automático con switch de exención según el Art. 879 del Estatuto Tributario.

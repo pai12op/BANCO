@@ -614,7 +614,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
                           onClick={() => setCodigoOtpRetiro((prev) => prev.slice(0, -1))}
                           className="h-9 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 font-semibold text-[10px] text-amber-300 border border-amber-500/30 active:scale-95 transition-all"
                         >
-                          ⌫
+                          Borrar
                         </button>
                       </div>
                     </div>

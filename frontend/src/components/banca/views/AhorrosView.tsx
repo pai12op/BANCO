@@ -10,7 +10,7 @@ const fmt = (n: number) =>
 
 export function AhorrosView() {
   const [bolsillos, setBolsillos] = useState<
-    { id: number; nombre: string; meta: number; actual: number; emoji: string }[]
+    { id: number; nombre: string; meta: number; actual: number }[]
   >([]);
 
   const [modalNuevo, setModalNuevo] = useState(false);
@@ -30,7 +30,6 @@ export function AhorrosView() {
       nombre: nuevoNombre.trim(),
       meta: metaNum,
       actual: 0,
-      emoji: "🎯",
     };
 
     setBolsillos([...bolsillos, nuevo]);
@@ -120,7 +119,9 @@ export function AhorrosView() {
                 <div key={b.id} className="rounded-2xl border bg-card p-5 shadow-sm space-y-4 hover:border-border/80 transition-all">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <span className="text-2xl">{b.emoji}</span>
+                      <div className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                        <PiggyBank className="h-5 w-5" />
+                      </div>
                       <div>
                         <h4 className="font-semibold text-sm">{b.nombre}</h4>
                         <p className="text-[11px] text-muted-foreground">Meta: {fmt(b.meta)}</p>

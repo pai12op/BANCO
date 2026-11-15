@@ -1,17 +1,17 @@
-# 🏦 Proyecto Integrador — Simulador Bancario Web
+# Proyecto Integrador — Simulador Bancario Web
 
 Sistema web multi-módulo que simula las operaciones fundamentales de una entidad bancaria comercial, integrado sobre una base de datos centralizada en MySQL (diseñada estrictamente en **Tercera Forma Normal - 3NF**), un backend transaccional en **Node.js + Express** y una interfaz moderna con estética *obsidian black* en **React 19, Tailwind CSS v4 y Radix UI**.
 
 ---
 
-## 👥 Integrantes
+## Integrantes
 * **Jairo Andrés Pai Guanga** — Desarrollador Full-Stack & Arquitectura de Software
 * **Melisa Pinilla** — Documentación Técnica, Casos de Prueba y Manual de Usuario
 * **Isabella Caviedes** — Diseño Funcional, Presentación Ejecutiva y Validación de Procesos
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 ### Backend
 * **Node.js** (v24+)
@@ -34,7 +34,7 @@ Sistema web multi-módulo que simula las operaciones fundamentales de una entida
 
 ---
 
-## 📊 Modelo Entidad-Relación (Tercera Forma Normal - 3NF)
+## Modelo Entidad-Relación (Tercera Forma Normal - 3NF)
 
 ```mermaid
 erDiagram
@@ -61,11 +61,11 @@ erDiagram
 
 ---
 
-## 🏛️ Arquitectura del Sistema (3 Módulos Integrados)
+## Arquitectura del Sistema (3 Módulos Integrados)
 
 El sistema opera sobre una **única base de datos centralizada**, de modo que cualquier transacción realizada desde cualquiera de los canales se refleja de forma instantánea en los demás:
 
-### 1. 🌐 Módulo de Cliente — Banca Virtual
+### 1. Módulo de Cliente — Banca Virtual
 * Inicio de sesión seguro con correo o documento + contraseña.
 * Consulta de saldo en vivo, número de cuenta y tipo de cuenta.
 * Historial de movimientos con fecha, tipo de operación, canal, valor (+ / -) y saldo resultante.
@@ -73,7 +73,7 @@ El sistema opera sobre una **única base de datos centralizada**, de modo que cu
 * **Simulador Tributario Colombiano (4x1.000 - GMF):** Desglose del impuesto con opción de cuenta exenta (Art. 879 E.T.) y switch para simular cuenta gravada.
 * Modificación de información de perfil (teléfono) y cambio de contraseña con validación de clave actual en `bcrypt`.
 
-### 2. 🏧 Módulo de Cajero Automático Virtual ATM
+### 2. Módulo de Cajero Automático Virtual ATM
 * Simulación visual de terminal de autoservicio de cajero físico con pantalla LCD bancaria.
 * Identificación por número de cuenta y PIN de 4 dígitos.
 * Consulta de saldo en pantalla.
@@ -81,7 +81,7 @@ El sistema opera sobre una **única base de datos centralizada**, de modo que cu
 * Emisión de **Voucher / Recibo térmico digital** con número de aprobación, fecha, cajero `ATM-BOG-004` y nuevo saldo.
 * Visualización en pantalla de los últimos 5 movimientos.
 
-### 3. 🛡️ Módulo Administrativo del Banco
+### 3. Módulo Administrativo del Banco
 * Consola central de backoffice bancario para funcionarios y administradores.
 * **Dashboard con los 4 indicadores obligatorios (Pág. 3 del PDF):**
   1. Cantidad total de clientes registrados.
@@ -96,18 +96,18 @@ El sistema opera sobre una **única base de datos centralizada**, de modo que cu
 
 ---
 
-## 📋 Requisitos Previos
+## Requisitos Previos
 * **Node.js** (v18 o superior) y **npm**.
 * **MySQL Server** o **XAMPP / MariaDB** ejecutándose en el puerto `3306`.
 
 ---
 
-## ⚙️ Instrucciones de Instalación y Ejecución
+## Instrucciones de Instalación y Ejecución
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/pai12op/simulador-bancario-web.git
-cd simulador_bancario
+git clone https://github.com/pai12op/BANCO.git
+cd BANCO
 ```
 
 ### 2. Configurar la Base de Datos MySQL
@@ -121,7 +121,7 @@ cd simulador_bancario
 ### 3. Configurar variables de entorno (`.env`)
 Crear un archivo `.env` en la raíz con sus credenciales locales:
 ```env
-PORT=3000
+PORT=3050
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=
@@ -146,36 +146,36 @@ cd ..
 **Terminal 1 — Backend Express:**
 ```bash
 node server.js
-# Servidor escuchando en: http://localhost:3000
+# Servidor escuchando en: http://localhost:3050
 ```
 
 **Terminal 2 — Frontend React (Vite):**
 ```bash
 cd frontend
 npm run dev
-# Servidor de interfaz listo en: http://localhost:8080
+# Servidor de interfaz listo en: http://localhost:3051
 ```
 
 ---
 
-## 🔑 Usuarios y Credenciales de Prueba (Seed Data)
+## Usuarios y Credenciales de Prueba (Seed Data)
 
 | Módulo | Usuario / Cuenta | Clave / PIN | Rol / Estado | Saldo Inicial |
 | :--- | :--- | :--- | :---: | :---: |
 | **Admin** | `admin@banco.com` | `Banco123*` | Administrador (Activo) | N/A |
 | **Banca / Cliente 1** | `andres@cliente.com` (C.C. 1001234567) | `Banco123*` | Cliente (Activo) | Cuenta Ahorros `400110203040` — **$1.000.000 COP** |
-| **Banca / Cliente 2** | `valentina@cliente.com` (C.C. 1002345678) | `Banco123*` | Cliente (Activo) | Cuenta Corriente `500190807060` — **$2.500.000 COP** |
-| **Banca / Cliente 3** | `mateo@cliente.com` (C.C. 1003456789) | `Banco123*` | Cliente (**Bloqueado**) | Cuenta Ahorros `400155667788` — **$350.000 COP** |
+| **Banca / Cliente 2** | `melisa@cliente.com` (C.C. 1002345678) | `Banco123*` | Cliente (Activo) | Cuenta Corriente `500190807060` — **$2.500.000 COP** |
+| **Banca / Cliente 3** | `isabella@cliente.com` (C.C. 1004567890) | `Banco123*` | Cliente (Activo) | Cuenta Ahorros `400122334455` — **$1.800.000 COP** |
 | **Cajero ATM** | No. Cuenta: `400110203040` | PIN: `1234` | Cliente Activo | Saldo disponible para retiro |
 
 ---
 
-## 🎯 Prueba Mínima de Funcionamiento (Páginas 9-10 de la Guía)
+## Prueba Mínima de Funcionamiento (Páginas 9-10 de la Guía)
 
 Para demostrar la integración total entre los módulos ante el docente, ejecute la siguiente secuencia en vivo:
 
-1. Ingrese a la **Banca Virtual** (`http://localhost:8080`) con `andres@cliente.com` y verifique su saldo: **$1.000.000 COP**.
-2. Abra el **Cajero Automático** (mediante el switcher superior) e ingrese la cuenta `400110203040` y PIN `1234`.
+1. Ingrese a la **Banca Virtual** con `andres@cliente.com` y verifique su saldo: **$1.000.000 COP**.
+2. Abra el **Cajero Automático** e ingrese la cuenta `400110203040` y PIN `1234`.
 3. Pulse **Retirar Dinero** y seleccione **$200.000 COP**. El cajero dispensará el efectivo, emitirá el comprobante y mostrará el nuevo saldo: **$800.000 COP**.
 4. Regrese a la pestaña de la Banca Virtual: El saldo aparecerá inmediatamente en **$800.000 COP** y en la tabla se reflejará el movimiento: *`Retiro de efectivo en cajero automático: -$200.000`*.
 5. Ingrese a la **Consola Administrativa**, vaya a **Consignar en Ventanilla**, ingrese la cuenta `400110203040` y consigne **$100.000 COP**.

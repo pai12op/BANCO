@@ -221,7 +221,7 @@ export function CuentasView({
                 onClick={() => setCertModal(false)}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                ✕ Cerrar
+                Cerrar
               </button>
             </div>
 

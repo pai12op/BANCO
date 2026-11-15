@@ -283,7 +283,8 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
               {/* ENLACES RÁPIDOS */}
               <div className="text-center pt-3 text-xs text-slate-400">
                 <a href="/cajero" className="hover:text-cyan-400 transition-colors inline-flex items-center gap-1.5 text-slate-400 hover:underline">
-                  <span>🏧 Terminal de Cajero Automático ATM</span>
+                  <CreditCard className="h-3.5 w-3.5 text-cyan-400" />
+                  <span>Terminal de Cajero Automático ATM</span>
                 </a>
               </div>
             </form>

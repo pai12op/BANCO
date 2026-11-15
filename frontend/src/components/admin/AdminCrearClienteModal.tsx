@@ -266,7 +266,7 @@ export function AdminCrearClienteModal({
               </div>
             </div>
             <p className="text-[10px] text-slate-400">
-              🔒 Las contraseñas y PINs se encriptan de inmediato con <strong className="text-slate-300">Bcrypt (10 rondas de salt)</strong>. Nunca se guardan en texto plano.
+              Seguridad: Las contraseñas y PINs se encriptan de inmediato con <strong className="text-slate-300">Bcrypt (10 rondas de salt)</strong>. Nunca se guardan en texto plano.
             </p>
           </div>
 

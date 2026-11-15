@@ -63,12 +63,12 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
     console.log(`=======================================================`);
-    console.log(`🏦 SIMULADOR BANCARIO WEB — SERVICIO ACTIVO`);
-    console.log(`📍 Servidor escuchando en: http://localhost:${PORT}`);
-    console.log(`💻 Módulos integrados:`);
+    console.log(`SIMULADOR BANCARIO WEB — SERVICIO ACTIVO`);
+    console.log(`Servidor escuchando en: http://localhost:${PORT}`);
+    console.log(`Modulos integrados:`);
     console.log(`   - Portal Principal:   http://localhost:${PORT}/`);
     console.log(`   - Banca Virtual:      http://localhost:${PORT}/banca`);
-    console.log(`   - Cajero Automático:  http://localhost:${PORT}/cajero`);
+    console.log(`   - Cajero Automatico:  http://localhost:${PORT}/cajero`);
     console.log(`   - Panel Admin:        http://localhost:${PORT}/admin`);
     console.log(`=======================================================`);
 });
