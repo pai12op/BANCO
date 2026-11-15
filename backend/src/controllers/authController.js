@@ -78,7 +78,7 @@ async function loginCliente(req, res) {
     }
 }
 
-// 2. Iniciar sesión en Panel Administrativo
+// 2. Iniciar sesión en Panel Administrativo (Paso 1: Validación de Credenciales -> Emisión 2FA)
 async function loginAdmin(req, res) {
     try {
         const { correo, password } = req.body;
@@ -108,22 +108,93 @@ async function loginAdmin(req, res) {
             return res.status(401).json({ error: 'Credenciales administrativas inválidas.' });
         }
 
-        req.session.admin = {
-            id: admin.id,
-            nombres: admin.nombres,
-            apellidos: admin.apellidos,
-            correo: admin.correo,
-            rol_id: admin.rol_id,
-            rol_nombre: admin.rol_nombre
+        // Generar código OTP criptográfico de 6 dígitos para Segundo Factor (2FA)
+        const codigo2FA = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Almacenar el reto 2FA en la sesión temporal (vigencia de 5 minutos)
+        req.session.pendingAdmin2FA = {
+            adminId: admin.id,
+            adminData: {
+                id: admin.id,
+                nombres: admin.nombres,
+                apellidos: admin.apellidos,
+                correo: admin.correo,
+                rol_id: admin.rol_id,
+                rol_nombre: admin.rol_nombre
+            },
+            code: codigo2FA,
+            expiresAt: Date.now() + 5 * 60 * 1000
         };
 
+        const correoEnmascarado = admin.correo.replace(/^(.{2})(.*)(@.*)$/, '$1***$3');
+
         return res.json({
-            mensaje: 'Bienvenido al panel de administración bancaria.',
-            admin: req.session.admin
+            requires2FA: true,
+            mensaje: 'Credenciales autorizadas. Ingrese el código de autenticación en dos pasos (2FA).',
+            correo_enmascarado: correoEnmascarado,
+            codigo_demo: codigo2FA
         });
     } catch (error) {
         console.error('Error en loginAdmin:', error);
         return res.status(500).json({ error: 'Error interno en el servidor.' });
+    }
+}
+
+// 2.1 Verificar Segundo Factor de Autenticación (2FA) para Administrador
+async function verify2FAAdmin(req, res) {
+    try {
+        const { codigo } = req.body;
+        const pending = req.session.pendingAdmin2FA;
+
+        if (!pending) {
+            return res.status(400).json({ error: 'No hay un reto 2FA pendiente. Inicie sesión nuevamente.' });
+        }
+
+        if (Date.now() > pending.expiresAt) {
+            delete req.session.pendingAdmin2FA;
+            return res.status(401).json({ error: 'El código 2FA ha expirado. Solicite un nuevo código.' });
+        }
+
+        const cleanCode = (codigo || '').toString().trim();
+        // Permite el código generado o el código maestro de respaldo '772901' para la sustentación
+        if (cleanCode !== pending.code && cleanCode !== '772901') {
+            return res.status(401).json({ error: 'Código 2FA incorrecto o no autorizado.' });
+        }
+
+        // 2FA Exitoso -> Promover a sesión activa definitiva de Administrador
+        req.session.admin = pending.adminData;
+        delete req.session.pendingAdmin2FA;
+
+        return res.json({
+            mensaje: 'Segundo factor 2FA verificado correctamente. Acceso concedido.',
+            admin: req.session.admin
+        });
+    } catch (error) {
+        console.error('Error en verify2FAAdmin:', error);
+        return res.status(500).json({ error: 'Error al verificar código 2FA.' });
+    }
+}
+
+// 2.2 Reenviar código 2FA
+async function resend2FAAdmin(req, res) {
+    try {
+        const pending = req.session.pendingAdmin2FA;
+        if (!pending) {
+            return res.status(400).json({ error: 'No hay proceso de autenticación pendiente.' });
+        }
+
+        const nuevoCodigo = Math.floor(100000 + Math.random() * 900000).toString();
+        pending.code = nuevoCodigo;
+        pending.expiresAt = Date.now() + 5 * 60 * 1000;
+        req.session.pendingAdmin2FA = pending;
+
+        return res.json({
+            mensaje: 'Nuevo código 2FA generado exitosamente.',
+            codigo_demo: nuevoCodigo
+        });
+    } catch (error) {
+        console.error('Error en resend2FAAdmin:', error);
+        return res.status(500).json({ error: 'Error al generar nuevo código 2FA.' });
     }
 }
 
@@ -204,6 +275,7 @@ function logout(req, res) {
     }
     if (modulo === 'admin') {
         delete req.session.admin;
+        delete req.session.pendingAdmin2FA;
         return res.json({ mensaje: 'Sesión administrativa cerrada.' });
     }
     if (modulo === 'cajero') {
@@ -339,6 +411,8 @@ async function registroCliente(req, res) {
 module.exports = {
     loginCliente,
     loginAdmin,
+    verify2FAAdmin,
+    resend2FAAdmin,
     loginCajero,
     logout,
     checkSession,

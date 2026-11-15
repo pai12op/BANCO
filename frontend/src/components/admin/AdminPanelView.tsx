@@ -238,7 +238,16 @@ export function AdminPanelView() {
   };
 
   if (!autenticado) {
-    return <AdminLogin onLogin={handleLogin} loading={loading} />;
+    return (
+      <AdminLogin
+        onLoginSuccess={() => {
+          setAutenticado(true);
+          cargarDashboard();
+          cargarClientes();
+          cargarAuditoria();
+        }}
+      />
+    );
   }
 
   // NAVEGACIÓN MÓVIL INFERIOR PARA ADMIN
