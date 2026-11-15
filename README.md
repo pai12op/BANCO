@@ -167,16 +167,4 @@ npm run dev
 | **Banca / Cliente 2** | `melisa@cliente.com` (C.C. 1002345678) | `Banco123*` | Cliente (Activo) | Cuenta Corriente `500190807060` — **$2.500.000 COP** |
 | **Banca / Cliente 3** | `isabella@cliente.com` (C.C. 1004567890) | `Banco123*` | Cliente (Activo) | Cuenta Ahorros `400122334455` — **$1.800.000 COP** |
 | **Cajero ATM** | No. Cuenta: `400110203040` | PIN: `1234` | Cliente Activo | Saldo disponible para retiro |
-
----
-
-## Prueba Mínima de Funcionamiento (Páginas 9-10 de la Guía)
-
-Para demostrar la integración total entre los módulos ante el docente, ejecute la siguiente secuencia en vivo:
-
-1. Ingrese a la **Banca Virtual** con `andres@cliente.com` y verifique su saldo: **$1.000.000 COP**.
-2. Abra el **Cajero Automático** e ingrese la cuenta `400110203040` y PIN `1234`.
-3. Pulse **Retirar Dinero** y seleccione **$200.000 COP**. El cajero dispensará el efectivo, emitirá el comprobante y mostrará el nuevo saldo: **$800.000 COP**.
-4. Regrese a la pestaña de la Banca Virtual: El saldo aparecerá inmediatamente en **$800.000 COP** y en la tabla se reflejará el movimiento: *`Retiro de efectivo en cajero automático: -$200.000`*.
-5. Ingrese a la **Consola Administrativa**, vaya a **Consignar en Ventanilla**, ingrese la cuenta `400110203040` y consigne **$100.000 COP**.
-6. El cliente recarga su Banca Virtual y verá su saldo actualizado en **$900.000 COP** con el comprobante de consignación en ventanilla.
+.
