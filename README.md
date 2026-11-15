@@ -5,7 +5,9 @@ Sistema web multi-módulo que simula las operaciones fundamentales de una entida
 ---
 
 ## 👥 Integrantes
-* **Jairo Andrés Pai Guanga** — Desarrollador Full-Stack & Diseñador UI/UX
+* **Jairo Andrés Pai Guanga** — Desarrollador Full-Stack & Arquitectura de Software
+* **Melisa Pinilla** — Documentación Técnica, Casos de Prueba y Manual de Usuario
+* **Isabella Caviedes** — Diseño Funcional, Presentación Ejecutiva y Validación de Procesos
 
 ---
 

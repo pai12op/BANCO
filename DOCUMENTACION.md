@@ -6,8 +6,8 @@ Este documento contiene la descripción operativa, casos de prueba y guía de us
 
 ## 👥 Equipo de Trabajo
 * **Jairo Andrés Pai Guanga** — Arquitectura de Software, Backend y Frontend
-* **[Nombre de Compañera 1]** — Documentación Técnica, Casos de Prueba y Manual
-* **[Nombre de Compañera 2]** — Diseño Funcional, Presentación y Validación de Procesos
+* **Melisa Pinilla** — Documentación Técnica, Casos de Prueba y Manual de Usuario
+* **Isabella Caviedes** — Diseño Funcional, Presentación y Validación de Procesos
 
 ---
 
