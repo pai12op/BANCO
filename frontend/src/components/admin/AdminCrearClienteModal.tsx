@@ -32,7 +32,7 @@ export function AdminCrearClienteModal({
     correo: "",
     telefono: "",
     tipo_cuenta_id: 1,
-    saldo_inicial: "150000",
+    saldo_inicial: "",
     password: "",
     pin_cajero: "",
   });
@@ -136,7 +136,7 @@ export function AdminCrearClienteModal({
               <Input
                 value={formData.numero_documento}
                 onChange={(e) => setFormData({ ...formData, numero_documento: e.target.value })}
-                placeholder="1009876543"
+                placeholder="Número de documento"
                 required
                 className="mt-1 font-mono text-xs bg-slate-900/80 border-slate-700"
               />
@@ -150,7 +150,7 @@ export function AdminCrearClienteModal({
               <Input
                 value={formData.nombres}
                 onChange={(e) => setFormData({ ...formData, nombres: e.target.value })}
-                placeholder="Carlos Alberto"
+                placeholder="Nombres completos"
                 required
                 className="mt-1 text-xs bg-slate-900/80 border-slate-700"
               />
@@ -160,7 +160,7 @@ export function AdminCrearClienteModal({
               <Input
                 value={formData.apellidos}
                 onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
-                placeholder="Ramírez Gómez"
+                placeholder="Apellidos completos"
                 required
                 className="mt-1 text-xs bg-slate-900/80 border-slate-700"
               />
@@ -175,7 +175,7 @@ export function AdminCrearClienteModal({
                 type="email"
                 value={formData.correo}
                 onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
-                placeholder="carlos@correo.com"
+                placeholder="correo@ejemplo.com"
                 required
                 className="mt-1 font-mono text-xs bg-slate-900/80 border-slate-700"
               />
@@ -185,7 +185,7 @@ export function AdminCrearClienteModal({
               <Input
                 value={formData.telefono}
                 onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                placeholder="3119876543"
+                placeholder="Teléfono móvil"
                 className="mt-1 font-mono text-xs bg-slate-900/80 border-slate-700"
               />
             </div>
