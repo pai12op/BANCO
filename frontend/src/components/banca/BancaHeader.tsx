@@ -1,4 +1,4 @@
-import { Bell, Landmark, LogOut, Menu } from "lucide-react";
+import { Bell, Landmark, LogOut, Menu, CreditCard, ShieldCheck } from "lucide-react";
 import { Usuario } from "./types";
 
 interface BancaHeaderProps {
@@ -63,6 +63,24 @@ export function BancaHeader({
 
         {/* ACCIONES DEL HEADER MÓVIL Y DESKTOP */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* ACCESOS RÁPIDOS DIRECTOS */}
+          <a
+            href="/cajero"
+            title="Ir al Cajero Automático ATM"
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-cyan-400 px-2.5 py-1.5 rounded-xl border border-slate-800 bg-[#0d1524] transition-colors"
+          >
+            <CreditCard className="h-3.5 w-3.5 text-cyan-400" />
+            <span>Cajero ATM</span>
+          </a>
+          <a
+            href="/admin"
+            title="Ir a Consola Administrativa"
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-purple-400 px-2.5 py-1.5 rounded-xl border border-purple-500/30 bg-purple-950/30 transition-colors"
+          >
+            <ShieldCheck className="h-3.5 w-3.5 text-purple-400" />
+            <span>Consola Admin</span>
+          </a>
+
           {/* NOTIFICACIONES / ACTUALIZAR */}
           <button
             aria-label="Actualizar datos"

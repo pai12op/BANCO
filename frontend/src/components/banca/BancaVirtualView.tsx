@@ -511,6 +511,31 @@ export function BancaVirtualView() {
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
                   </button>
                 </div>
+
+                {/* GRUPO 4: OTROS CANALES */}
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-2 mb-1">
+                    Otros Canales
+                  </p>
+                  <a
+                    href="/cajero"
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold text-cyan-300 hover:bg-[#111e38] transition-all border border-cyan-500/20 bg-cyan-950/20"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <CreditCard className="h-4 w-4 text-cyan-400" />
+                      <span>Cajero Automático ATM</span>
+                    </div>
+                  </a>
+                  <a
+                    href="/admin"
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold text-purple-300 hover:bg-[#111e38] transition-all border border-purple-500/20 bg-purple-950/20"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <ShieldCheck className="h-4 w-4 text-purple-400" />
+                      <span>Consola Administrativa</span>
+                    </div>
+                  </a>
+                </div>
               </div>
             </div>
 

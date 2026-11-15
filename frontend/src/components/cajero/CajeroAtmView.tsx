@@ -224,6 +224,13 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
             >
               ← Portal Clientes
             </a>
+            <a
+              href="/admin"
+              className="text-xs font-semibold text-muted-foreground hover:text-purple-400 px-3 py-1.5 rounded-lg border border-border/60 hover:bg-secondary/40 transition-colors flex items-center gap-1.5"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-purple-400" />
+              <span>Consola Admin</span>
+            </a>
             {autenticado && (
               <Button
                 variant="outline"

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, CreditCard,
-  PiggyBank, Landmark, Settings, LogOut
+  PiggyBank, Landmark, Settings, LogOut, ShieldCheck
 } from "lucide-react";
 import { BancaTab } from "./types";
 
@@ -55,16 +55,36 @@ export function BancaSidebar({ activeTab, onSelectTab, onLogout }: BancaSidebarP
         })}
       </nav>
 
-      {/* PIE DEL SIDEBAR: AYUDA Y CERRAR SESIÓN */}
-      <div className="mt-auto space-y-3 pt-4">
-        <div className="rounded-xl bg-[#0d1524] p-4 text-xs border border-[#1a273f]">
+      {/* PIE DEL SIDEBAR: OTROS MÓDULOS, AYUDA Y CERRAR SESIÓN */}
+      <div className="mt-auto space-y-2.5 pt-3">
+        <div className="space-y-1 pt-2 border-t border-[#1a2333]">
+          <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            Otros Canales
+          </p>
+          <a
+            href="/cajero"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-[#121a2a] hover:text-cyan-400 transition-all"
+          >
+            <CreditCard className="h-4 w-4 text-cyan-400" />
+            <span>Cajero Automático ATM</span>
+          </a>
+          <a
+            href="/admin"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-[#121a2a] hover:text-purple-400 transition-all"
+          >
+            <ShieldCheck className="h-4 w-4 text-purple-400" />
+            <span>Consola Administrativa</span>
+          </a>
+        </div>
+
+        <div className="rounded-xl bg-[#0d1524] p-3 text-xs border border-[#1a273f]">
           <p className="font-semibold text-slate-200">¿Necesitas ayuda?</p>
-          <p className="mt-1 text-[11px] text-slate-400">Línea 24/7: 01 8000 123 456</p>
+          <p className="mt-0.5 text-[11px] text-slate-400">Línea 24/7: 01 8000 123 456</p>
         </div>
 
         <button
           onClick={onLogout}
-          className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
         >
           <LogOut className="h-4 w-4" />
           <span>Cerrar sesión</span>

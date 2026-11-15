@@ -281,10 +281,15 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
               </div>
 
               {/* ENLACES RÁPIDOS */}
-              <div className="text-center pt-3 text-xs text-slate-400">
+              <div className="flex items-center justify-center gap-3 pt-3 text-xs text-slate-400">
                 <a href="/cajero" className="hover:text-cyan-400 transition-colors inline-flex items-center gap-1.5 text-slate-400 hover:underline">
                   <CreditCard className="h-3.5 w-3.5 text-cyan-400" />
-                  <span>Terminal de Cajero Automático ATM</span>
+                  <span>Cajero ATM</span>
+                </a>
+                <span className="text-slate-700">|</span>
+                <a href="/admin" className="hover:text-purple-400 transition-colors inline-flex items-center gap-1.5 text-slate-400 hover:underline">
+                  <ShieldCheck className="h-3.5 w-3.5 text-purple-400" />
+                  <span>Consola Admin</span>
                 </a>
               </div>
             </form>
