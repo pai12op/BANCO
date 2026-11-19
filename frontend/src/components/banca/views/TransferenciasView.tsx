@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeftRight, Send, CheckCircle2, RefreshCw, UserCheck, Receipt } from "lucide-react";
 import { toast } from "sonner";
-import { securePost } from "@/lib/secureFetch";
+import { formatCOP } from "@/lib/formatters";
+import { bancaService } from "@/services/bancaService";
 import { ComprobanteTransferencia, Cuenta, Movimiento } from "../types";
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+const fmt = formatCOP;
 
 interface TransferenciasViewProps {
   cuentaActiva: Cuenta | null;
@@ -83,18 +83,12 @@ export function TransferenciasView({
         ? (impuesto > 0 ? `${concepto.trim()} (GMF 4x1000: ${fmt(impuesto)})` : concepto.trim())
         : (impuesto > 0 ? `Transferencia (GMF 4x1000: ${fmt(impuesto)})` : undefined);
 
-      const res = await securePost("/api/banca/transferir", {
+      const data = await bancaService.transferir({
         cuenta_origen_id: cuentaActiva.id,
         numero_cuenta_destino: destinoLimpio,
         valor,
         concepto: conceptoFinal,
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "No se pudo realizar la transferencia.");
-        return;
-      }
 
       const detalleExito = `Enviaste ${fmt(valor)} a la cuenta ${destinoLimpio}${
         data.comprobante?.titular_destino ? ` (${data.comprobante.titular_destino})` : ""
@@ -108,8 +102,8 @@ export function TransferenciasView({
       setConcepto("");
       setCuentaDestino("");
       onTransferSuccess();
-    } catch (err) {
-      toast.error("Error al procesar la transferencia.");
+    } catch (err: any) {
+      toast.error(err?.message || "No se pudo realizar la transferencia.");
     } finally {
       setLoading(false);
     }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { securePost } from "@/lib/secureFetch";
+import { authService } from "@/services/authService";
 
 interface AdminLoginProps {
   onLoginSuccess?: () => void;
@@ -48,16 +48,7 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
 
     try {
       setLoading(true);
-      const res = await securePost("/api/auth/login-admin", {
-        correo: adminCorreo.trim(),
-        password: adminPassword,
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Credenciales administrativas inválidas.");
-        return;
-      }
+      const data = await authService.loginAdmin(adminCorreo.trim(), adminPassword);
 
       if (data.requires2FA) {
         setCodigoDemo(data.codigo_demo || "");
@@ -72,7 +63,7 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         if (onLoginSuccess) onLoginSuccess();
       }
     } catch (err: any) {
-      toast.error(err?.message || "Error de conexión segura con el servidor bancario.");
+      toast.error(err?.message || "Credenciales administrativas inválidas.");
     } finally {
       setLoading(false);
     }
@@ -90,22 +81,14 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
 
     try {
       setLoading(true);
-      const res = await securePost("/api/auth/verify-2fa-admin", {
-        codigo: cleanCode,
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Código 2FA incorrecto o no autorizado.");
-        return;
-      }
+      await authService.verify2FAAdmin(cleanCode);
 
       toast.success("Autenticación en dos pasos exitosa. Acceso concedido.");
       if (onLoginSuccess) {
         onLoginSuccess();
       }
     } catch (err: any) {
-      toast.error(err?.message || "Error de comunicación al verificar 2FA.");
+      toast.error(err?.message || "Código 2FA incorrecto o no autorizado.");
     } finally {
       setLoading(false);
     }
@@ -115,24 +98,14 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
   const handleReenviar2FA = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/resend-2fa-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "No se pudo generar nuevo código.");
-        return;
-      }
+      const data = await authService.resend2FAAdmin();
 
       setCodigoDemo(data.codigo_demo || "");
       setTimeLeft(300);
       setCodigo2FA("");
       toast.success("Nuevo código 2FA emitido a su terminal.");
-    } catch (err) {
-      toast.error("Error al reenviar código 2FA.");
+    } catch (err: any) {
+      toast.error(err?.message || "No se pudo generar nuevo código.");
     } finally {
       setLoading(false);
     }

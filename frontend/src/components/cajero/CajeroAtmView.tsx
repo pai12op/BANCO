@@ -6,12 +6,14 @@ import {
   ArrowDownLeft, ArrowUpRight, KeyRound, Printer
 } from "lucide-react";
 import { toast } from "sonner";
-import { consumeCajeroHandoff, securePost } from "@/lib/secureFetch";
+import { consumeCajeroHandoff } from "@/lib/secureFetch";
+import { formatCOP } from "@/lib/formatters";
+import { authService } from "@/services/authService";
+import { cajeroService } from "@/services/cajeroService";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+const fmt = formatCOP;
 
 interface CajeroAtmProps {
   activeModule?: string;
@@ -75,14 +77,11 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
 
   const checkSesion = async () => {
     try {
-      const res = await fetch("/api/cajero/saldo", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setCuentaInfo(data.cuenta || data);
-        setAutenticado(true);
-      }
-    } catch (err) {
-      // No hay sesión
+      const data = await cajeroService.getSaldo();
+      setCuentaInfo(data.cuenta || data);
+      setAutenticado(true);
+    } catch {
+      // Sin sesión activa
     }
   };
 
@@ -100,16 +99,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
 
     try {
       setLoading(true);
-      const res = await securePost("/api/auth/login-cajero", {
-        numero_cuenta: cuentaNumero.trim(),
-        pin: pin.trim(),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Tarjeta o PIN inválido.");
-        return;
-      }
+      const data = await authService.loginCajero(cuentaNumero.trim(), pin.trim());
 
       toast.success("Acceso ATM autorizado con éxito.", {
         description: "Bienvenido al Cajero Automático.",
@@ -118,7 +108,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
       setAutenticado(true);
       setPantalla("menu");
     } catch (err: any) {
-      toast.error(err?.message || "Error de comunicación segura con el cajero automático.");
+      toast.error(err?.message || "Tarjeta o PIN inválido.");
     } finally {
       setLoading(false);
     }
@@ -143,16 +133,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
 
     try {
       setLoading(true);
-      const res = await securePost("/api/cajero/retirar", {
-        valor,
-        codigoOtp: cleanOtp,
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "No se pudo dispensar el dinero.");
-        return;
-      }
+      const data = await cajeroService.retirar(valor, cleanOtp);
 
       toast.success("Retiro exitoso", {
         description: data.mensaje || `Efectivo dispensado por ${fmt(valor)}.`,
@@ -161,7 +142,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
       setCuentaInfo((prev: any) => ({ ...prev, saldo: data.recibo.nuevo_saldo }));
       setPantalla("recibo");
     } catch (err: any) {
-      toast.error(err?.message || "Error de conexión segura con el dispensador de efectivo.");
+      toast.error(err?.message || "No se pudo dispensar el dinero.");
     } finally {
       setLoading(false);
     }
@@ -170,14 +151,12 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
   const cargarMovimientos = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/cajero/movimientos", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setMovimientos(data.movimientos || []);
-        setPantalla("movimientos");
-      }
-    } catch (err) {
-      toast.error("Error al consultar movimientos en pantalla.");
+      const data = await cajeroService.getMovimientos();
+      setMovimientos(data.movimientos || []);
+      setPantalla("movimientos");
+      toast.success("Últimos movimientos consultados con éxito.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error al consultar movimientos en pantalla.");
     } finally {
       setLoading(false);
     }
@@ -185,7 +164,7 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      await authService.logout();
       setAutenticado(false);
       setCuentaInfo(null);
       setPantalla("menu");

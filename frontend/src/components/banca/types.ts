@@ -23,6 +23,7 @@ export interface Movimiento {
   valor: number;
   saldo_resultante?: number;
   fecha_hora: string;
+  fecha?: string;
   descripcion: string;
   tipo_operacion: string;
   canal: string;
@@ -33,7 +34,9 @@ export interface ComprobanteTransferencia {
   fecha: string;
   cuenta_origen: string;
   cuenta_destino: string;
+  titular_destino?: string;
   valor: number;
+  nuevo_saldo?: number;
   nuevo_saldo_origen: number;
 }
 

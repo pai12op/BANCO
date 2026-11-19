@@ -50,7 +50,7 @@ export function InicioView({
   const bars = [42, 65, 38, 80, 55, 72, 90, 48, 60, 76, 52, 68];
   const months = ["E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
-  // Cuentas reales conectadas a MySQL
+  // Cuentas activas del cliente
   const cuentasAMostrar = cuentas && cuentas.length > 0
     ? cuentas
     : (cuentaActiva ? [cuentaActiva] : []);

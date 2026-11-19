@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { securePost } from "@/lib/secureFetch";
+import { formatCOP } from "@/lib/formatters";
+import { authService } from "@/services/authService";
+import { adminService } from "@/services/adminService";
 import { AdminHeader } from "./AdminHeader";
 import { AdminSidebar, AdminTab } from "./AdminSidebar";
 import { AdminLogin } from "./AdminLogin";
@@ -15,12 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  }).format(n);
+const fmt = formatCOP;
 
 export function AdminPanelView() {
   const [autenticado, setAutenticado] = useState(false);
@@ -55,36 +52,30 @@ export function AdminPanelView() {
 
   const checkAdminSession = async () => {
     try {
-      const res = await fetch("/api/admin/dashboard", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setKpis({
-          totalClientes: Number(data.total_clientes) || 0,
-          cuentasActivas: Number(data.cuentas_activas) || 0,
-          cuentasBloqueadas: Number(data.cuentas_bloqueadas) || 0,
-          totalBoveda: Number(data.saldo_total_banco) || 0,
-        });
-        setAutenticado(true);
-        cargarClientes();
-        cargarAuditoria();
-      }
-    } catch (err) {
+      const data = await adminService.getDashboard();
+      setKpis({
+        totalClientes: Number(data.total_clientes) || 0,
+        cuentasActivas: Number(data.cuentas_activas) || 0,
+        cuentasBloqueadas: Number(data.cuentas_bloqueadas) || 0,
+        totalBoveda: Number(data.saldo_total_banco) || 0,
+      });
+      setAutenticado(true);
+      cargarClientes();
+      cargarAuditoria();
+    } catch {
       // Sin sesión admin activa
     }
   };
 
   const cargarDashboard = async () => {
     try {
-      const res = await fetch("/api/admin/dashboard", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setKpis({
-          totalClientes: Number(data.total_clientes) || 0,
-          cuentasActivas: Number(data.cuentas_activas) || 0,
-          cuentasBloqueadas: Number(data.cuentas_bloqueadas) || 0,
-          totalBoveda: Number(data.saldo_total_banco) || 0,
-        });
-      }
+      const data = await adminService.getDashboard();
+      setKpis({
+        totalClientes: Number(data.total_clientes) || 0,
+        cuentasActivas: Number(data.cuentas_activas) || 0,
+        cuentasBloqueadas: Number(data.cuentas_bloqueadas) || 0,
+        totalBoveda: Number(data.saldo_total_banco) || 0,
+      });
     } catch (err) {
       console.error(err);
     }
@@ -92,11 +83,8 @@ export function AdminPanelView() {
 
   const cargarClientes = async () => {
     try {
-      const res = await fetch("/api/admin/clientes", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setClientes(data.clientes || []);
-      }
+      const data = await adminService.getClientes();
+      setClientes(data.clientes || []);
     } catch (err) {
       console.error(err);
     }
@@ -104,11 +92,8 @@ export function AdminPanelView() {
 
   const cargarAuditoria = async () => {
     try {
-      const res = await fetch("/api/admin/movimientos-general", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setAuditoria(data.movimientos || []);
-      }
+      const data = await adminService.getAuditoria();
+      setAuditoria(data.movimientos || []);
     } catch (err) {
       console.error(err);
     }
@@ -124,24 +109,12 @@ export function AdminPanelView() {
     const nuevoEstadoId = esActivo ? 3 : 1;
 
     try {
-      const res = await fetch("/api/admin/clientes/estado", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario_id: cliente.id, nuevo_estado_id: nuevoEstadoId }),
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "No se pudo cambiar el estado.");
-        return;
-      }
-
+      const data = await adminService.toggleEstadoCliente(cliente.id, nuevoEstadoId);
       toast.success(data.mensaje);
       cargarDashboard();
       cargarClientes();
-    } catch (err) {
-      toast.error("Error al actualizar estado del cliente.");
+    } catch (err: any) {
+      toast.error(err?.message || "No se pudo cambiar el estado.");
     }
   };
 
@@ -153,17 +126,7 @@ export function AdminPanelView() {
     }
 
     try {
-      const res = await securePost("/api/admin/consignar", {
-        numero_cuenta: numero_cuenta.trim(),
-        valor,
-        concepto: concepto.trim(),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Error al procesar consignación.");
-        return null;
-      }
+      const data = await adminService.consignar(numero_cuenta.trim(), valor, concepto.trim());
 
       toast.success("Consignación exitosa", {
         description: `Depósito de ${fmt(valor)} aplicado a la cuenta ${numero_cuenta.trim()}.`,
@@ -173,14 +136,14 @@ export function AdminPanelView() {
       cargarAuditoria();
       return data.recibo;
     } catch (err: any) {
-      toast.error(err?.message || "Error de conexión segura con ventanilla.");
+      toast.error(err?.message || "Error al procesar consignación.");
       return null;
     }
   };
 
   const handleCrearCliente = async (nuevoCliente: any): Promise<boolean> => {
     try {
-      const res = await securePost("/api/admin/clientes", {
+      const data = await adminService.crearCliente({
         tipo_documento_id: nuevoCliente.tipo_documento_id || 1,
         numero_documento: nuevoCliente.numero_documento.trim(),
         nombres: nuevoCliente.nombres.trim(),
@@ -193,12 +156,6 @@ export function AdminPanelView() {
         saldo_inicial: parseFloat(nuevoCliente.saldo_inicial) || 0,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Error al crear cliente.");
-        return false;
-      }
-
       toast.success("Cliente y cuenta creados con éxito", {
         description: data.cliente?.numero_cuenta
           ? `Cuenta asignada: ${data.cliente.numero_cuenta}`
@@ -208,14 +165,14 @@ export function AdminPanelView() {
       cargarClientes();
       return true;
     } catch (err: any) {
-      toast.error(err?.message || "Error de comunicación segura.");
+      toast.error(err?.message || "Error al crear cliente.");
       return false;
     }
   };
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      await authService.logout();
       setAutenticado(false);
       toast.success("Sesión administrativa cerrada con éxito.");
     } catch (err) {

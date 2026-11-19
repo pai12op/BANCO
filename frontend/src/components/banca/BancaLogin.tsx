@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { isStrongPassword, securePost } from "@/lib/secureFetch";
+import { isStrongPassword } from "@/lib/secureFetch";
+import { authService } from "@/services/authService";
 
 interface BancaLoginProps {
   onLogin: (identificador: string, password: string) => Promise<void>;
@@ -96,7 +97,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
 
     try {
       setRegLoading(true);
-      const res = await securePost("/api/auth/registro-cliente", {
+      const data = await authService.registroCliente({
         tipo_documento_id: regData.tipo_documento_id,
         numero_documento: regData.numero_documento.trim(),
         nombres: regData.nombres.trim(),
@@ -108,12 +109,6 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
         pin_cajero: pin,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "No se pudo crear la cuenta bancaria.");
-        return;
-      }
-
       toast.success("¡Cuenta creada con éxito!", {
         description: data.mensaje || "Tu cuenta inició en $0 COP. Ya puedes iniciar sesión.",
       });
@@ -123,7 +118,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
       setPassword(regData.password);
       setTab("login");
     } catch (err: any) {
-      toast.error(err?.message || "Error de conexión segura con el banco.");
+      toast.error(err?.message || "No se pudo crear la cuenta bancaria.");
     } finally {
       setRegLoading(false);
     }

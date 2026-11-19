@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { securePost, saveCajeroHandoff } from "@/lib/secureFetch";
+import { ApiError } from "@/lib/secureFetch";
+import { formatCOP } from "@/lib/formatters";
+import { authService } from "@/services/authService";
+import { bancaService } from "@/services/bancaService";
 import { BancaTab, Cuenta, Movimiento, Usuario } from "./types";
 import { BancaSidebar } from "./BancaSidebar";
 import { BancaHeader, BankNotification } from "./BancaHeader";
 import { BancaLogin } from "./BancaLogin";
+import { ModalSacarPlata } from "./ModalSacarPlata";
 import { InicioView } from "./views/InicioView";
 import { CuentasView } from "./views/CuentasView";
 import { TransferenciasView } from "./views/TransferenciasView";
@@ -15,11 +19,10 @@ import { AjustesView } from "./views/AjustesView";
 import {
   LayoutDashboard, Wallet, ArrowLeftRight, CreditCard,
   PiggyBank, Landmark, Settings, MoreHorizontal, LogOut, X,
-  Menu, ChevronRight, ShieldCheck, DollarSign, FileText, Copy, Check
+  Menu, ChevronRight, ShieldCheck, DollarSign, FileText
 } from "lucide-react";
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+const fmt = formatCOP;
 
 export function BancaVirtualView() {
   const [loading, setLoading] = useState(true);
@@ -54,27 +57,25 @@ export function BancaVirtualView() {
   const cargarResumen = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/banca/resumen", { credentials: "include" });
-      if (res.status === 401) {
-        setUsuario(null);
-        setLoading(false);
-        return;
-      }
-      const data = await res.json();
+      const data = await bancaService.getResumen();
       if (data.usuario) {
         setUsuario(data.usuario);
         setCuentas(data.cuentas || []);
         if (data.cuentas && data.cuentas.length > 0) {
           const cuentaActual = cuentaActiva
-            ? data.cuentas.find((c: Cuenta) => c.id === cuentaActiva.id) || data.cuentas[0]
+            ? data.cuentas.find((c) => c.id === cuentaActiva.id) || data.cuentas[0]
             : data.cuentas[0];
           setCuentaActiva(cuentaActual);
           cargarMovimientos(cuentaActual.id);
         }
       }
     } catch (err) {
-      console.error("Error al cargar resumen:", err);
-      toast.error("Error de conexión con el backend.");
+      if (err instanceof ApiError && err.status === 401) {
+        setUsuario(null);
+      } else {
+        console.error("Error al cargar resumen:", err);
+        toast.error("Error de conexión con el backend.");
+      }
     } finally {
       setLoading(false);
     }
@@ -82,11 +83,8 @@ export function BancaVirtualView() {
 
   const cargarMovimientos = async (cuentaId: number) => {
     try {
-      const res = await fetch(`/api/banca/movimientos?cuenta_id=${cuentaId}`, { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setMovimientos(data.movimientos || []);
-      }
+      const data = await bancaService.getMovimientos(cuentaId);
+      setMovimientos(data.movimientos || []);
     } catch (err) {
       console.error("Error al cargar movimientos:", err);
     }
@@ -99,15 +97,7 @@ export function BancaVirtualView() {
   const handleLogin = async (identificador: string, pass: string) => {
     try {
       setLoginLoading(true);
-      const res = await securePost("/api/auth/login-cliente", {
-        identificador,
-        password: pass,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Credenciales incorrectas.");
-        return;
-      }
+      const data = await authService.loginCliente(identificador, pass);
       toast.success("Inicio de sesión exitoso", {
         description: `Bienvenido(a), ${data.usuario.nombres}`,
       });
@@ -117,7 +107,7 @@ export function BancaVirtualView() {
       );
       cargarResumen();
     } catch (err: any) {
-      toast.error(err?.message || "Error de conexión segura al iniciar sesión.");
+      toast.error(err?.message || "Credenciales incorrectas.");
     } finally {
       setLoginLoading(false);
     }
@@ -125,7 +115,7 @@ export function BancaVirtualView() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      await authService.logout();
       setUsuario(null);
       setCuentas([]);
       setCuentaActiva(null);
@@ -142,22 +132,12 @@ export function BancaVirtualView() {
 
   const handleUpdateTelefono = async (nuevoTel: string): Promise<boolean> => {
     try {
-      const res = await fetch("/api/banca/perfil", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ telefono: nuevoTel }),
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Error al actualizar perfil.");
-        return false;
-      }
+      await bancaService.actualizarTelefono(nuevoTel);
       if (usuario) setUsuario({ ...usuario, telefono: nuevoTel });
       agregarNotificacion("Contacto actualizado", `Nuevo teléfono registrado: ${nuevoTel}.`);
       return true;
-    } catch (err) {
-      toast.error("Error de comunicación.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error al actualizar perfil.");
       return false;
     }
   };
@@ -169,24 +149,19 @@ export function BancaVirtualView() {
     pinCajero: string
   ): Promise<boolean> => {
     try {
-      const res = await securePost("/api/banca/password", {
+      await bancaService.cambiarPassword({
         password_actual: passAct,
         password_nuevo: passNew,
         password_confirmacion: passConfirm,
         pin_cajero: pinCajero,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Error al actualizar contraseña.");
-        return false;
-      }
       agregarNotificacion(
         "Contraseña actualizada con éxito",
         "Cambio autenticado con clave actual + PIN de 4 dígitos y sesión renovada."
       );
       return true;
     } catch (err: any) {
-      toast.error(err?.message || "Error de comunicación segura.");
+      toast.error(err?.message || "Error al actualizar contraseña.");
       return false;
     }
   };
@@ -236,36 +211,26 @@ export function BancaVirtualView() {
     try {
       setLoadingCodigo(true);
       setShowModalSacarPlata(true);
-      const res = await fetch("/api/banca/generar-codigo-retiro", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cuenta_id: cuentaActiva?.id,
-          numero_cuenta: cuentaActiva?.numero_cuenta
-        }),
-        credentials: "include",
+      const data = await bancaService.generarCodigoRetiro(
+        cuentaActiva?.id,
+        cuentaActiva?.numero_cuenta
+      );
+      setCodigoRetiro(data.codigo);
+      toast.success("Código de retiro generado", {
+        description: `Tu código temporal es ${data.codigo}.`,
       });
-      const data = await res.json();
-      if (res.ok && data.codigo) {
-        setCodigoRetiro(data.codigo);
-        toast.success("Código de retiro generado", {
-          description: `Tu código temporal es ${data.codigo}.`,
-        });
-        agregarNotificacion(
-          "Código de retiro ATM generado",
-          `Código temporal ${data.codigo} listo para usar en el cajero automático.`
-        );
+      agregarNotificacion(
+        "Código de retiro ATM generado",
+        `Código temporal ${data.codigo} listo para usar en el cajero automático.`
+      );
+    } catch (err: any) {
+      if (err instanceof ApiError && err.status === 401) {
+        setShowModalSacarPlata(false);
+        toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
+        setUsuario(null);
       } else {
-        if (res.status === 401) {
-          setShowModalSacarPlata(false);
-          toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
-          setUsuario(null);
-        } else {
-          toast.error(data.error || "No se pudo generar el código de retiro.");
-        }
+        toast.error(err?.message || "No se pudo generar el código de retiro.");
       }
-    } catch (err) {
-      toast.error("Error al conectar con el servidor.");
     } finally {
       setLoadingCodigo(false);
     }
@@ -614,149 +579,17 @@ export function BancaVirtualView() {
         </div>
       )}
 
-      {/* MODAL MODERNO: SACAR DINERO EN CAJERO CON CÓDIGO OTP */}
-      {showModalSacarPlata && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-sm rounded-3xl border border-[#1d2f50] bg-[#091224] p-5 sm:p-6 shadow-2xl space-y-4 text-left animate-in zoom-in-95 duration-200">
-            {/* ENCABEZADO MODAL */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                  <Landmark className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-display font-bold text-base text-white leading-tight">
-                    Sacar Dinero en Cajero
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Retiro sin tarjeta con código único</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowModalSacarPlata(false)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-slate-800 text-slate-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {loadingCodigo ? (
-              <div className="py-8 text-center space-y-2">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
-                <p className="text-xs text-slate-400">Generando tu código de retiro seguro...</p>
-              </div>
-            ) : (
-              <div className="space-y-3.5 text-xs">
-                {/* CAJA DESTACADA DEL CÓDIGO */}
-                <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-[#0b1b36] to-[#071122] p-4 text-center space-y-2.5 shadow-inner">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-cyan-300">
-                    Tu Código de Retiro (Válido 30 min)
-                  </p>
-
-                  <div className="flex items-center justify-center gap-3">
-                    <p
-                      onClick={() => copiarTexto(codigoRetiro || "", "codigo")}
-                      title="Haz clic para copiar"
-                      className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-white cursor-pointer hover:text-cyan-300 transition-colors select-all"
-                    >
-                      {codigoRetiro ? `${codigoRetiro.slice(0, 3)} ${codigoRetiro.slice(3)}` : "------"}
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => copiarTexto(codigoRetiro || "", "codigo")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-md ${
-                        copiadoCodigo
-                          ? "bg-emerald-500 text-slate-950 shadow-emerald-500/40 scale-105"
-                          : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-blue-500/25"
-                      }`}
-                      title="Copiar código de retiro"
-                    >
-                      {copiadoCodigo ? (
-                        <>
-                          <Check className="h-4 w-4" />
-                          <span>¡Copiado!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4" />
-                          <span>Copiar</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* MENSAJE DE CONFIRMACIÓN VISUAL DESTACADO */}
-                  {copiadoCodigo ? (
-                    <div className="rounded-xl bg-emerald-500/20 border border-emerald-500/50 py-1.5 px-3 text-center text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
-                      <Check className="h-4 w-4 text-emerald-400" />
-                      <span>¡Código copiado al portapapeles!</span>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-emerald-400 font-medium">
-                      ● Código activo de un solo uso en Cajeros ATM
-                    </p>
-                  )}
-                </div>
-
-                {/* DETALLE DE CUENTA */}
-                <div className="rounded-xl border border-slate-800 bg-[#060b14] p-3 space-y-2">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Número de Cuenta:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-white">
-                        {cuentaActiva?.numero_cuenta || "400150181053"}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => copiarTexto(cuentaActiva?.numero_cuenta || "400150181053", "cuenta")}
-                        className={`grid h-6 w-6 place-items-center rounded-md text-[10px] transition-all ${
-                          copiadoCuenta
-                            ? "bg-emerald-500 text-slate-950 font-bold"
-                            : "bg-slate-800 hover:bg-slate-700 text-slate-300"
-                        }`}
-                        title="Copiar número de cuenta"
-                      >
-                        {copiadoCuenta ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Saldo Disponible:</span>
-                    <span className="font-mono font-bold text-emerald-400">
-                      {fmt(saldoReal)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* PASOS DE INSTRUCCIÓN */}
-                <div className="rounded-xl bg-slate-900/60 p-3 space-y-1 text-slate-300 text-[11px]">
-                  <p className="font-bold text-white mb-0.5">¿Cómo retirar en el Cajero?</p>
-                  <p>1. Ingresa a la pantalla del Cajero Virtual.</p>
-                  <p>2. Ingresa tu número de cuenta: <span className="font-mono font-bold text-cyan-300">{cuentaActiva?.numero_cuenta || "Tu cuenta"}</span></p>
-                  <p>3. Digita tu código generado: <span className="font-mono font-bold text-cyan-300">{codigoRetiro}</span></p>
-                </div>
-
-                {/* BOTÓN PARA ENTRAR DIRECTO AL CAJERO SIN EXPONER DATOS EN URL */}
-                <button
-                  disabled={loadingCodigo || !codigoRetiro || codigoRetiro === "null"}
-                  onClick={() => {
-                    if (!codigoRetiro || codigoRetiro === "null" || !cuentaActiva?.numero_cuenta) {
-                      toast.error("El código de retiro aún no ha sido generado.");
-                      return;
-                    }
-                    saveCajeroHandoff(cuentaActiva.numero_cuenta, codigoRetiro);
-                    window.location.href = "/cajero";
-                  }}
-                  className="w-full rounded-xl bg-gradient-to-r from-[#0e76fd] to-[#00d2ff] hover:opacity-95 active:scale-95 py-3 text-xs font-bold text-white transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Landmark className="h-4 w-4" />
-                  <span>Entrar al Cajero Virtual con este Código →</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <ModalSacarPlata
+        open={showModalSacarPlata}
+        loadingCodigo={loadingCodigo}
+        codigoRetiro={codigoRetiro}
+        cuentaActiva={cuentaActiva}
+        saldoReal={saldoReal}
+        copiadoCodigo={copiadoCodigo}
+        copiadoCuenta={copiadoCuenta}
+        onClose={() => setShowModalSacarPlata(false)}
+        onCopy={copiarTexto}
+      />
     </div>
   );
 }

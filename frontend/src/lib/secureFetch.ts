@@ -208,3 +208,57 @@ export function consumeCajeroHandoff(): { cuenta: string; codigo: string } | nul
     return null;
   }
 }
+
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+async function parseJsonResponse<T>(res: Response, defaultErrorMsg: string): Promise<T> {
+  let data: any = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+  if (!res.ok) {
+    throw new ApiError(data?.error || defaultErrorMsg, res.status, data?.code);
+  }
+  return data as T;
+}
+
+export async function apiGet<T>(url: string, fallbackError = "Error de comunicación con el servidor."): Promise<T> {
+  const res = await fetch(url, { method: "GET", credentials: "include" });
+  return parseJsonResponse<T>(res, fallbackError);
+}
+
+export async function apiPost<T>(
+  url: string,
+  payload?: Record<string, unknown>,
+  fallbackError = "Error al procesar la solicitud."
+): Promise<T> {
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: payload ? JSON.stringify(payload) : undefined,
+  });
+  return parseJsonResponse<T>(res, fallbackError);
+}
+
+export async function apiSecurePost<T>(
+  url: string,
+  payload: Record<string, unknown>,
+  fallbackError = "Error en operación segura cifrada."
+): Promise<T> {
+  const res = await securePost(url, payload);
+  return parseJsonResponse<T>(res, fallbackError);
+}
+
