@@ -81,7 +81,7 @@ export function AdminSidebar({ activeTab, onSelectTab, onLogout }: AdminSidebarP
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-semibold text-white">Motor transaccional</span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-400">MySQL 3NF · InnoDB · En línea</p>
+          <p className="mt-1 text-[11px] text-slate-400">PostgreSQL · Cifrado E2E · En línea</p>
         </div>
 
         <button

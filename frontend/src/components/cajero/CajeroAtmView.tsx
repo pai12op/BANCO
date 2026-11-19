@@ -6,6 +6,7 @@ import {
   ArrowDownLeft, ArrowUpRight, KeyRound, Printer
 } from "lucide-react";
 import { toast } from "sonner";
+import { consumeCajeroHandoff, securePost } from "@/lib/secureFetch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -51,29 +52,23 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
     setPantalla("confirmar_retiro");
   };
 
-  // Verificar sesión existente en cajero o parámetros en URL desde Banca Virtual
+  // Verificar sesión existente en cajero o transferencia segura desde Banca Virtual
   useEffect(() => {
     checkSesion();
     if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const cParam = params.get("cuenta");
-      const codParam = params.get("codigo");
-      if (cParam && cParam !== "null" && cParam !== "undefined") {
-        setCuentaNumero(cParam.trim());
-      }
-      if (
-        codParam &&
-        codParam !== "null" &&
-        codParam !== "undefined" &&
-        /^\d{4,6}$/.test(codParam.trim())
-      ) {
-        setPin(codParam.trim());
-        setCodigoOtpRetiro(codParam.trim());
+      const handoff = consumeCajeroHandoff();
+      if (handoff) {
+        setCuentaNumero(handoff.cuenta);
+        setPin(handoff.codigo);
+        setCodigoOtpRetiro(handoff.codigo);
         setModoAcceso("codigo");
-        toast.info("Código de retiro OTP cargado en el cajero.");
+        toast.success("Código de retiro cargado en el cajero con éxito.");
       } else {
         setPin("");
         setCodigoOtpRetiro("");
+      }
+      if (window.location.search) {
+        window.history.replaceState({}, "", window.location.pathname);
       }
     }
   }, []);
@@ -105,11 +100,9 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
 
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/login-cajero", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ numero_cuenta: cuentaNumero.trim(), pin: pin.trim() }),
-        credentials: "include",
+      const res = await securePost("/api/auth/login-cajero", {
+        numero_cuenta: cuentaNumero.trim(),
+        pin: pin.trim(),
       });
 
       const data = await res.json();
@@ -118,12 +111,14 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
         return;
       }
 
-      toast.success("Tarjeta aceptada. Bienvenido al Cajero ATM.");
+      toast.success("Acceso ATM autorizado con éxito.", {
+        description: "Bienvenido al Cajero Automático.",
+      });
       setCuentaInfo(data.cuenta);
       setAutenticado(true);
       setPantalla("menu");
-    } catch (err) {
-      toast.error("Error de comunicación con el cajero automático.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de comunicación segura con el cajero automático.");
     } finally {
       setLoading(false);
     }
@@ -148,11 +143,9 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
 
     try {
       setLoading(true);
-      const res = await fetch("/api/cajero/retirar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ valor, codigoOtp: cleanOtp }),
-        credentials: "include",
+      const res = await securePost("/api/cajero/retirar", {
+        valor,
+        codigoOtp: cleanOtp,
       });
 
       const data = await res.json();
@@ -161,12 +154,14 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
         return;
       }
 
-      toast.success(data.mensaje);
+      toast.success("Retiro exitoso", {
+        description: data.mensaje || `Efectivo dispensado por ${fmt(valor)}.`,
+      });
       setRecibo(data.recibo);
       setCuentaInfo((prev: any) => ({ ...prev, saldo: data.recibo.nuevo_saldo }));
       setPantalla("recibo");
-    } catch (err) {
-      toast.error("Error en el dispensador de efectivo.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de conexión segura con el dispensador de efectivo.");
     } finally {
       setLoading(false);
     }
@@ -195,7 +190,9 @@ export function CajeroAtmView({ activeModule = "cajero", onSwitchModule }: Cajer
       setCuentaInfo(null);
       setPantalla("menu");
       setRecibo(null);
-      toast.info("Por favor retire su tarjeta de la ranura.");
+      toast.success("Sesión ATM cerrada con éxito", {
+        description: "Por favor retire su tarjeta de la ranura.",
+      });
     } catch (err) {
       console.error(err);
     }

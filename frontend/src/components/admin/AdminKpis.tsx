@@ -22,7 +22,7 @@ export function AdminKpis({ kpis }: AdminKpisProps) {
           <Users className="h-5 w-5 text-blue-400" />
         </div>
         <p className="mt-2 font-display text-3xl font-bold text-slate-100">{kpis.totalClientes}</p>
-        <p className="mt-1 text-[11px] text-muted-foreground">Registrados en MySQL</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">Registrados en núcleo seguro</p>
       </div>
 
       {/* KPI 2 */}

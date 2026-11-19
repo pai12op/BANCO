@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { securePost } from "@/lib/secureFetch";
 import { AdminHeader } from "./AdminHeader";
 import { AdminSidebar, AdminTab } from "./AdminSidebar";
 import { AdminLogin } from "./AdminLogin";
@@ -152,15 +153,10 @@ export function AdminPanelView() {
     }
 
     try {
-      const res = await fetch("/api/admin/consignar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          numero_cuenta: numero_cuenta.trim(),
-          valor,
-          concepto: concepto.trim(),
-        }),
-        credentials: "include",
+      const res = await securePost("/api/admin/consignar", {
+        numero_cuenta: numero_cuenta.trim(),
+        valor,
+        concepto: concepto.trim(),
       });
 
       const data = await res.json();
@@ -169,34 +165,32 @@ export function AdminPanelView() {
         return null;
       }
 
+      toast.success("Consignación exitosa", {
+        description: `Depósito de ${fmt(valor)} aplicado a la cuenta ${numero_cuenta.trim()}.`,
+      });
       cargarDashboard();
       cargarClientes();
       cargarAuditoria();
       return data.recibo;
-    } catch (err) {
-      toast.error("Error al conectar con ventanilla.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de conexión segura con ventanilla.");
       return null;
     }
   };
 
   const handleCrearCliente = async (nuevoCliente: any): Promise<boolean> => {
     try {
-      const res = await fetch("/api/admin/clientes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tipo_documento_id: nuevoCliente.tipo_documento_id || 1,
-          numero_documento: nuevoCliente.numero_documento.trim(),
-          nombres: nuevoCliente.nombres.trim(),
-          apellidos: nuevoCliente.apellidos.trim(),
-          correo: nuevoCliente.correo.trim(),
-          telefono: nuevoCliente.telefono ? nuevoCliente.telefono.trim() : null,
-          password: nuevoCliente.password,
-          pin_cajero: nuevoCliente.pin_cajero,
-          tipo_cuenta_id: nuevoCliente.tipo_cuenta_id || 1,
-          saldo_inicial: parseFloat(nuevoCliente.saldo_inicial) || 0,
-        }),
-        credentials: "include",
+      const res = await securePost("/api/admin/clientes", {
+        tipo_documento_id: nuevoCliente.tipo_documento_id || 1,
+        numero_documento: nuevoCliente.numero_documento.trim(),
+        nombres: nuevoCliente.nombres.trim(),
+        apellidos: nuevoCliente.apellidos.trim(),
+        correo: nuevoCliente.correo.trim(),
+        telefono: nuevoCliente.telefono ? nuevoCliente.telefono.trim() : null,
+        password: nuevoCliente.password,
+        pin_cajero: nuevoCliente.pin_cajero,
+        tipo_cuenta_id: nuevoCliente.tipo_cuenta_id || 1,
+        saldo_inicial: parseFloat(nuevoCliente.saldo_inicial) || 0,
       });
 
       const data = await res.json();
@@ -205,12 +199,16 @@ export function AdminPanelView() {
         return false;
       }
 
-      toast.success("Cliente y cuenta creados exitosamente.");
+      toast.success("Cliente y cuenta creados con éxito", {
+        description: data.cliente?.numero_cuenta
+          ? `Cuenta asignada: ${data.cliente.numero_cuenta}`
+          : undefined,
+      });
       cargarDashboard();
       cargarClientes();
       return true;
-    } catch (err) {
-      toast.error("Error de comunicación.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de comunicación segura.");
       return false;
     }
   };
@@ -219,7 +217,7 @@ export function AdminPanelView() {
     try {
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       setAutenticado(false);
-      toast.info("Sesión administrativa finalizada.");
+      toast.success("Sesión administrativa cerrada con éxito.");
     } catch (err) {
       console.error(err);
     }

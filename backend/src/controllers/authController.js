@@ -1,35 +1,31 @@
 // src/controllers/authController.js
-const db = require('../config/db');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const bankRepository = require('../repositories/bankRepository');
+const { getPublicKeyInfo } = require('../config/payloadCrypto');
 const { validarCodigoRetiro } = require('../config/otpStore');
+
+const STRONG_PASS_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+// 0. Llave pública RSA-OAEP para cifrado de carga útil en tránsito
+function getPublicKey(req, res) {
+    return res.json(getPublicKeyInfo());
+}
 
 // 1. Iniciar sesión en Banca Virtual (Cliente)
 async function loginCliente(req, res) {
     try {
-        const { identificador, password } = req.body; // Número de documento (Cédula), tarjeta/cuenta o correo
+        const { identificador, password } = req.body;
         if (!identificador || !password) {
             return res.status(400).json({ error: 'Debe ingresar su número de documento o tarjeta y contraseña.' });
         }
 
-        const valorLimpio = identificador.trim().replace(/[-\s]/g, '');
+        const valorLimpio = identificador.toString().trim().replace(/[-\s]/g, '');
+        const usuario = await bankRepository.findClienteLogin(valorLimpio, identificador.toString().trim());
 
-        const [usuarios] = await db.query(`
-            SELECT DISTINCT u.*, r.nombre AS rol_nombre, e.nombre AS estado_nombre
-            FROM usuarios u
-            JOIN roles r ON u.rol_id = r.id
-            JOIN estados_usuario e ON u.estado_id = e.id
-            LEFT JOIN cuentas c ON u.id = c.usuario_id
-            WHERE u.numero_documento = ? 
-               OR c.numero_cuenta = ? 
-               OR u.correo = ?
-            LIMIT 1
-        `, [valorLimpio, valorLimpio, identificador.trim()]);
-
-        if (usuarios.length === 0) {
+        if (!usuario) {
             return res.status(401).json({ error: 'Credenciales inválidas.' });
         }
-
-        const usuario = usuarios[0];
 
         if (usuario.rol_id !== 2) {
             return res.status(403).json({ error: 'Este usuario no tiene acceso a la Banca Virtual de clientes.' });
@@ -44,14 +40,7 @@ async function loginCliente(req, res) {
             return res.status(401).json({ error: 'Credenciales inválidas.' });
         }
 
-        // Obtener cuentas asociadas al cliente
-        const [cuentas] = await db.query(`
-            SELECT c.*, tc.nombre AS tipo_cuenta, ec.nombre AS estado_cuenta
-            FROM cuentas c
-            JOIN tipos_cuenta tc ON c.tipo_id = tc.id
-            JOIN estados_cuenta ec ON c.estado_id = ec.id
-            WHERE c.usuario_id = ?
-        `, [usuario.id]);
+        const cuentas = await bankRepository.findCuentasSegurasPorUsuario(usuario.id);
 
         req.session.cliente = {
             id: usuario.id,
@@ -63,22 +52,23 @@ async function loginCliente(req, res) {
             rol_id: usuario.rol_id,
             rol_nombre: usuario.rol_nombre,
             cuenta_principal_id: cuentas.length > 0 ? cuentas[0].id : null,
-            numero_cuenta: cuentas.length > 0 ? cuentas[0].numero_cuenta : null
+            numero_cuenta: cuentas.length > 0 ? cuentas[0].numero_cuenta : null,
         };
         req.session.usuario = req.session.cliente;
 
         return res.json({
+            exito: true,
             mensaje: 'Inicio de sesión exitoso.',
             usuario: req.session.cliente,
-            cuentas
+            cuentas,
         });
     } catch (error) {
-        console.error('Error en loginCliente:', error);
+        console.error('Error en loginCliente:', error.message);
         return res.status(500).json({ error: 'Error interno en el servidor.' });
     }
 }
 
-// 2. Iniciar sesión en Panel Administrativo (Paso 1: Validación de Credenciales -> Emisión 2FA)
+// 2. Iniciar sesión en Panel Administrativo (Paso 1: Credenciales -> 2FA)
 async function loginAdmin(req, res) {
     try {
         const { correo, password } = req.body;
@@ -86,19 +76,11 @@ async function loginAdmin(req, res) {
             return res.status(400).json({ error: 'Ingrese correo y contraseña de administrador.' });
         }
 
-        const [usuarios] = await db.query(`
-            SELECT u.*, r.nombre AS rol_nombre, e.nombre AS estado_nombre
-            FROM usuarios u
-            JOIN roles r ON u.rol_id = r.id
-            JOIN estados_usuario e ON u.estado_id = e.id
-            WHERE u.correo = ? AND u.rol_id = 1
-        `, [correo.trim()]);
-
-        if (usuarios.length === 0) {
+        const admin = await bankRepository.findAdminPorCorreo(correo.toString().trim());
+        if (!admin) {
             return res.status(401).json({ error: 'Credenciales administrativas inválidas.' });
         }
 
-        const admin = usuarios[0];
         if (admin.estado_nombre !== 'ACTIVO') {
             return res.status(403).json({ error: 'El usuario administrativo se encuentra inactivo o bloqueado.' });
         }
@@ -108,10 +90,7 @@ async function loginAdmin(req, res) {
             return res.status(401).json({ error: 'Credenciales administrativas inválidas.' });
         }
 
-        // Generar código OTP criptográfico de 6 dígitos para Segundo Factor (2FA)
-        const codigo2FA = Math.floor(100000 + Math.random() * 900000).toString();
-
-        // Almacenar el reto 2FA en la sesión temporal (vigencia de 5 minutos)
+        const codigo2FA = crypto.randomInt(100000, 1000000).toString();
         req.session.pendingAdmin2FA = {
             adminId: admin.id,
             adminData: {
@@ -120,10 +99,11 @@ async function loginAdmin(req, res) {
                 apellidos: admin.apellidos,
                 correo: admin.correo,
                 rol_id: admin.rol_id,
-                rol_nombre: admin.rol_nombre
+                rol_nombre: admin.rol_nombre,
             },
             code: codigo2FA,
-            expiresAt: Date.now() + 5 * 60 * 1000
+            attempts: 0,
+            expiresAt: Date.now() + 5 * 60 * 1000,
         };
 
         const correoEnmascarado = admin.correo.replace(/^(.{2})(.*)(@.*)$/, '$1***$3');
@@ -132,15 +112,15 @@ async function loginAdmin(req, res) {
             requires2FA: true,
             mensaje: 'Credenciales autorizadas. Ingrese el código de autenticación en dos pasos (2FA).',
             correo_enmascarado: correoEnmascarado,
-            codigo_demo: codigo2FA
+            codigo_demo: codigo2FA,
         });
     } catch (error) {
-        console.error('Error en loginAdmin:', error);
+        console.error('Error en loginAdmin:', error.message);
         return res.status(500).json({ error: 'Error interno en el servidor.' });
     }
 }
 
-// 2.1 Verificar Segundo Factor de Autenticación (2FA) para Administrador
+// 2.1 Verificar Segundo Factor (2FA) con límite de intentos
 async function verify2FAAdmin(req, res) {
     try {
         const { codigo } = req.body;
@@ -156,21 +136,25 @@ async function verify2FAAdmin(req, res) {
         }
 
         const cleanCode = (codigo || '').toString().trim();
-        // Permite el código generado o el código maestro de respaldo '772901' para la sustentación
-        if (cleanCode !== pending.code && cleanCode !== '772901') {
+        if (!cleanCode || cleanCode !== pending.code) {
+            pending.attempts = (pending.attempts || 0) + 1;
+            if (pending.attempts >= 5) {
+                delete req.session.pendingAdmin2FA;
+                return res.status(429).json({ error: 'Demasiados intentos fallidos. Inicie sesión nuevamente.' });
+            }
             return res.status(401).json({ error: 'Código 2FA incorrecto o no autorizado.' });
         }
 
-        // 2FA Exitoso -> Promover a sesión activa definitiva de Administrador
         req.session.admin = pending.adminData;
         delete req.session.pendingAdmin2FA;
 
         return res.json({
-            mensaje: 'Segundo factor 2FA verificado correctamente. Acceso concedido.',
-            admin: req.session.admin
+            exito: true,
+            mensaje: 'Segundo factor 2FA verificado con éxito. Acceso concedido.',
+            admin: req.session.admin,
         });
     } catch (error) {
-        console.error('Error en verify2FAAdmin:', error);
+        console.error('Error en verify2FAAdmin:', error.message);
         return res.status(500).json({ error: 'Error al verificar código 2FA.' });
     }
 }
@@ -183,22 +167,24 @@ async function resend2FAAdmin(req, res) {
             return res.status(400).json({ error: 'No hay proceso de autenticación pendiente.' });
         }
 
-        const nuevoCodigo = Math.floor(100000 + Math.random() * 900000).toString();
+        const nuevoCodigo = crypto.randomInt(100000, 1000000).toString();
         pending.code = nuevoCodigo;
+        pending.attempts = 0;
         pending.expiresAt = Date.now() + 5 * 60 * 1000;
         req.session.pendingAdmin2FA = pending;
 
         return res.json({
+            exito: true,
             mensaje: 'Nuevo código 2FA generado exitosamente.',
-            codigo_demo: nuevoCodigo
+            codigo_demo: nuevoCodigo,
         });
     } catch (error) {
-        console.error('Error en resend2FAAdmin:', error);
+        console.error('Error en resend2FAAdmin:', error.message);
         return res.status(500).json({ error: 'Error al generar nuevo código 2FA.' });
     }
 }
 
-// 3. Identificación en Cajero Automático (Cuenta + PIN de 4 dígitos o Código de Retiro OTP de 6 dígitos)
+// 3. Identificación en Cajero Automático (Cuenta + PIN 4 dígitos o OTP 6 dígitos)
 async function loginCajero(req, res) {
     try {
         const { numero_cuenta, pin, codigo_retiro } = req.body;
@@ -208,34 +194,20 @@ async function loginCajero(req, res) {
             return res.status(400).json({ error: 'Ingrese el número de cuenta y su PIN o Código de Retiro.' });
         }
 
-        const cleanId = numero_cuenta.trim().replace(/[-\s]/g, '');
-        const [cuentas] = await db.query(`
-            SELECT c.*, tc.nombre AS tipo_cuenta, ec.nombre AS estado_cuenta,
-                   u.nombres, u.apellidos, u.numero_documento, u.estado_id AS usuario_estado_id
-            FROM cuentas c
-            JOIN tipos_cuenta tc ON c.tipo_id = tc.id
-            JOIN estados_cuenta ec ON c.estado_id = ec.id
-            JOIN usuarios u ON c.usuario_id = u.id
-            WHERE c.numero_cuenta = ? OR u.numero_documento = ?
-        `, [cleanId, cleanId]);
+        const cleanId = numero_cuenta.toString().trim().replace(/[-\s]/g, '');
+        const cuenta = await bankRepository.findCuentaParaCajero(cleanId);
 
-        if (cuentas.length === 0) {
+        if (!cuenta) {
             return res.status(404).json({ error: 'La cuenta ingresada no existe en el sistema.' });
         }
-
-        const cuenta = cuentas[0];
 
         if (cuenta.estado_cuenta !== 'ACTIVA' || cuenta.usuario_estado_id === 3) {
             return res.status(403).json({ error: 'La cuenta se encuentra BLOQUEADA o INACTIVA. Operación rechazada.' });
         }
 
-        // 1. Probar primero si es un código de retiro de 6 dígitos válido (OTP sin tarjeta)
-        // No se consume todavía para que pueda ser confirmado al momento de dispensar el efectivo
         const esOtpValido = validarCodigoRetiro(authCode, cuenta.numero_cuenta, false);
-
         let pinValido = false;
         if (!esOtpValido) {
-            // 2. Probar si es el PIN físico de 4 dígitos
             pinValido = await bcrypt.compare(authCode, cuenta.pin_hash);
         }
 
@@ -250,45 +222,47 @@ async function loginCajero(req, res) {
             numero_cuenta: cuenta.numero_cuenta,
             tipo_cuenta: cuenta.tipo_cuenta,
             saldo: parseFloat(cuenta.saldo),
-            tipo_retiro: esOtpValido ? 'SIN_TARJETA_OTP' : 'TARJETA_PIN'
+            tipo_retiro: esOtpValido ? 'SIN_TARJETA_OTP' : 'TARJETA_PIN',
         };
         req.session.cajeroCuenta = req.session.cajero;
 
         return res.json({
-            mensaje: esOtpValido 
-                ? '¡Código de retiro verificado exitosamente! Bienvenido al Cajero Virtual.' 
-                : 'Tarjeta aceptada. Bienvenido al Cajero ATM.',
-            cuenta: req.session.cajero
+            exito: true,
+            mensaje: esOtpValido
+                ? '¡Código de retiro verificado con éxito! Bienvenido al Cajero Virtual.'
+                : 'Tarjeta aceptada con éxito. Bienvenido al Cajero ATM.',
+            cuenta: req.session.cajero,
         });
     } catch (error) {
-        console.error('Error en loginCajero:', error);
+        console.error('Error en loginCajero:', error.message);
         return res.status(500).json({ error: 'Error en la terminal del cajero automático.' });
     }
 }
 
-// 4. Cerrar sesión aislada por módulo (evita cerrar las otras pestañas)
+// 4. Cerrar sesión aislada por módulo
 function logout(req, res) {
     const modulo = req.body?.modulo || req.query?.modulo;
     if (modulo === 'cliente') {
         delete req.session.cliente;
-        return res.json({ mensaje: 'Sesión de Banca Virtual cerrada.' });
+        delete req.session.usuario;
+        return res.json({ exito: true, mensaje: 'Sesión de Banca Virtual cerrada con éxito.' });
     }
     if (modulo === 'admin') {
         delete req.session.admin;
         delete req.session.pendingAdmin2FA;
-        return res.json({ mensaje: 'Sesión administrativa cerrada.' });
+        return res.json({ exito: true, mensaje: 'Sesión administrativa cerrada con éxito.' });
     }
     if (modulo === 'cajero') {
         delete req.session.cajero;
         delete req.session.cajeroCuenta;
-        return res.json({ mensaje: 'Tarjeta expulsada de la terminal.' });
+        return res.json({ exito: true, mensaje: 'Tarjeta expulsada con éxito de la terminal.' });
     }
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ error: 'No se pudo cerrar la sesión.' });
         }
-        res.clearCookie('connect.sid');
-        return res.json({ mensaje: 'Sesión finalizada correctamente.' });
+        res.clearCookie('bancarota.sid');
+        return res.json({ exito: true, mensaje: 'Sesión finalizada con éxito.' });
     });
 }
 
@@ -297,13 +271,12 @@ function checkSession(req, res) {
     return res.json({
         cliente: req.session.cliente || null,
         admin: req.session.admin || null,
-        cajero: req.session.cajero || req.session.cajeroCuenta || null
+        cajero: req.session.cajero || req.session.cajeroCuenta || null,
     });
 }
 
-// 6. Registro / Apertura de Cuenta Pública (Cliente desde el panel principal con todos sus datos)
+// 6. Registro / Apertura de Cuenta Pública (Cliente siempre inicia con $0 COP)
 async function registroCliente(req, res) {
-    const connection = await db.getConnection();
     try {
         const {
             tipo_documento_id,
@@ -313,10 +286,22 @@ async function registroCliente(req, res) {
             correo,
             telefono,
             tipo_cuenta_id,
-            saldo_inicial,
             password,
-            pin_cajero
+            pin_cajero,
+            saldo_inicial,
+            saldo,
+            monto_inicial,
         } = req.body;
+
+        // Bloqueo estricto: un cliente nunca puede asignarse saldo desde el registro
+        if (saldo_inicial !== undefined || saldo !== undefined || monto_inicial !== undefined) {
+            const intento = Number(saldo_inicial ?? saldo ?? monto_inicial);
+            if (!Number.isNaN(intento) && intento !== 0) {
+                return res.status(403).json({
+                    error: 'Operación prohibida: ningún cliente puede fijar monto inicial al crear su cuenta. Todas las cuentas nuevas inician en $0 COP.',
+                });
+            }
+        }
 
         if (!numero_documento || !nombres || !apellidos || !correo || !password || !pin_cajero) {
             return res.status(400).json({ error: 'Por favor diligencie todos los campos obligatorios del registro.' });
@@ -327,88 +312,43 @@ async function registroCliente(req, res) {
             return res.status(400).json({ error: 'El PIN de seguridad del cajero debe ser de exactamente 4 dígitos numéricos.' });
         }
 
-        if (password.length < 6) {
-            return res.status(400).json({ error: 'La contraseña debe contener al menos 6 caracteres.' });
+        if (!STRONG_PASS_REGEX.test(password)) {
+            return res.status(400).json({
+                error: 'La contraseña debe tener mínimo 8 caracteres, incluyendo mayúscula, minúscula y número.',
+            });
         }
 
-        const saldoNum = parseFloat(saldo_inicial) || 0;
-        if (saldoNum < 0) {
-            return res.status(400).json({ error: 'El saldo inicial no puede ser negativo.' });
-        }
-
-        await connection.beginTransaction();
-
-        // Validar unicidad
-        const [existentes] = await connection.query(`
-            SELECT id FROM usuarios WHERE correo = ? OR (tipo_documento_id = ? AND numero_documento = ?)
-        `, [correo.trim(), tipo_documento_id || 1, numero_documento.trim()]);
-
-        if (existentes.length > 0) {
-            await connection.rollback();
-            return res.status(400).json({ error: 'Ya existe una cuenta registrada con este correo o número de documento.' });
-        }
-
-        // Hashing seguro de contraseña y PIN con bcrypt (10 salt rounds)
         const passwordHash = await bcrypt.hash(password, 10);
         const pinHash = await bcrypt.hash(pinStr, 10);
 
-        // 1. Insertar usuario cliente (rol_id = 2, estado_id = 1 ACTIVO)
-        const [resUser] = await connection.query(`
-            INSERT INTO usuarios (tipo_documento_id, numero_documento, nombres, apellidos, correo, telefono, password_hash, rol_id, estado_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 2, 1)
-        `, [tipo_documento_id || 1, numero_documento.trim(), nombres.trim(), apellidos.trim(), correo.trim(), telefono ? telefono.trim() : null, passwordHash]);
-
-        const nuevoUsuarioId = resUser.insertId;
-
-        // 2. Generar número de cuenta bancaria
-        const prefix = (tipo_cuenta_id == 2) ? '5001' : '4001';
-        const randomDigits = Math.floor(10000000 + Math.random() * 90000000);
-        const numeroCuenta = `${prefix}${randomDigits}`;
-
-        // 3. Crear cuenta bancaria activa (estado_id = 1)
-        const [resCuenta] = await connection.query(`
-            INSERT INTO cuentas (usuario_id, numero_cuenta, tipo_id, estado_id, pin_hash, saldo)
-            VALUES (?, ?, ?, 1, ?, ?)
-        `, [nuevoUsuarioId, numeroCuenta, tipo_cuenta_id || 1, pinHash, saldoNum]);
-
-        const nuevaCuentaId = resCuenta.insertId;
-
-        // 4. Si hay saldo inicial, registrar operación contable de apertura (Canal 2: Banca Virtual)
-        if (saldoNum > 0) {
-            const [resOp] = await connection.query(`
-                INSERT INTO operaciones (tipo_id, estado_id, canal_id, realizado_por, valor, descripcion)
-                VALUES (1, 1, 2, ?, ?, 'Apertura de cuenta con depósito inicial en línea')
-            `, [nuevoUsuarioId, saldoNum]);
-
-            await connection.query(`
-                INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
-                VALUES (?, ?, 'CREDITO', ?)
-            `, [resOp.insertId, nuevaCuentaId, saldoNum]);
-        }
-
-        await connection.commit();
+        const cuenta = await bankRepository.registrarClienteConSaldoCero({
+            tipo_documento_id,
+            numero_documento: numero_documento.toString().trim(),
+            nombres: nombres.toString().trim(),
+            apellidos: apellidos.toString().trim(),
+            correo: correo.toString().trim(),
+            telefono: telefono ? telefono.toString().trim() : null,
+            tipo_cuenta_id,
+            passwordHash,
+            pinHash,
+            esBancoCorazones: false,
+        });
 
         return res.json({
             exito: true,
-            mensaje: '¡Tu cuenta bancaria ha sido creada exitosamente! Ya puedes iniciar sesión con tu número de documento o tarjeta.',
-            cuenta: {
-                numero_documento: numero_documento.trim(),
-                numero_cuenta: numeroCuenta,
-                titular: `${nombres} ${apellidos}`,
-                correo: correo.trim(),
-                saldo: saldoNum
-            }
+            mensaje: '¡Cuenta creada con éxito! Inicia sesión con tu documento; tu saldo inicial es $0 COP.',
+            cuenta,
         });
     } catch (error) {
-        await connection.rollback();
-        console.error('Error en registroCliente:', error);
-        return res.status(500).json({ error: 'Error al procesar la apertura de la cuenta.' });
-    } finally {
-        connection.release();
+        console.error('Error en registroCliente:', error.message);
+        return res.status(error.statusCode || 500).json({
+            error: error.statusCode ? error.message : 'Error al procesar la apertura de la cuenta.',
+        });
     }
 }
 
 module.exports = {
+    getPublicKey,
     loginCliente,
     loginAdmin,
     verify2FAAdmin,
@@ -416,5 +356,5 @@ module.exports = {
     loginCajero,
     logout,
     checkSession,
-    registroCliente
+    registroCliente,
 };

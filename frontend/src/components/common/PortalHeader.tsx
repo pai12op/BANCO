@@ -75,7 +75,7 @@ export function PortalHeader({ activeModule, onSwitchModule }: PortalHeaderProps
         {/* ESTADO DEL SISTEMA */}
         <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground">
           <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-mono text-[11px]">MySQL 3NF Conectado</span>
+          <span className="font-mono text-[11px]">Núcleo Seguro · Cifrado E2E</span>
         </div>
       </div>
     </header>

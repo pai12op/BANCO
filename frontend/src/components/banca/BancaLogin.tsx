@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { isStrongPassword, securePost } from "@/lib/secureFetch";
 
 interface BancaLoginProps {
   onLogin: (identificador: string, password: string) => Promise<void>;
@@ -38,7 +39,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
     setTimeout(() => setCopiedKey(false), 2000);
   };
 
-  // Formulario de Registro Público
+  // Formulario de Registro Público (saldo inicial siempre $0 COP en backend)
   const [regData, setRegData] = useState({
     tipo_documento_id: 1,
     numero_documento: "",
@@ -47,7 +48,6 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
     correo: "",
     telefono: "",
     tipo_cuenta_id: 1,
-    saldo_inicial: "",
     password: "",
     password_confirm: "",
     pin_cajero: "",
@@ -78,6 +78,11 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
       return;
     }
 
+    if (!isStrongPassword(regData.password)) {
+      toast.error("La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número.");
+      return;
+    }
+
     if (regData.password !== regData.password_confirm) {
       toast.error("Las contraseñas ingresadas no coinciden.");
       return;
@@ -91,21 +96,16 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
 
     try {
       setRegLoading(true);
-      const res = await fetch("/api/auth/registro-cliente", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tipo_documento_id: regData.tipo_documento_id,
-          numero_documento: regData.numero_documento.trim(),
-          nombres: regData.nombres.trim(),
-          apellidos: regData.apellidos.trim(),
-          correo: regData.correo.trim(),
-          telefono: regData.telefono.trim(),
-          tipo_cuenta_id: regData.tipo_cuenta_id,
-          saldo_inicial: parseFloat(regData.saldo_inicial) || 0,
-          password: regData.password,
-          pin_cajero: pin,
-        }),
+      const res = await securePost("/api/auth/registro-cliente", {
+        tipo_documento_id: regData.tipo_documento_id,
+        numero_documento: regData.numero_documento.trim(),
+        nombres: regData.nombres.trim(),
+        apellidos: regData.apellidos.trim(),
+        correo: regData.correo.trim(),
+        telefono: regData.telefono.trim(),
+        tipo_cuenta_id: regData.tipo_cuenta_id,
+        password: regData.password,
+        pin_cajero: pin,
       });
 
       const data = await res.json();
@@ -114,13 +114,16 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
         return;
       }
 
-      toast.success(data.mensaje);
+      toast.success("¡Cuenta creada con éxito!", {
+        description: data.mensaje || "Tu cuenta inició en $0 COP. Ya puedes iniciar sesión.",
+      });
       setCuentaCreada(data.cuenta);
-      // Precargar documento (cédula) como usuario en el login
+      // Precargar documento (cédula) como usuario en el login y cambiar de pestaña
       setIdentificador(regData.numero_documento.trim());
       setPassword(regData.password);
-    } catch (err) {
-      toast.error("Error de conexión con el banco.");
+      setTab("login");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de conexión segura con el banco.");
     } finally {
       setRegLoading(false);
     }
@@ -382,16 +385,17 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   </select>
                 </div>
                 <div>
-                  <Label className="text-[11px] text-slate-300">Depósito Inicial (COP)</Label>
-                  <Input
-                    type="number"
-                    step="10000"
-                    placeholder="0"
-                    value={regData.saldo_inicial}
-                    onChange={(e) => setRegData({ ...regData, saldo_inicial: e.target.value })}
-                    className="mt-1 font-mono text-xs bg-slate-900 border-slate-700 text-emerald-400 font-bold"
-                  />
+                  <Label className="text-[11px] text-slate-300">Saldo Inicial de Apertura</Label>
+                  <div className="mt-1 flex items-center justify-between rounded-md border border-emerald-500/30 bg-emerald-950/20 px-2.5 py-1.5 text-xs">
+                    <span className="font-mono font-bold text-emerald-400">$0 COP</span>
+                    <span className="text-[10px] text-slate-400">Fijo por seguridad</span>
+                  </div>
                 </div>
+              </div>
+
+              <div className="rounded-lg border border-cyan-500/20 bg-cyan-950/20 px-2.5 py-2 text-[10px] text-cyan-200/90 flex items-center gap-2">
+                <ShieldCheck className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                <span>Política bancaria: toda cuenta nueva inicia en $0 COP y credenciales cifradas E2E.</span>
               </div>
 
               {/* CONTRASEÑA Y CONFIRMACIÓN */}
@@ -402,7 +406,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                     type={showRegPass ? "text" : "password"}
                     value={regData.password}
                     onChange={(e) => setRegData({ ...regData, password: e.target.value })}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mín. 8 (Mayús+Min+Num)"
                     required
                     className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
                   />

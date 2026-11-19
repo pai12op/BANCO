@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeftRight, Send, CheckCircle2, RefreshCw, UserCheck, Receipt } from "lucide-react";
 import { toast } from "sonner";
+import { securePost } from "@/lib/secureFetch";
 import { ComprobanteTransferencia, Cuenta, Movimiento } from "../types";
 
 const fmt = (n: number) =>
@@ -14,6 +15,7 @@ interface TransferenciasViewProps {
   saldoReal: number;
   movimientos: Movimiento[];
   onTransferSuccess: () => void;
+  onNotify?: (title: string, detail: string) => void;
 }
 
 export function TransferenciasView({
@@ -21,6 +23,7 @@ export function TransferenciasView({
   saldoReal,
   movimientos,
   onTransferSuccess,
+  onNotify,
 }: TransferenciasViewProps) {
   const [cuentaDestino, setCuentaDestino] = useState("");
   const [monto, setMonto] = useState("");
@@ -80,16 +83,11 @@ export function TransferenciasView({
         ? (impuesto > 0 ? `${concepto.trim()} (GMF 4x1000: ${fmt(impuesto)})` : concepto.trim())
         : (impuesto > 0 ? `Transferencia (GMF 4x1000: ${fmt(impuesto)})` : undefined);
 
-      const res = await fetch("/api/banca/transferir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cuenta_origen_id: cuentaActiva.id,
-          numero_cuenta_destino: destinoLimpio,
-          valor,
-          concepto: conceptoFinal,
-        }),
-        credentials: "include",
+      const res = await securePost("/api/banca/transferir", {
+        cuenta_origen_id: cuentaActiva.id,
+        numero_cuenta_destino: destinoLimpio,
+        valor,
+        concepto: conceptoFinal,
       });
 
       const data = await res.json();
@@ -98,7 +96,13 @@ export function TransferenciasView({
         return;
       }
 
-      toast.success(data.mensaje || "¡Transferencia realizada con éxito!");
+      const detalleExito = `Enviaste ${fmt(valor)} a la cuenta ${destinoLimpio}${
+        data.comprobante?.titular_destino ? ` (${data.comprobante.titular_destino})` : ""
+      }.`;
+      toast.success("Transferencia exitosa", {
+        description: detalleExito,
+      });
+      onNotify?.("Transferencia exitosa", detalleExito);
       setComprobante(data.comprobante);
       setMonto("");
       setConcepto("");

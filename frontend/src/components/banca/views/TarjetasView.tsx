@@ -6,6 +6,7 @@ import {
   Printer, RefreshCw, KeyRound, Store
 } from "lucide-react";
 import { toast } from "sonner";
+import { securePost } from "@/lib/secureFetch";
 import { Cuenta, Movimiento, Usuario } from "../types";
 
 const fmt = (n: number) =>
@@ -15,9 +16,10 @@ interface TarjetasViewProps {
   usuario: Usuario | null;
   cuentaActiva: Cuenta | null;
   onRefreshResumen?: () => void;
+  onNotify?: (title: string, detail: string) => void;
 }
 
-export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: TarjetasViewProps) {
+export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen, onNotify }: TarjetasViewProps) {
   // Estado de giro 3D de la tarjeta (frente / reverso)
   const [flipped, setFlipped] = useState(false);
   const [tipoTarjeta, setTipoTarjeta] = useState<"debito" | "credito">("debito");
@@ -28,14 +30,11 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
 
   // Modales de acciones
   const [modalMovimientos, setModalMovimientos] = useState(false);
-  const [modalAjustarPlata, setModalAjustarPlata] = useState(false);
   const [modalDatafono, setModalDatafono] = useState(false);
   const [modalFisica, setModalFisica] = useState(false);
   const [modalPromos, setModalPromos] = useState(false);
 
   // Estados de formularios
-  const [ajusteTipo, setAjusteTipo] = useState<"PONER" | "QUITAR">("PONER");
-  const [ajusteMonto, setAjusteMonto] = useState("");
   const [datafonoComercio, setDatafonoComercio] = useState("Domicilios Llorente");
   const [datafonoMonto, setDatafonoMonto] = useState("35000");
   const [datafonoProcesando, setDatafonoProcesando] = useState(false);
@@ -171,16 +170,11 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
 
       setDatafonoEstadoTexto("VERIFICANDO CHIP Y FONDOS...");
 
-      const res = await fetch("/api/usuario/pago-tarjeta", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cuenta_id: cuentaActiva?.id,
-          valor: parseFloat(datafonoMonto),
-          establecimiento: datafonoComercio,
-          pin: datafonoPin,
-        }),
-        credentials: "include",
+      const res = await securePost("/api/usuario/pago-tarjeta", {
+        cuenta_id: cuentaActiva?.id,
+        valor: parseFloat(datafonoMonto),
+        establecimiento: datafonoComercio,
+        pin: datafonoPin,
       });
 
       const data = await res.json();
@@ -209,9 +203,16 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
 
       setDatafonoPaso("voucher");
       setDatafonoProcesando(false);
-      toast.success("Comprobante emitido exitosamente.");
-    } catch (err) {
-      toast.error("Error de comunicación con el datáfono.");
+      const montoPago = parseFloat(datafonoMonto) || 0;
+      toast.success("Pago con tarjeta exitoso", {
+        description: `Compra aprobada en ${datafonoComercio} por ${fmt(montoPago)}.`,
+      });
+      onNotify?.(
+        "Compra con tarjeta aprobada",
+        `Pago en ${datafonoComercio} por ${fmt(montoPago)}.`
+      );
+    } catch (err: any) {
+      toast.error(err?.message || "Error de comunicación segura con el datáfono.");
       setDatafonoProcesando(false);
     }
   };
@@ -222,43 +223,6 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
     setDatafonoPin("");
     setDatafonoExito(false);
     setDatafonoVoucher(null);
-  };
-
-  // Poner o Quitar plata de la tarjeta
-  const handleAjustarPlata = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const valorNum = parseFloat(ajusteMonto);
-    if (isNaN(valorNum) || valorNum <= 0) {
-      toast.error("Ingrese un valor válido.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/usuario/ajustar-tarjeta", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cuenta_id: cuentaActiva?.id,
-          valor: valorNum,
-          tipo: ajusteTipo,
-        }),
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Error al ajustar saldo.");
-        return;
-      }
-
-      toast.success(data.mensaje);
-      setAjusteMonto("");
-      setModalAjustarPlata(false);
-      cargarMovimientos();
-      if (onRefreshResumen) onRefreshResumen();
-    } catch (err) {
-      toast.error("Error de conexión al ajustar saldo.");
-    }
   };
 
   const movimientosFiltrados = movimientosTarjeta.filter((m) => {
@@ -639,7 +603,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
                   Movimientos de tu Tarjeta
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Transacciones en vivo conectadas a MySQL
+                  Transacciones en vivo conectadas al núcleo bancario seguro
                 </p>
               </div>
               <button
@@ -742,89 +706,7 @@ export function TarjetasView({ usuario, cuentaActiva, onRefreshResumen }: Tarjet
       )}
 
       {/* ======================================================== */}
-      {/* MODAL 2: PON O QUITA PLATA                              */}
-      {/* ======================================================== */}
-      {modalAjustarPlata && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-3xl border border-[#1a2b4a] bg-[#0a1224] p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-[#182642]">
-              <h3 className="font-display font-bold text-lg text-white">
-                Pon o quita plata de tu Tarjeta
-              </h3>
-              <button
-                onClick={() => setModalAjustarPlata(false)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-slate-800 text-slate-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* SELECTOR ACCIÓN */}
-            <div className="grid grid-cols-2 gap-2 bg-[#080d19] p-1.5 rounded-2xl border border-[#172542]">
-              <button
-                onClick={() => setAjusteTipo("PONER")}
-                className={`rounded-xl py-2 text-xs font-bold transition-all ${
-                  ajusteTipo === "PONER"
-                    ? "bg-emerald-600 text-white shadow-md"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                + Poner plata
-              </button>
-              <button
-                onClick={() => setAjusteTipo("QUITAR")}
-                className={`rounded-xl py-2 text-xs font-bold transition-all ${
-                  ajusteTipo === "QUITAR"
-                    ? "bg-rose-600 text-white shadow-md"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                - Quitar plata
-              </button>
-            </div>
-
-            {/* BOTONES DE ACCESO RÁPIDO */}
-            <div className="grid grid-cols-4 gap-2">
-              {[50000, 100000, 200000, 500000].map((val) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => setAjusteMonto(val.toString())}
-                  className="rounded-xl border border-[#18253e] bg-[#091122] py-2 text-[11px] font-mono text-slate-300 hover:border-[#0e76fd] hover:text-white transition-colors"
-                >
-                  ${val / 1000}k
-                </button>
-              ))}
-            </div>
-
-            <form onSubmit={handleAjustarPlata} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-300">
-                  Monto a {ajusteTipo === "PONER" ? "cargar" : "retirar"} (COP)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Ej: 100000"
-                  value={ajusteMonto}
-                  onChange={(e) => setAjusteMonto(e.target.value)}
-                  className="mt-1.5 w-full rounded-2xl border border-[#1a2b4a] bg-[#080d19] px-4 py-3 font-mono text-base font-bold text-white outline-none focus:border-[#0e76fd]"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full rounded-2xl bg-[#0e76fd] hover:bg-[#0b63d6] py-3.5 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition-all"
-              >
-                {ajusteTipo === "PONER" ? "Cargar plata a la Tarjeta" : "Retirar plata de la Tarjeta"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* MODAL 3: SIMULADOR DE DATÁFONO PROFESIONAL REDEBAN       */}
+      {/* MODAL 2: SIMULADOR DE DATÁFONO PROFESIONAL REDEBAN       */}
       {/* ======================================================== */}
       {modalDatafono && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">

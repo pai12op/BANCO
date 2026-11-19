@@ -116,7 +116,7 @@
 
 <header class="hero">
  <h1> BANCO DIGITAL ANDINO</h1>
- <p>Proyecto Integrador — Simulador Bancario Web Multi-Módulo (MySQL + Node.js + Express)</p>
+ <p>Plataforma Bancaria Web Multi-Módulo (Arquitectura Segura en Capas)</p>
 </header>
 
 <main class="container">
@@ -128,10 +128,9 @@
  <h2>Banca Virtual Clientes</h2>
  <p style="margin-top: 6px;">Portal web para clientes. Consulta de saldo, historial de movimientos, transferencias a otras cuentas y cambio de contraseña.</p>
  <div class="credentials-box">
- <strong>Credenciales de Prueba:</strong><br>
- Correo: <code>andres@cliente.com</code><br>
- Clave: <code>Banco123*</code><br>
- Cuenta: <code>400110203040</code> (Saldo: $1.000.000)
+ <strong>Seguridad de Acceso:</strong><br>
+ Inicie sesión con su correo registrado y clave cifrada.<br>
+ Cambio de clave protegido con PIN de seguridad.
  </div>
  </div>
  <a href="/banca" class="btn btn-primary btn-block">Ingresar a Banca Virtual →</a>
@@ -144,9 +143,8 @@
  <h2>Cajero Automático (ATM)</h2>
  <p style="margin-top: 6px;">Terminal de autoservicio con simulación de hardware bancario. Retiros en efectivo con validación de saldo, PIN y comprobante térmico.</p>
  <div class="credentials-box">
- <strong>Credenciales de Prueba:</strong><br>
- Número Cuenta: <code>400110203040</code><br>
- PIN de Seguridad: <code>1234</code><br>
+ <strong>Operación Segura:</strong><br>
+ Autenticación por número de cuenta y PIN de 4 dígitos.<br>
  (Validación con múltiplos de $10.000 COP)
  </div>
  </div>
@@ -160,10 +158,9 @@
  <h2>Portal Administrativo</h2>
  <p style="margin-top: 6px;">Consola bancaria interna. Dashboard con métricas globales, creación de clientes, bloqueo de cuentas y consignaciones en ventanilla.</p>
  <div class="credentials-box">
- <strong>Credenciales de Prueba:</strong><br>
- Correo Admin: <code>admin@banco.com</code><br>
- Clave Admin: <code>Banco123*</code><br>
- Rol: Administrador General
+ <strong>Acceso Restringido:</strong><br>
+ Rol: Administrador General<br>
+ Consola protegida con verificación 2FA.
  </div>
  </div>
  <a href="/admin" class="btn btn-accent btn-block">Ingresar a Administración →</a>
@@ -175,7 +172,7 @@
  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
  <div>
  <h3> Flujo de Prueba Mínima Oficial (Exigido en Páginas 9-10 de la Guía)</h3>
- <p>Verificación de sincronización en tiempo real entre los tres módulos sobre la misma base de datos MySQL.</p>
+ <p>Verificación de sincronización en tiempo real entre los tres módulos sobre el núcleo bancario transaccional.</p>
  </div>
  <span class="badge badge-primary">Sustentación en Vivo</span>
  </div>

@@ -153,7 +153,7 @@ export function CuentasView({
                 </div>
                 <p className="font-mono text-xs text-muted-foreground mt-1">{c.numero_cuenta}</p>
                 <p className="font-display text-2xl font-bold text-foreground mt-3">{fmt(parseFloat(c.saldo as any) || 0)}</p>
-                <p className="text-xs text-muted-foreground mt-1">Conectada a base de datos MySQL</p>
+                <p className="text-xs text-muted-foreground mt-1">Sincronizada en tiempo real con el núcleo bancario</p>
               </div>
             );
           })}

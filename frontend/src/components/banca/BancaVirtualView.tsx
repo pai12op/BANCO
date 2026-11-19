@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { securePost, saveCajeroHandoff } from "@/lib/secureFetch";
 import { BancaTab, Cuenta, Movimiento, Usuario } from "./types";
 import { BancaSidebar } from "./BancaSidebar";
-import { BancaHeader } from "./BancaHeader";
+import { BancaHeader, BankNotification } from "./BancaHeader";
 import { BancaLogin } from "./BancaLogin";
 import { InicioView } from "./views/InicioView";
 import { CuentasView } from "./views/CuentasView";
@@ -35,8 +36,21 @@ export function BancaVirtualView() {
   const [loadingCodigo, setLoadingCodigo] = useState(false);
   const [copiadoCodigo, setCopiadoCodigo] = useState(false);
   const [copiadoCuenta, setCopiadoCuenta] = useState(false);
+  const [notificaciones, setNotificaciones] = useState<BankNotification[]>([]);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
 
-  // Cargar datos de resumen desde MySQL
+  const agregarNotificacion = (title: string, detail: string) => {
+    const item: BankNotification = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      title,
+      detail,
+      time: new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }),
+    };
+    setNotificaciones((prev) => [item, ...prev].slice(0, 20));
+    setUnreadNotifs((prev) => prev + 1);
+  };
+
+  // Cargar datos de resumen desde el núcleo bancario
   const cargarResumen = async () => {
     try {
       setLoading(true);
@@ -85,21 +99,25 @@ export function BancaVirtualView() {
   const handleLogin = async (identificador: string, pass: string) => {
     try {
       setLoginLoading(true);
-      const res = await fetch("/api/auth/login-cliente", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identificador, password: pass }),
-        credentials: "include",
+      const res = await securePost("/api/auth/login-cliente", {
+        identificador,
+        password: pass,
       });
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Credenciales incorrectas.");
         return;
       }
-      toast.success(`Bienvenido(a), ${data.usuario.nombres}`);
+      toast.success("Inicio de sesión exitoso", {
+        description: `Bienvenido(a), ${data.usuario.nombres}`,
+      });
+      agregarNotificacion(
+        "Sesión iniciada con éxito",
+        `Acceso cifrado aprobado para ${data.usuario.nombres} ${data.usuario.apellidos}.`
+      );
       cargarResumen();
-    } catch (err) {
-      toast.error("Error de conexión al iniciar sesión.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de conexión segura al iniciar sesión.");
     } finally {
       setLoginLoading(false);
     }
@@ -112,9 +130,11 @@ export function BancaVirtualView() {
       setCuentas([]);
       setCuentaActiva(null);
       setMovimientos([]);
+      setNotificaciones([]);
+      setUnreadNotifs(0);
       setActiveTab("inicio");
       setShowMobileMore(false);
-      toast.info("Sesión cerrada correctamente.");
+      toast.success("Sesión cerrada correctamente.");
     } catch (err) {
       console.error(err);
     }
@@ -134,6 +154,7 @@ export function BancaVirtualView() {
         return false;
       }
       if (usuario) setUsuario({ ...usuario, telefono: nuevoTel });
+      agregarNotificacion("Contacto actualizado", `Nuevo teléfono registrado: ${nuevoTel}.`);
       return true;
     } catch (err) {
       toast.error("Error de comunicación.");
@@ -141,27 +162,36 @@ export function BancaVirtualView() {
     }
   };
 
-  const handleCambiarPassword = async (passAct: string, passNew: string): Promise<boolean> => {
+  const handleCambiarPassword = async (
+    passAct: string,
+    passNew: string,
+    passConfirm: string,
+    pinCajero: string
+  ): Promise<boolean> => {
     try {
-      const res = await fetch("/api/banca/password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password_actual: passAct, password_nuevo: passNew }),
-        credentials: "include",
+      const res = await securePost("/api/banca/password", {
+        password_actual: passAct,
+        password_nuevo: passNew,
+        password_confirmacion: passConfirm,
+        pin_cajero: pinCajero,
       });
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Error al actualizar contraseña.");
         return false;
       }
+      agregarNotificacion(
+        "Contraseña actualizada con éxito",
+        "Cambio autenticado con clave actual + PIN de 4 dígitos y sesión renovada."
+      );
       return true;
-    } catch (err) {
-      toast.error("Error de comunicación.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de comunicación segura.");
       return false;
     }
   };
 
-  const saldoReal = cuentaActiva ? cuentaActiva.saldo : 1000000;
+  const saldoReal = cuentaActiva ? cuentaActiva.saldo : 0;
 
   const movimientosFiltrados = movimientos.filter((m) => {
     if (!searchTerm.trim()) return true;
@@ -218,11 +248,18 @@ export function BancaVirtualView() {
       const data = await res.json();
       if (res.ok && data.codigo) {
         setCodigoRetiro(data.codigo);
+        toast.success("Código de retiro generado", {
+          description: `Tu código temporal es ${data.codigo}.`,
+        });
+        agregarNotificacion(
+          "Código de retiro ATM generado",
+          `Código temporal ${data.codigo} listo para usar en el cajero automático.`
+        );
       } else {
         if (res.status === 401) {
           setShowModalSacarPlata(false);
           toast.error("Sesión expirada. Por favor inicie sesión nuevamente.");
-          setAutenticado(false);
+          setUsuario(null);
         } else {
           toast.error(data.error || "No se pudo generar el código de retiro.");
         }
@@ -284,7 +321,7 @@ export function BancaVirtualView() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b13] font-sans text-slate-100 w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#070b13] font-sans text-slate-100 w-full max-w-full overflow-x-clip">
       {/* SIDEBAR DESKTOP PERMANENTE */}
       <BancaSidebar
         activeTab={activeTab}
@@ -293,13 +330,19 @@ export function BancaVirtualView() {
       />
 
       {/* ÁREA CENTRAL CON PADDING IZQUIERDO EN DESKTOP */}
-      <div className="lg:pl-64 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
+      <div className="lg:pl-64 flex flex-col min-h-screen w-full max-w-full overflow-x-clip">
         {/* HEADER LIMPIO */}
         <BancaHeader
           usuario={usuario}
-          onRefresh={cargarResumen}
+          onRefresh={() => {
+            cargarResumen();
+            toast.success("Saldos y movimientos actualizados.");
+          }}
           onLogout={handleLogout}
           onToggleMenu={() => setShowMobileMore((prev) => !prev)}
+          notifications={notificaciones}
+          unreadCount={unreadNotifs}
+          onMarkNotificationsRead={() => setUnreadNotifs(0)}
         />
 
         {/* CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
@@ -335,6 +378,9 @@ export function BancaVirtualView() {
               onSelectCuenta={(c) => {
                 setCuentaActiva(c);
                 cargarMovimientos(c.id);
+                toast.success("Cuenta seleccionada", {
+                  description: `${c.tipo_cuenta || "Cuenta"} ${c.numero_cuenta}`,
+                });
               }}
               onOpenTransferir={() => selectTab("transferencias")}
             />
@@ -346,6 +392,7 @@ export function BancaVirtualView() {
               saldoReal={saldoReal}
               movimientos={movimientos}
               onTransferSuccess={cargarResumen}
+              onNotify={agregarNotificacion}
             />
           )}
 
@@ -354,6 +401,7 @@ export function BancaVirtualView() {
               usuario={usuario}
               cuentaActiva={cuentaActiva}
               onRefreshResumen={cargarResumen}
+              onNotify={agregarNotificacion}
             />
           )}
 
@@ -684,20 +732,20 @@ export function BancaVirtualView() {
                 <div className="rounded-xl bg-slate-900/60 p-3 space-y-1 text-slate-300 text-[11px]">
                   <p className="font-bold text-white mb-0.5">¿Cómo retirar en el Cajero?</p>
                   <p>1. Ingresa a la pantalla del Cajero Virtual.</p>
-                  <p>2. Ingresa tu número de cuenta: <span className="font-mono font-bold text-cyan-300">{cuentaActiva?.numero_cuenta || "400150181053"}</span></p>
+                  <p>2. Ingresa tu número de cuenta: <span className="font-mono font-bold text-cyan-300">{cuentaActiva?.numero_cuenta || "Tu cuenta"}</span></p>
                   <p>3. Digita tu código generado: <span className="font-mono font-bold text-cyan-300">{codigoRetiro}</span></p>
                 </div>
 
-                {/* BOTÓN PARA ENTRAR DIRECTO AL CAJERO CON DATOS */}
+                {/* BOTÓN PARA ENTRAR DIRECTO AL CAJERO SIN EXPONER DATOS EN URL */}
                 <button
                   disabled={loadingCodigo || !codigoRetiro || codigoRetiro === "null"}
                   onClick={() => {
-                    if (!codigoRetiro || codigoRetiro === "null") {
+                    if (!codigoRetiro || codigoRetiro === "null" || !cuentaActiva?.numero_cuenta) {
                       toast.error("El código de retiro aún no ha sido generado.");
                       return;
                     }
-                    const cNum = cuentaActiva?.numero_cuenta || "400110203040";
-                    window.location.href = `/cajero?cuenta=${cNum}&codigo=${codigoRetiro}`;
+                    saveCajeroHandoff(cuentaActiva.numero_cuenta, codigoRetiro);
+                    window.location.href = "/cajero";
                   }}
                   className="w-full rounded-xl bg-gradient-to-r from-[#0e76fd] to-[#00d2ff] hover:opacity-95 active:scale-95 py-3 text-xs font-bold text-white transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >

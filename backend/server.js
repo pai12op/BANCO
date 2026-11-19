@@ -1,8 +1,14 @@
-// server.js
+// server.js — Banca Rota API
+const crypto = require('crypto');
 const express = require('express');
 const session = require('express-session');
-const path = require('path');
 require('dotenv').config();
+
+const {
+    securityHeaders,
+    decryptRequestBody,
+    antiSqlInjectionGuard,
+} = require('./src/middlewares/security');
 
 const authRoutes = require('./src/routes/authRoutes');
 const usuarioRoutes = require('./src/routes/usuarioRoutes');
@@ -11,64 +17,40 @@ const adminRoutes = require('./src/routes/adminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const FALLBACK_SECRET = crypto.randomBytes(32).toString('hex');
 
-// Middlewares para procesar body
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use(securityHeaders);
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(decryptRequestBody);
+app.use(antiSqlInjectionGuard);
 
-// Configuración de Sesiones
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'banco_andino_super_secret_session_key',
+    name: 'bancarota.sid',
+    secret: process.env.SESSION_SECRET || FALLBACK_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // true en HTTPS de producción
+        secure: 'auto',
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 2 // 2 horas
-    }
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 * 2,
+    },
 }));
 
-// Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Rutas API REST
 app.use('/api/auth', authRoutes);
 app.use('/api/usuario', usuarioRoutes);
-app.use('/api/banca', usuarioRoutes); // Alias retrocompatible
+app.use('/api/banca', usuarioRoutes);
 app.use('/api/cajero', cajeroRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Rutas de navegación directa para frontend
-app.get('/banca', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'banca.html'));
-});
-
-app.get('/cajero', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'cajero.html'));
-});
-
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Manejo de errores no capturados
 app.use((err, req, res, next) => {
-    console.error('Error global:', err);
-    res.status(500).json({ error: 'Ocurrió un error inesperado en el servidor bancario.' });
+    console.error('[BancaRota Error]:', err.message);
+    res.status(err.statusCode || 500).json({ error: 'Ocurrió un error al procesar la solicitud bancaria.' });
 });
 
 app.listen(PORT, () => {
-    console.log(`=======================================================`);
-    console.log(`SIMULADOR BANCARIO WEB — SERVICIO ACTIVO`);
-    console.log(`Servidor escuchando en: http://localhost:${PORT}`);
-    console.log(`Modulos integrados:`);
-    console.log(`   - Portal Principal:   http://localhost:${PORT}/`);
-    console.log(`   - Banca Virtual:      http://localhost:${PORT}/banca`);
-    console.log(`   - Cajero Automatico:  http://localhost:${PORT}/cajero`);
-    console.log(`   - Panel Admin:        http://localhost:${PORT}/admin`);
-    console.log(`=======================================================`);
+    console.log(`[Banca Rota] API segura activa en puerto ${PORT}`);
 });

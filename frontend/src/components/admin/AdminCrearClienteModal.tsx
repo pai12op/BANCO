@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { isStrongPassword } from "@/lib/secureFetch";
 
 interface AdminCrearClienteModalProps {
   open: boolean;
@@ -32,7 +33,7 @@ export function AdminCrearClienteModal({
     correo: "",
     telefono: "",
     tipo_cuenta_id: 1,
-    saldo_inicial: "",
+    saldo_inicial: "0",
     password: "",
     pin_cajero: "",
   });
@@ -41,15 +42,25 @@ export function AdminCrearClienteModal({
   const [loading, setLoading] = useState(false);
 
   const generarPasswordSegura = () => {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%*";
-    let pass = "";
-    for (let i = 0; i < 10; i++) {
-      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const lower = "abcdefghijkmnpqrstuvwxyz";
+    const digits = "23456789";
+    const syms = "!@#$%*";
+    const all = upper + lower + digits + syms;
+    const picked = [
+      upper.charAt(Math.floor(Math.random() * upper.length)),
+      lower.charAt(Math.floor(Math.random() * lower.length)),
+      digits.charAt(Math.floor(Math.random() * digits.length)),
+      syms.charAt(Math.floor(Math.random() * syms.length)),
+    ];
+    for (let i = 0; i < 6; i++) {
+      picked.push(all.charAt(Math.floor(Math.random() * all.length)));
     }
+    const pass = picked.sort(() => Math.random() - 0.5).join("");
     const pin = Math.floor(1000 + Math.random() * 9000).toString();
     setFormData((prev) => ({ ...prev, password: pass, pin_cajero: pin }));
     setShowPassword(true);
-    toast.info("Contraseña y PIN generados aleatoriamente.");
+    toast.success("Contraseña fuerte y PIN generados.");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,15 +71,15 @@ export function AdminCrearClienteModal({
       return;
     }
 
-    const pin = formData.pin_cajero.trim() || "1234";
+    const pin = formData.pin_cajero.trim();
     if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-      toast.error("El PIN del cajero debe ser de 4 dígitos numéricos.");
+      toast.error("Debe ingresar un PIN de cajero obligatorio de 4 dígitos numéricos.");
       return;
     }
 
-    const pass = formData.password.trim() || "Banco123*";
-    if (pass.length < 6) {
-      toast.error("La contraseña debe tener mínimo 6 caracteres.");
+    const pass = formData.password.trim();
+    if (!isStrongPassword(pass)) {
+      toast.error("La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número.");
       return;
     }
 
@@ -90,7 +101,7 @@ export function AdminCrearClienteModal({
         correo: "",
         telefono: "",
         tipo_cuenta_id: 1,
-        saldo_inicial: "1500000",
+        saldo_inicial: "0",
         password: "",
         pin_cajero: "",
       });
@@ -234,13 +245,14 @@ export function AdminCrearClienteModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <Label className="text-[11px] text-slate-400">Contraseña Web</Label>
+                <Label className="text-[11px] text-slate-400">Contraseña Web *</Label>
                 <div className="relative mt-1">
                   <Input
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Dejar vacía para 'Banco123*'"
+                    placeholder="Mín. 8 (Mayús+Min+Num)"
+                    required
                     className="font-mono text-xs pr-8 bg-slate-900 border-slate-700"
                   />
                   <button
@@ -254,13 +266,14 @@ export function AdminCrearClienteModal({
               </div>
 
               <div>
-                <Label className="text-[11px] text-slate-400">PIN Cajero (4 dígitos)</Label>
+                <Label className="text-[11px] text-slate-400">PIN Cajero (4 dígitos) *</Label>
                 <Input
                   type="password"
                   maxLength={4}
                   value={formData.pin_cajero}
                   onChange={(e) => setFormData({ ...formData, pin_cajero: e.target.value.replace(/\D/g, "") })}
-                  placeholder="Por defecto: 1234"
+                  placeholder="••••"
+                  required
                   className="mt-1 font-mono text-xs bg-slate-900 border-slate-700 text-center tracking-widest"
                 />
               </div>

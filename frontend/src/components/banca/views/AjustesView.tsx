@@ -2,21 +2,47 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Lock, Phone, User, CheckCircle2, RefreshCw } from "lucide-react";
+import {
+  Shield,
+  ShieldCheck,
+  Lock,
+  KeyRound,
+  User,
+  CheckCircle2,
+  RefreshCw,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { toast } from "sonner";
+import { isStrongPassword } from "@/lib/secureFetch";
 import { Usuario } from "../types";
 
 interface AjustesViewProps {
   usuario: Usuario | null;
   onUpdateTelefono: (nuevoTel: string) => Promise<boolean>;
-  onCambiarPassword: (passAct: string, passNew: string) => Promise<boolean>;
+  onCambiarPassword: (
+    passAct: string,
+    passNew: string,
+    passConfirm: string,
+    pinCajero: string
+  ) => Promise<boolean>;
 }
 
-export function AjustesView({ usuario, onUpdateTelefono, onCambiarPassword }: AjustesViewProps) {
-  const [telefono, setTelefono] = useState(usuario?.telefono || "3001234567");
+export function AjustesView({
+  usuario,
+  onUpdateTelefono,
+  onCambiarPassword,
+}: AjustesViewProps) {
+  const [telefono, setTelefono] = useState(usuario?.telefono || "");
   const [passActual, setPassActual] = useState("");
   const [passNueva, setPassNueva] = useState("");
   const [passConfirm, setPassConfirm] = useState("");
+  const [pinCajero, setPinCajero] = useState("");
+  const [showActual, setShowActual] = useState(false);
+  const [showNueva, setShowNueva] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+  const [passSuccessMsg, setPassSuccessMsg] = useState<string | null>(null);
   const [loadingTel, setLoadingTel] = useState(false);
   const [loadingPass, setLoadingPass] = useState(false);
 
@@ -30,40 +56,70 @@ export function AjustesView({ usuario, onUpdateTelefono, onCambiarPassword }: Aj
     const ok = await onUpdateTelefono(telefono.trim());
     setLoadingTel(false);
     if (ok) {
-      toast.success("Teléfono actualizado en la base de datos.");
+      toast.success("Teléfono actualizado con éxito", {
+        description: `Tu número de contacto ahora es ${telefono.trim()}.`,
+      });
     }
   };
 
   const handleGuardarPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passNueva.length < 6) {
-      toast.error("La nueva contraseña debe tener mínimo 6 caracteres.");
+    setPassSuccessMsg(null);
+
+    if (!passActual) {
+      toast.error("Debes ingresar tu contraseña actual.");
+      return;
+    }
+    if (!isStrongPassword(passNueva)) {
+      toast.error(
+        "La nueva contraseña debe tener mínimo 8 caracteres, incluir mayúscula, minúscula y al menos un número."
+      );
+      return;
+    }
+    if (passNueva === passActual) {
+      toast.error("La nueva contraseña debe ser diferente a la actual.");
       return;
     }
     if (passNueva !== passConfirm) {
       toast.error("La confirmación de la nueva contraseña no coincide.");
       return;
     }
+    const pinClean = pinCajero.trim();
+    if (!/^\d{4}$/.test(pinClean)) {
+      toast.error("Para autenticar el cambio debes ingresar tu PIN de 4 dígitos.");
+      return;
+    }
 
     setLoadingPass(true);
-    const ok = await onCambiarPassword(passActual, passNueva);
+    const ok = await onCambiarPassword(passActual, passNueva, passConfirm, pinClean);
     setLoadingPass(false);
     if (ok) {
       setPassActual("");
       setPassNueva("");
       setPassConfirm("");
-      toast.success("Contraseña actualizada exitosamente con cifrado bcrypt.");
+      setPinCajero("");
+      setPassSuccessMsg(
+        "Contraseña actualizada con verificación de clave actual + PIN de 4 dígitos y sesión rotada."
+      );
+      toast.success("¡Contraseña actualizada con éxito!", {
+        description: "Credenciales cifradas y sesión bancaria renovada.",
+      });
     }
   };
 
   return (
     <div className="space-y-6">
       {/* HEADER DE LA SECCIÓN */}
-      <div className="border-b border-border/60 pb-4">
-        <h2 className="font-display text-2xl font-bold">Perfil y Ajustes de Seguridad</h2>
-        <p className="text-xs text-muted-foreground">
-          Administra tus datos de contacto personales y actualiza tus credenciales de acceso seguro.
-        </p>
+      <div className="border-b border-border/60 pb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-2xl font-bold">Perfil y Ajustes de Seguridad</h2>
+          <p className="text-xs text-muted-foreground">
+            Administra tus datos de contacto y realiza cambios de contraseña con doble verificación (clave actual + PIN ATM).
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-400">
+          <ShieldCheck className="h-3.5 w-3.5" /> Autenticación Reforzada E2E
+        </span>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -116,67 +172,135 @@ export function AjustesView({ usuario, onUpdateTelefono, onCambiarPassword }: Aj
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Se enviarán códigos de autenticación OTP a este número para autorizar transferencias.
+              Se enviarán notificaciones de seguridad a este número para operaciones relevantes.
             </p>
           </form>
         </div>
 
-        {/* CAMBIO DE CONTRASEÑA BANCARIA */}
+        {/* CAMBIO DE CONTRASEÑA BANCARIA CON VERIFICACIÓN PIN + CLAVE ACTUAL */}
         <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-5">
-          <div className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-accent" />
-            <h3 className="font-display text-lg font-bold">Cambio de Contraseña</h3>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-accent" />
+              <h3 className="font-display text-lg font-bold">Cambio de Contraseña Autenticado</h3>
+            </div>
+            <Shield className="h-4 w-4 text-emerald-400" />
           </div>
+
+          {passSuccessMsg && (
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>{passSuccessMsg}</span>
+            </div>
+          )}
 
           <form onSubmit={handleGuardarPassword} className="space-y-4">
             <div>
-              <Label className="text-xs">Contraseña Actual</Label>
-              <Input
-                type="password"
-                value={passActual}
-                onChange={(e) => setPassActual(e.target.value)}
-                placeholder="Tu contraseña actual"
-                required
-                className="mt-1 font-mono text-sm"
-              />
+              <Label className="text-xs">1. Contraseña Actual</Label>
+              <div className="relative mt-1">
+                <Input
+                  type={showActual ? "text" : "password"}
+                  value={passActual}
+                  onChange={(e) => {
+                    setPassActual(e.target.value);
+                    setPassSuccessMsg(null);
+                  }}
+                  placeholder="Tu contraseña actual"
+                  required
+                  className="font-mono text-sm pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowActual(!showActual)}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  {showActual ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
-              <Label className="text-xs">Nueva Contraseña</Label>
-              <Input
-                type="password"
-                value={passNueva}
-                onChange={(e) => setPassNueva(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                required
-                className="mt-1 font-mono text-sm"
-              />
+              <Label className="text-xs flex items-center gap-1.5">
+                <KeyRound className="h-3.5 w-3.5 text-amber-400" />
+                2. PIN de Seguridad de la Cuenta (4 dígitos)
+              </Label>
+              <div className="relative mt-1">
+                <Input
+                  type={showPin ? "text" : "password"}
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={pinCajero}
+                  onChange={(e) => setPinCajero(e.target.value.replace(/\D/g, ""))}
+                  placeholder="••••"
+                  required
+                  className="font-mono text-sm tracking-[0.4em] pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
-              <Label className="text-xs">Confirmar Nueva Contraseña</Label>
-              <Input
-                type="password"
-                value={passConfirm}
-                onChange={(e) => setPassConfirm(e.target.value)}
-                placeholder="Repite la nueva contraseña"
-                required
-                className="mt-1 font-mono text-sm"
-              />
+              <Label className="text-xs">3. Nueva Contraseña Segura</Label>
+              <div className="relative mt-1">
+                <Input
+                  type={showNueva ? "text" : "password"}
+                  value={passNueva}
+                  onChange={(e) => setPassNueva(e.target.value)}
+                  placeholder="Mínimo 8 caracteres (Mayús, minús, número)"
+                  required
+                  className="font-mono text-sm pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNueva(!showNueva)}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  {showNueva ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs">4. Confirmar Nueva Contraseña</Label>
+              <div className="relative mt-1">
+                <Input
+                  type={showConfirm ? "text" : "password"}
+                  value={passConfirm}
+                  onChange={(e) => setPassConfirm(e.target.value)}
+                  placeholder="Repite la nueva contraseña"
+                  required
+                  className="font-mono text-sm pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <Button
               type="submit"
-              disabled={loadingPass || !passActual || !passNueva}
+              disabled={loadingPass || !passActual || !passNueva || !passConfirm || pinCajero.length !== 4}
               className="w-full h-11 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
             >
               {loadingPass && <RefreshCw className="h-4 w-4 animate-spin mr-1.5" />}
-              Guardar Nueva Contraseña
+              Autorizar y Cambiar Contraseña
             </Button>
 
             <div className="rounded-xl border border-border/60 bg-secondary/30 p-3 text-[11px] text-muted-foreground space-y-1">
-              <p className="font-semibold text-accent">Norma de Ciberseguridad:</p>
-              <p>Tu clave se almacena con función hash unidireccional bcrypt con sal de 10 rondas.</p>
+              <p className="font-semibold text-accent">Doble Verificación de Seguridad:</p>
+              <p>
+                El cambio viaja cifrado con RSA-OAEP + AES-GCM, valida tu clave actual y PIN bancario, y rota tu identificador de sesión.
+              </p>
             </div>
           </form>
         </div>

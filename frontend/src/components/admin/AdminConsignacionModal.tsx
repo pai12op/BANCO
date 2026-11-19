@@ -125,7 +125,7 @@ export function AdminConsignacionModal({
             </div>
             <DialogTitle className="font-display text-xl text-center">¡Depósito Exitoso!</DialogTitle>
             <DialogDescription className="text-center">
-              Comprobante de ventanilla registrado en MySQL.
+              Comprobante de ventanilla registrado en núcleo bancario seguro.
             </DialogDescription>
           </DialogHeader>
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { securePost } from "@/lib/secureFetch";
 
 interface AdminLoginProps {
   onLoginSuccess?: () => void;
@@ -16,7 +17,7 @@ interface AdminLoginProps {
 
 export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
   const [step, setStep] = useState<"credenciales" | "2fa">("credenciales");
-  const [adminCorreo, setAdminCorreo] = useState("admin@banco.com");
+  const [adminCorreo, setAdminCorreo] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,11 +48,9 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
 
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/login-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ correo: adminCorreo.trim(), password: adminPassword }),
-        credentials: "include",
+      const res = await securePost("/api/auth/login-admin", {
+        correo: adminCorreo.trim(),
+        password: adminPassword,
       });
 
       const data = await res.json();
@@ -65,14 +64,15 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         setCorreoEnmascarado(data.correo_enmascarado || adminCorreo);
         setTimeLeft(300);
         setStep("2fa");
-        toast.info("Credenciales verificadas. Ingrese el código 2FA de seguridad.");
+        toast.success("Credenciales verificadas con éxito", {
+          description: "Ingresa el código de seguridad 2FA para acceder.",
+        });
       } else {
-        // En caso de que se loguee directamente sin reto
-        toast.success("Bienvenido Administrador.");
+        toast.success("Acceso administrativo concedido.");
         if (onLoginSuccess) onLoginSuccess();
       }
-    } catch (err) {
-      toast.error("Error de conexión con el servidor bancario.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de conexión segura con el servidor bancario.");
     } finally {
       setLoading(false);
     }
@@ -90,11 +90,8 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
 
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/verify-2fa-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigo: cleanCode }),
-        credentials: "include",
+      const res = await securePost("/api/auth/verify-2fa-admin", {
+        codigo: cleanCode,
       });
 
       const data = await res.json();
@@ -107,8 +104,8 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
       if (onLoginSuccess) {
         onLoginSuccess();
       }
-    } catch (err) {
-      toast.error("Error de comunicación al verificar 2FA.");
+    } catch (err: any) {
+      toast.error(err?.message || "Error de comunicación al verificar 2FA.");
     } finally {
       setLoading(false);
     }
