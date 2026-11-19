@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { isStrongPassword } from "@/lib/secureFetch";
+import { isStrongPassword, validateAdultBirthDate } from "@/lib/secureFetch";
 
 interface AdminCrearClienteModalProps {
   open: boolean;
@@ -32,6 +32,7 @@ export function AdminCrearClienteModal({
     apellidos: "",
     correo: "",
     telefono: "",
+    fecha_nacimiento: "",
     tipo_cuenta_id: 1,
     saldo_inicial: "0",
     password: "",
@@ -71,6 +72,12 @@ export function AdminCrearClienteModal({
       return;
     }
 
+    const dobError = validateAdultBirthDate(formData.fecha_nacimiento, 18);
+    if (dobError) {
+      toast.error(dobError);
+      return;
+    }
+
     const pin = formData.pin_cajero.trim();
     if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       toast.error("Debe ingresar un PIN de cajero obligatorio de 4 dígitos numéricos.");
@@ -100,6 +107,7 @@ export function AdminCrearClienteModal({
         apellidos: "",
         correo: "",
         telefono: "",
+        fecha_nacimiento: "",
         tipo_cuenta_id: 1,
         saldo_inicial: "0",
         password: "",
@@ -200,6 +208,21 @@ export function AdminCrearClienteModal({
                 className="mt-1 font-mono text-xs bg-slate-900/80 border-slate-700"
               />
             </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-slate-300">Fecha de Nacimiento *</Label>
+              <span className="text-[11px] text-amber-300/90">Validación legal: 18+ años</span>
+            </div>
+            <Input
+              type="date"
+              max={new Date().toISOString().slice(0, 10)}
+              value={formData.fecha_nacimiento}
+              onChange={(e) => setFormData({ ...formData, fecha_nacimiento: e.target.value })}
+              required
+              className="mt-1 font-mono text-xs bg-slate-900/80 border-slate-700 [color-scheme:dark]"
+            />
           </div>
 
           {/* TIPO DE CUENTA Y SALDO DE APERTURA */}

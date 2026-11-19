@@ -10,6 +10,7 @@ export interface RegistroClientePayload {
   apellidos: string;
   correo: string;
   telefono: string;
+  fecha_nacimiento: string;
   tipo_cuenta_id: number;
   password: string;
   pin_cajero: string;

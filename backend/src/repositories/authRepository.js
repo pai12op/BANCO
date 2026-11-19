@@ -77,6 +77,7 @@ async function registrarClienteConSaldoCero({
     apellidos,
     correo,
     telefono,
+    fecha_nacimiento,
     tipo_cuenta_id,
     passwordHash,
     pinHash,
@@ -91,9 +92,9 @@ async function registrarClienteConSaldoCero({
         }
 
         const resUser = await exec(
-            `INSERT INTO usuarios (tipo_documento_id, numero_documento, nombres, apellidos, correo, telefono, password_hash, rol_id, estado_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 2, 1)`,
-            [tipo_documento_id || 1, numero_documento, nombres, apellidos, correo, telefono || null, passwordHash]
+            `INSERT INTO usuarios (tipo_documento_id, numero_documento, nombres, apellidos, correo, telefono, fecha_nacimiento, password_hash, rol_id, estado_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 2, 1)`,
+            [tipo_documento_id || 1, numero_documento, nombres, apellidos, correo, telefono || null, fecha_nacimiento || null, passwordHash]
         );
         const nuevoUsuarioId = resUser.insertId;
         const numeroCuenta = generarNumeroCuenta(tipo_cuenta_id);

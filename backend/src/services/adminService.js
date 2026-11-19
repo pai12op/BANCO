@@ -6,6 +6,7 @@ const { AppError } = require('../utils/AppError');
 const {
     assertStrongPassword,
     assertValidPin,
+    assertAdultBirthDate,
     parsePositiveAmount,
     cleanAccountIdentifier,
 } = require('../utils/validators');
@@ -26,6 +27,7 @@ async function registrarClienteAdmin(adminId, payload) {
         apellidos,
         correo,
         telefono,
+        fecha_nacimiento,
         password,
         tipo_cuenta_id,
         pin_cajero,
@@ -39,6 +41,7 @@ async function registrarClienteAdmin(adminId, payload) {
         );
     }
 
+    const fechaNacimientoValida = assertAdultBirthDate(fecha_nacimiento, 18);
     const finalPin = assertValidPin(pin_cajero, 'El PIN del cajero');
     assertStrongPassword(password, 'La contraseña del cliente');
 
@@ -57,6 +60,7 @@ async function registrarClienteAdmin(adminId, payload) {
         apellidos: apellidos.toString().trim(),
         correo: correo.toString().trim(),
         telefono: telefono ? telefono.toString().trim() : null,
+        fecha_nacimiento: fechaNacimientoValida,
         passwordHash,
         pinHash,
         tipo_cuenta_id,

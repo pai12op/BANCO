@@ -6,7 +6,7 @@ const authRepo = require('../repositories/authRepository');
 const bankConfig = require('../config/bankConfig');
 const { validarCodigoRetiro } = require('../config/otpStore');
 const { AppError } = require('../utils/AppError');
-const { assertStrongPassword, assertValidPin, cleanAccountIdentifier } = require('../utils/validators');
+const { assertStrongPassword, assertValidPin, assertAdultBirthDate, cleanAccountIdentifier } = require('../utils/validators');
 
 async function autenticarCliente({ identificador, password }) {
     if (!identificador || !password) {
@@ -185,6 +185,7 @@ async function registrarClientePublico(payload) {
         apellidos,
         correo,
         telefono,
+        fecha_nacimiento,
         tipo_cuenta_id,
         password,
         pin_cajero,
@@ -208,6 +209,7 @@ async function registrarClientePublico(payload) {
         throw new AppError('Por favor diligencie todos los campos obligatorios del registro.', 400);
     }
 
+    const fechaNacimientoValida = assertAdultBirthDate(fecha_nacimiento, 18);
     const pinStr = assertValidPin(pin_cajero, 'El PIN de seguridad del cajero');
     assertStrongPassword(password, 'La contraseña');
 
@@ -221,6 +223,7 @@ async function registrarClientePublico(payload) {
         apellidos: apellidos.toString().trim(),
         correo: correo.toString().trim(),
         telefono: telefono ? telefono.toString().trim() : null,
+        fecha_nacimiento: fechaNacimientoValida,
         tipo_cuenta_id,
         passwordHash,
         pinHash,

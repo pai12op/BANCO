@@ -8,6 +8,37 @@ export function isStrongPassword(password: string): boolean {
   return STRONG_PASS_REGEX.test(password);
 }
 
+export function validateAdultBirthDate(rawDate: string, minAge = 18): string | null {
+  const clean = rawDate.trim();
+  if (!clean) {
+    return "Debe ingresar la fecha de nacimiento del titular.";
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(clean);
+  if (!match) {
+    return "Formato de fecha de nacimiento inválido.";
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  if (utc.getUTCFullYear() !== year || utc.getUTCMonth() + 1 !== month || utc.getUTCDate() !== day) {
+    return "La fecha de nacimiento ingresada no existe en el calendario.";
+  }
+  const now = new Date();
+  let age = now.getFullYear() - year;
+  const curMonth = now.getMonth() + 1;
+  const curDay = now.getDate();
+  if (curMonth < month || (curMonth === month && curDay < day)) {
+    age -= 1;
+  }
+  if (age < 0) return "La fecha de nacimiento no puede ser una fecha futura.";
+  if (year < 1900 || age > 120) return "Ingrese una fecha de nacimiento válida.";
+  if (age < minAge) {
+    return `Registro no permitido para menores de edad (${age} años). Debes tener al menos ${minAge} años.`;
+  }
+  return null;
+}
+
 interface PublicKeyResponse {
   keyId: string;
   algorithm: string;

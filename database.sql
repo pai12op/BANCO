@@ -84,6 +84,7 @@ CREATE TABLE `usuarios` (
     `apellidos` VARCHAR(80) NOT NULL,
     `correo` VARCHAR(120) NOT NULL UNIQUE,
     `telefono` VARCHAR(25) NULL,
+    `fecha_nacimiento` DATE NULL,
     `password_hash` VARCHAR(255) NOT NULL,
     `rol_id` TINYINT UNSIGNED NOT NULL,
     `estado_id` TINYINT UNSIGNED NOT NULL DEFAULT 1,
