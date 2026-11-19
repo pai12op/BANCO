@@ -4,10 +4,10 @@ import { apiGet, apiPost, apiSecurePost } from "@/lib/secureFetch";
 import type { ComprobanteTransferencia, Cuenta, Movimiento, Usuario } from "@/components/banca/types";
 
 export interface TransferenciaPayload {
-  cuenta_origen_id?: number;
+  cuenta_origen_id?: number | undefined;
   numero_cuenta_destino: string;
   valor: number;
-  concepto?: string;
+  concepto?: string | undefined;
 }
 
 export interface CambioPasswordPayload {
@@ -18,7 +18,7 @@ export interface CambioPasswordPayload {
 }
 
 export interface PagoTarjetaPayload {
-  cuenta_id?: number;
+  cuenta_id?: number | undefined;
   valor: number;
   establecimiento: string;
   pin: string;

@@ -7,12 +7,12 @@ import { bancaService } from "@/services/bancaService";
 interface TarjetaDatafonoModalProps {
   open: boolean;
   congelada: boolean;
-  cuentaId?: number;
+  cuentaId?: number | undefined;
   saldoDisponible: number;
   numTarjetaFormateado: string;
   nombreTitular: string;
   onSuccess: () => void;
-  onNotify?: (title: string, detail: string) => void;
+  onNotify?: ((title: string, detail: string) => void) | undefined;
   onClose: () => void;
 }
 

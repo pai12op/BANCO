@@ -62,11 +62,13 @@ export function BancaVirtualView() {
         setUsuario(data.usuario);
         setCuentas(data.cuentas || []);
         if (data.cuentas && data.cuentas.length > 0) {
-          const cuentaActual = cuentaActiva
-            ? data.cuentas.find((c) => c.id === cuentaActiva.id) || data.cuentas[0]
-            : data.cuentas[0];
-          setCuentaActiva(cuentaActual);
-          cargarMovimientos(cuentaActual.id);
+          const cuentaActual =
+            (cuentaActiva ? data.cuentas.find((c) => c.id === cuentaActiva.id) : undefined) ||
+            data.cuentas[0];
+          if (cuentaActual) {
+            setCuentaActiva(cuentaActual);
+            cargarMovimientos(cuentaActual.id);
+          }
         }
       }
     } catch (err) {

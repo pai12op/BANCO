@@ -211,7 +211,7 @@ export function consumeCajeroHandoff(): { cuenta: string; codigo: string } | nul
 
 export class ApiError extends Error {
   status: number;
-  code?: string;
+  code?: string | undefined;
 
   constructor(message: string, status: number, code?: string) {
     super(message);
@@ -244,12 +244,13 @@ export async function apiPost<T>(
   payload?: Record<string, unknown>,
   fallbackError = "Error al procesar la solicitud."
 ): Promise<T> {
-  const res = await fetch(url, {
+  const init: RequestInit = {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: payload ? JSON.stringify(payload) : undefined,
-  });
+    ...(payload ? { body: JSON.stringify(payload) } : {}),
+  };
+  const res = await fetch(url, init);
   return parseJsonResponse<T>(res, fallbackError);
 }
 

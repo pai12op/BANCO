@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   CreditCard, Eye, EyeOff, Lock, Unlock, FileText,
-  DollarSign, Radio, Copy, Check, Sparkles, ShieldCheck, Tag, KeyRound,
+  DollarSign, Radio, Copy, Check, Sparkles, ShieldCheck, Tag, KeyRound, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCOP } from "@/lib/formatters";

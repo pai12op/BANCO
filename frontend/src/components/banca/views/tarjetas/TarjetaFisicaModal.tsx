@@ -4,7 +4,7 @@ import { toast } from "sonner";
 interface TarjetaFisicaModalProps {
   open: boolean;
   onClose: () => void;
-  onNotify?: (title: string, detail: string) => void;
+  onNotify?: ((title: string, detail: string) => void) | undefined;
 }
 
 export function TarjetaFisicaModal({ open, onClose, onNotify }: TarjetaFisicaModalProps) {

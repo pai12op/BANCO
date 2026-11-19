@@ -232,28 +232,30 @@ export function InicioView({
             </div>
 
             {/* SI HAY 1 CUENTA (CASO FRECUENTE): BANNER COMPLETO ELEGANTE */}
-            {cuentasAMostrar.length === 1 ? (
+            {(() => {
+              const unicaCuenta = cuentasAMostrar.length === 1 ? cuentasAMostrar[0] : undefined;
+              return unicaCuenta ? (
               <div
-                onClick={() => onSelectCuenta(cuentasAMostrar[0])}
+                onClick={() => onSelectCuenta(unicaCuenta)}
                 className="rounded-2xl border border-[#1a2d4f] bg-gradient-to-r from-[#091120] to-[#0c172c] p-4 sm:p-5 shadow-lg ring-1 ring-[#0e76fd]/30 transition-all hover:border-[#0e76fd]/60 cursor-pointer"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="space-y-0.5 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm text-slate-200 truncate">
-                        {cuentasAMostrar[0].tipo_cuenta || "Cuenta de Ahorros"}
+                        {unicaCuenta.tipo_cuenta || "Cuenta de Ahorros"}
                       </span>
                       <span className="rounded-full bg-emerald-500/10 px-2 py-0.2 text-[10px] font-bold text-emerald-400 border border-emerald-500/20 shrink-0">
                         ● ACTIVA
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-                      <span>Cuenta No. {cuentasAMostrar[0].numero_cuenta}</span>
+                      <span>Cuenta No. {unicaCuenta.numero_cuenta}</span>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCopyAccount(cuentasAMostrar[0].numero_cuenta);
+                          handleCopyAccount(unicaCuenta.numero_cuenta);
                         }}
                         className="rounded p-1 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
                         title="Copiar número"
@@ -270,12 +272,14 @@ export function InicioView({
                   <div className="text-left sm:text-right pt-1 sm:pt-0 shrink-0">
                     <p className="text-[10px] uppercase tracking-wider text-slate-400">Saldo Disponible</p>
                     <p className="font-display text-xl sm:text-2xl font-bold text-white tracking-tight">
-                      {fmt(parseFloat(cuentasAMostrar[0].saldo as any) || 0)}
+                      {fmt(parseFloat(unicaCuenta.saldo as any) || 0)}
                     </p>
                   </div>
                 </div>
               </div>
-            ) : (
+              ) : null;
+            })()}
+            {cuentasAMostrar.length !== 1 && (
               /* SI HAY 2 O MÁS CUENTAS: GRID */
               <div className="grid gap-3 sm:grid-cols-2">
                 {cuentasAMostrar.map((c) => {
