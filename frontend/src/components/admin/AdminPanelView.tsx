@@ -150,6 +150,7 @@ export function AdminPanelView() {
         apellidos: nuevoCliente.apellidos.trim(),
         correo: nuevoCliente.correo.trim(),
         telefono: nuevoCliente.telefono ? nuevoCliente.telefono.trim() : null,
+        fecha_nacimiento: nuevoCliente.fecha_nacimiento ? nuevoCliente.fecha_nacimiento.trim() : null,
         password: nuevoCliente.password,
         pin_cajero: nuevoCliente.pin_cajero,
         tipo_cuenta_id: nuevoCliente.tipo_cuenta_id || 1,
