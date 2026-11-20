@@ -118,6 +118,18 @@ export function AdminPanelView() {
     }
   };
 
+  const handleEliminarCliente = async (cliente: any) => {
+    try {
+      const data = await adminService.eliminarCliente(cliente.id);
+      toast.success(data.mensaje || "Cliente y cuentas eliminados exitosamente.");
+      cargarDashboard();
+      cargarClientes();
+      cargarAuditoria();
+    } catch (err: any) {
+      toast.error(err?.message || "Error al eliminar el cliente.");
+    }
+  };
+
   const handleConsignar = async (numero_cuenta: string, valorStr: string, concepto: string) => {
     const valor = parseFloat(valorStr);
     if (isNaN(valor) || valor <= 0) {
@@ -570,6 +582,7 @@ export function AdminPanelView() {
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
                 onToggleEstado={toggleEstadoCliente}
+                onEliminarCliente={handleEliminarCliente}
                 onRefresh={() => {
                   cargarDashboard();
                   cargarClientes();
@@ -624,6 +637,7 @@ export function AdminPanelView() {
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
                 onToggleEstado={toggleEstadoCliente}
+                onEliminarCliente={handleEliminarCliente}
                 onRefresh={cargarClientes}
                 onQuickConsignar={(cli) => {
                   setCuentaVentanilla(cli.numero_cuenta);

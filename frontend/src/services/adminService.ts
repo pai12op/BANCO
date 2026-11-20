@@ -27,6 +27,13 @@ export const adminService = {
       "No se pudo cambiar el estado del cliente."
     ),
 
+  eliminarCliente: (usuario_id: number) =>
+    apiPost<{ exito: boolean; mensaje: string; cliente: any }>(
+      "/api/admin/clientes/eliminar",
+      { usuario_id },
+      "Error al eliminar el cliente del sistema."
+    ),
+
   consignar: (numero_cuenta: string, valor: number, concepto?: string) =>
     apiSecurePost<{ exito: boolean; mensaje: string; recibo: any }>(
       "/api/admin/consignar",

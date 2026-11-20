@@ -95,11 +95,19 @@ async function obtenerAuditoriaGeneral() {
     return adminRepo.getHistorialGeneralAdmin();
 }
 
+async function eliminarCliente(usuario_id) {
+    if (!usuario_id) {
+        throw new AppError('Debe especificar el identificador del cliente a eliminar.', 400);
+    }
+    return adminRepo.eliminarClienteAdmin(Number(usuario_id));
+}
+
 module.exports = {
     obtenerDashboard,
     listarClientes,
     registrarClienteAdmin,
     cambiarEstadoCliente,
+    eliminarCliente,
     consignarVentanilla,
     obtenerAuditoriaGeneral,
 };

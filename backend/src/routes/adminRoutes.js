@@ -10,6 +10,8 @@ router.get('/resumen', requireAdmin, adminController.getDashboard);
 router.get('/clientes', requireAdmin, adminController.getClientes);
 router.post('/clientes', requireAdmin, requireEncryptedPayload, adminController.crearCliente);
 router.post('/clientes/estado', requireAdmin, adminController.cambiarEstadoCliente);
+router.delete('/clientes/:id', requireAdmin, adminController.eliminarCliente);
+router.post('/clientes/eliminar', requireAdmin, adminController.eliminarCliente);
 router.post('/consignar', requireAdmin, requireEncryptedPayload, adminController.consignar);
 router.get('/movimientos-general', requireAdmin, adminController.getHistorialGeneral);
 

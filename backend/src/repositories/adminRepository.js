@@ -191,6 +191,101 @@ async function getHistorialGeneralAdmin() {
     );
 }
 
+async function eliminarClienteAdmin(usuario_id) {
+    return withTransaction(async (exec) => {
+        const users = await exec(
+            `SELECT u.id, u.nombres, u.apellidos, u.correo, u.rol_id, c.id AS cuenta_id, c.numero_cuenta
+             FROM usuarios u
+             LEFT JOIN cuentas c ON u.id = c.usuario_id
+             WHERE u.id = ?`,
+            [usuario_id]
+        );
+
+        if (!users || users.length === 0) {
+            throw new AppError('El usuario o cliente no existe.', 404);
+        }
+
+        const user = users[0];
+        if (Number(user.rol_id) === 1) {
+            throw new AppError('Acción denegada: No está permitido eliminar usuarios administradores del banco.', 403);
+        }
+
+        const cuentaIds = users.filter((u) => u.cuenta_id).map((u) => u.cuenta_id);
+
+        if (cuentaIds.length > 0) {
+            const placeholders = cuentaIds.map(() => '?').join(',');
+
+            // 1. Obtener IDs de operaciones asociadas a los movimientos de estas cuentas
+            const movOps = await exec(
+                `SELECT DISTINCT operacion_id FROM movimientos WHERE cuenta_id IN (${placeholders})`,
+                cuentaIds
+            );
+            const opIdsFromMovs = movOps.map((m) => m.operacion_id);
+
+            // 2. Obtener IDs de operaciones de transferencias vinculadas a estas cuentas
+            const transOps = await exec(
+                `SELECT DISTINCT operacion_id FROM transferencias WHERE cuenta_origen_id IN (${placeholders}) OR cuenta_destino_id IN (${placeholders})`,
+                [...cuentaIds, ...cuentaIds]
+            );
+            const opIdsFromTrans = transOps.map((t) => t.operacion_id);
+
+            const allOpIds = Array.from(new Set([...opIdsFromMovs, ...opIdsFromTrans]));
+
+            // 3. Eliminar registros de transferencias relacionadas
+            await exec(
+                `DELETE FROM transferencias WHERE cuenta_origen_id IN (${placeholders}) OR cuenta_destino_id IN (${placeholders})`,
+                [...cuentaIds, ...cuentaIds]
+            );
+
+            // 4. Eliminar movimientos contables de estas cuentas
+            await exec(
+                `DELETE FROM movimientos WHERE cuenta_id IN (${placeholders})`,
+                cuentaIds
+            );
+
+            // 5. Eliminar operaciones huérfanas
+            if (allOpIds.length > 0) {
+                const opPlaceholders = allOpIds.map(() => '?').join(',');
+                await exec(
+                    `DELETE FROM operaciones WHERE id IN (${opPlaceholders})`,
+                    allOpIds
+                );
+            }
+
+            // 6. Eliminar cuentas bancarias del cliente
+            await exec(
+                `DELETE FROM cuentas WHERE id IN (${placeholders})`,
+                cuentaIds
+            );
+        }
+
+        // 7. Limpiar operaciones donde el usuario figure como realizado_por
+        await exec(
+            `UPDATE operaciones SET realizado_por = NULL WHERE realizado_por = ?`,
+            [usuario_id]
+        );
+
+        // 8. Eliminar notificaciones del usuario
+        await exec(
+            `DELETE FROM notificaciones WHERE usuario_id = ?`,
+            [usuario_id]
+        );
+
+        // 9. Eliminar usuario finalmente
+        await exec(
+            `DELETE FROM usuarios WHERE id = ? AND rol_id = 2`,
+            [usuario_id]
+        );
+
+        return {
+            id: user.id,
+            titular: `${user.nombres} ${user.apellidos}`,
+            correo: user.correo,
+            numero_cuenta: user.numero_cuenta,
+        };
+    });
+}
+
 module.exports = {
     getDashboardAdmin,
     getClientesAdmin,
@@ -198,4 +293,5 @@ module.exports = {
     actualizarEstadoClienteAdmin,
     consignarEnCuentaAdmin,
     getHistorialGeneralAdmin,
+    eliminarClienteAdmin,
 };

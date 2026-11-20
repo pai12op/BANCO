@@ -45,6 +45,20 @@ async function cambiarEstadoCliente(req, res) {
     }
 }
 
+async function eliminarCliente(req, res) {
+    try {
+        const usuarioId = req.params.id || req.body?.usuario_id;
+        const resultado = await adminService.eliminarCliente(usuarioId);
+        return res.json({
+            exito: true,
+            mensaje: `Cliente '${resultado.titular}' y sus productos bancarios asociados han sido eliminados de forma definitiva.`,
+            cliente: resultado,
+        });
+    } catch (error) {
+        return handleControllerError(res, error, 'adminController.eliminarCliente', 'Error al eliminar el cliente del sistema.');
+    }
+}
+
 async function consignar(req, res) {
     try {
         const adminId = getAdminSession(req)?.id || null;
@@ -73,6 +87,7 @@ module.exports = {
     getClientes,
     crearCliente,
     cambiarEstadoCliente,
+    eliminarCliente,
     consignar,
     getHistorialGeneral,
 };

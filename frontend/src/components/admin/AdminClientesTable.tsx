@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Lock, Unlock, CreditCard, DollarSign, X } from "lucide-react";
+import { Search, Lock, Unlock, CreditCard, DollarSign, Trash2, X, AlertTriangle } from "lucide-react";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-CO", {
@@ -13,6 +13,7 @@ interface AdminClientesTableProps {
   searchTerm: string;
   onSearchChange: (val: string) => void;
   onToggleEstado: (cliente: any) => void;
+  onEliminarCliente?: (cliente: any) => void;
   onRefresh?: () => void;
   onQuickConsignar?: (cliente: any) => void;
   aiFilterLabel?: string | null;
@@ -25,6 +26,7 @@ export function AdminClientesTable({
   searchTerm,
   onSearchChange,
   onToggleEstado,
+  onEliminarCliente,
   onRefresh,
   onQuickConsignar,
   aiFilterLabel,
@@ -32,6 +34,7 @@ export function AdminClientesTable({
   title = "Clientes Recientes",
 }: AdminClientesTableProps) {
   const [statusFilter, setStatusFilter] = useState<"todos" | "activos" | "bloqueados">("todos");
+  const [clienteAEliminar, setClienteAEliminar] = useState<any | null>(null);
 
   const getEsActivo = (c: any) => {
     const estado =
@@ -270,7 +273,7 @@ export function AdminClientesTable({
                             onClick={() => onToggleEstado(cli)}
                             className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-semibold transition-all ${
                               esActivo
-                                ? "border-[#223558] bg-[#0d172b] text-slate-300 hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-300"
+                                ? "border-[#223558] bg-[#0d172b] text-slate-300 hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-300"
                                 : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
                             }`}
                           >
@@ -286,6 +289,18 @@ export function AdminClientesTable({
                               </>
                             )}
                           </button>
+
+                          {onEliminarCliente && (
+                            <button
+                              type="button"
+                              onClick={() => setClienteAEliminar(cli)}
+                              title="Eliminar cliente y sus cuentas definitivamente"
+                              className="inline-flex items-center gap-1 rounded-xl border border-rose-500/30 bg-rose-950/20 hover:bg-rose-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-rose-300 transition-all"
+                            >
+                              <Trash2 className="h-3 w-3 text-rose-400" />
+                              <span className="hidden sm:inline">Eliminar</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -296,6 +311,70 @@ export function AdminClientesTable({
           </table>
         </div>
       </section>
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN SEGURA */}
+      {clienteAEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-[#0c1424] p-6 shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-rose-950/80 border border-rose-500/40 flex items-center justify-center shrink-0 text-rose-400">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-display text-base font-bold text-white">¿Eliminar Cliente Definitivamente?</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Esta acción es irreversible y eliminará al cliente, su cuenta bancaria y su historial contable en cascada.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#1b2b48] bg-[#070d18] p-3 text-xs space-y-1.5">
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-500">Titular:</span>
+                <span className="font-semibold text-white">{clienteAEliminar.nombres} {clienteAEliminar.apellidos}</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-500">Documento:</span>
+                <span className="font-mono">{clienteAEliminar.tipo_doc || "CC"} {clienteAEliminar.numero_documento}</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-500">Cuenta:</span>
+                <span className="font-mono text-cyan-400">{clienteAEliminar.numero_cuenta || "Sin cuenta"}</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-500">Saldo actual:</span>
+                <span className="font-mono font-bold text-emerald-400">
+                  {fmt(Number(clienteAEliminar.saldo || 0))}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setClienteAEliminar(null)}
+                className="rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = clienteAEliminar;
+                  setClienteAEliminar(null);
+                  if (onEliminarCliente) {
+                    onEliminarCliente(target);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-rose-600/30 transition-all"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Confirmar Eliminación</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
