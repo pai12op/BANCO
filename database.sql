@@ -11,6 +11,7 @@ USE `simulador_bancario`;
 -- Deshabilitar chequeo de claves foráneas temporalmente para recreación limpia
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `notificaciones`;
 DROP TABLE IF EXISTS `transferencias`;
 DROP TABLE IF EXISTS `movimientos`;
 DROP TABLE IF EXISTS `operaciones`;
@@ -158,6 +159,22 @@ CREATE TABLE `transferencias` (
     CONSTRAINT `fk_transferencia_operacion` FOREIGN KEY (`operacion_id`) REFERENCES `operaciones` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_transferencia_origen` FOREIGN KEY (`cuenta_origen_id`) REFERENCES `cuentas` (`id`),
     CONSTRAINT `fk_transferencia_destino` FOREIGN KEY (`cuenta_destino_id`) REFERENCES `cuentas` (`id`)
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------------------------
+-- 7. TABLA DE NOTIFICACIONES PERSISTENTES EN TIEMPO REAL
+-- ------------------------------------------------------------------------------
+
+CREATE TABLE `notificaciones` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `usuario_id` BIGINT UNSIGNED NOT NULL,
+    `tipo` VARCHAR(40) NOT NULL DEFAULT 'TRANSACCION',
+    `titulo` VARCHAR(120) NOT NULL,
+    `detalle` VARCHAR(280) NOT NULL,
+    `leida` TINYINT(1) NOT NULL DEFAULT 0,
+    `creada_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_notif_user_leida` (`usuario_id`, `leida`, `id`),
+    CONSTRAINT `fk_notif_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ==============================================================================

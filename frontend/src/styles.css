@@ -190,6 +190,15 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
+    color-scheme: dark;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e2e8f0;
+    -webkit-box-shadow: 0 0 0 1000px #0f172a inset;
+    transition: background-color 9999s ease-in-out 0s;
   }
 
   ::selection {

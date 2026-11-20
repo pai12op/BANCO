@@ -24,6 +24,21 @@ export interface PagoTarjetaPayload {
   pin: string;
 }
 
+export interface DestinatarioTransferencia {
+  numero_cuenta: string;
+  tipo_cuenta: string;
+  titular: string;
+}
+
+export interface ServerNotification {
+  id: number;
+  tipo: string;
+  titulo: string;
+  detalle: string;
+  leida: number;
+  creada_en: string;
+}
+
 export const bancaService = {
   getResumen: () =>
     apiGet<{ usuario: Usuario | null; cuentas: Cuenta[] }>(
@@ -35,6 +50,27 @@ export const bancaService = {
     apiGet<{ cuenta: Cuenta; movimientos: Movimiento[] }>(
       `${endpointBase}/movimientos?cuenta_id=${cuentaId}`,
       "Error al consultar los movimientos de la cuenta."
+    ),
+
+  getNotificaciones: () =>
+    apiGet<{ notificaciones: ServerNotification[]; unread_count: number }>(
+      "/api/banca/notificaciones",
+      "Error al consultar notificaciones."
+    ),
+
+  marcarNotificacionesLeidas: () =>
+    apiPost<{ exito: boolean }>(
+      "/api/banca/notificaciones/leer",
+      {},
+      "Error al actualizar notificaciones."
+    ),
+
+  consultarDestinatario: (numeroCuenta: string, cuentaOrigenId?: number) =>
+    apiGet<DestinatarioTransferencia>(
+      `/api/banca/destinatario?numero_cuenta=${encodeURIComponent(numeroCuenta)}${
+        cuentaOrigenId ? `&cuenta_origen_id=${cuentaOrigenId}` : ""
+      }`,
+      "No se pudo verificar la cuenta de destino."
     ),
 
   transferir: (payload: TransferenciaPayload) =>

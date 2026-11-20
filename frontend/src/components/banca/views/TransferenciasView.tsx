@@ -2,11 +2,31 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeftRight, Send, CheckCircle2, RefreshCw, UserCheck, Receipt } from "lucide-react";
+import { ArrowLeftRight, Send, CheckCircle2, RefreshCw, UserCheck, Receipt, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatCOP } from "@/lib/formatters";
 import { bancaService } from "@/services/bancaService";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ComprobanteTransferencia, Cuenta, Movimiento } from "../types";
+
+interface PendingTransferConfirm {
+  cuenta_origen_id: number;
+  cuenta_origen_numero: string;
+  numero_cuenta_destino: string;
+  titular_destino: string;
+  tipo_cuenta_destino: string;
+  valor: number;
+  impuesto: number;
+  total_debitar: number;
+  concepto?: string | undefined;
+}
 
 const fmt = formatCOP;
 
@@ -30,6 +50,8 @@ export function TransferenciasView({
   const [concepto, setConcepto] = useState("");
   const [aplicarGmf, setAplicarGmf] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verificandoDestino, setVerificandoDestino] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingTransferConfirm | null>(null);
   const [comprobante, setComprobante] = useState<ComprobanteTransferencia | null>(null);
 
   // Lista dinámica de contactos del equipo
@@ -70,7 +92,6 @@ export function TransferenciasView({
     }
 
     const impuesto = aplicarGmf ? Math.round(valorBase * 0.004) : 0;
-    const valor = valorBase;
 
     if (valorBase + impuesto > saldoReal) {
       toast.error(`Saldo insuficiente. Saldo disponible: ${fmt(saldoReal)}`);
@@ -78,26 +99,47 @@ export function TransferenciasView({
     }
 
     try {
-      setLoading(true);
+      setVerificandoDestino(true);
+      const destinatario = await bancaService.consultarDestinatario(destinoLimpio, cuentaActiva.id);
       const conceptoFinal = concepto.trim()
         ? (impuesto > 0 ? `${concepto.trim()} (GMF 4x1000: ${fmt(impuesto)})` : concepto.trim())
         : (impuesto > 0 ? `Transferencia (GMF 4x1000: ${fmt(impuesto)})` : undefined);
 
-      const data = await bancaService.transferir({
+      setPendingConfirm({
         cuenta_origen_id: cuentaActiva.id,
-        numero_cuenta_destino: destinoLimpio,
-        valor,
+        cuenta_origen_numero: cuentaActiva.numero_cuenta,
+        numero_cuenta_destino: destinatario.numero_cuenta,
+        titular_destino: destinatario.titular,
+        tipo_cuenta_destino: destinatario.tipo_cuenta,
+        valor: valorBase,
+        impuesto,
+        total_debitar: valorBase + impuesto,
         concepto: conceptoFinal,
       });
+    } catch (err: any) {
+      toast.error(err?.message || "No se pudo verificar la cuenta destino.");
+    } finally {
+      setVerificandoDestino(false);
+    }
+  };
 
-      const detalleExito = `Enviaste ${fmt(valor)} a la cuenta ${destinoLimpio}${
-        data.comprobante?.titular_destino ? ` (${data.comprobante.titular_destino})` : ""
-      }.`;
+  const handleConfirmarTransferencia = async () => {
+    if (!pendingConfirm) return;
+    try {
+      setLoading(true);
+      const data = await bancaService.transferir({
+        cuenta_origen_id: pendingConfirm.cuenta_origen_id,
+        numero_cuenta_destino: pendingConfirm.numero_cuenta_destino,
+        valor: pendingConfirm.valor,
+        concepto: pendingConfirm.concepto,
+      });
+
+      const detalleExito = `Enviaste ${fmt(pendingConfirm.valor)} a ${pendingConfirm.titular_destino} (${pendingConfirm.numero_cuenta_destino}).`;
       toast.success("Transferencia exitosa", {
         description: detalleExito,
       });
-      onNotify?.("Transferencia exitosa", detalleExito);
       setComprobante(data.comprobante);
+      setPendingConfirm(null);
       setMonto("");
       setConcepto("");
       setCuentaDestino("");
@@ -252,11 +294,11 @@ export function TransferenciasView({
 
             <Button
               type="submit"
-              disabled={loading || valorBase <= 0}
+              disabled={loading || verificandoDestino || valorBase <= 0}
               className="w-full gap-2 h-11 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
             >
-              {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Confirmar Transferencia Inmediata
+              {loading || verificandoDestino ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {verificandoDestino ? "Verificando destinatario..." : "Continuar y Confirmar Transferencia"}
             </Button>
           </form>
         </div>
@@ -321,6 +363,95 @@ export function TransferenciasView({
           </div>
         </div>
       </div>
+
+      {/* MODAL DE CONFIRMACIÓN ANTES DE EJECUTAR LA TRANSFERENCIA */}
+      <Dialog
+        open={Boolean(pendingConfirm)}
+        onOpenChange={(open) => {
+          if (!open && !loading) setPendingConfirm(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md bg-[#0e1626] border-slate-800 text-slate-100">
+          <DialogHeader>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="font-display text-lg text-white">
+                  Confirmar Transferencia
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-400">
+                  Verifica los datos del destinatario antes de autorizar el débito.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {pendingConfirm && (
+            <div className="rounded-xl border border-slate-800 bg-[#080f1d] p-4 space-y-2.5 text-xs">
+              <div className="flex justify-between gap-2">
+                <span className="text-slate-400">Titular destino:</span>
+                <span className="font-semibold text-white text-right">{pendingConfirm.titular_destino}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-slate-400">Cuenta destino:</span>
+                <span className="font-mono text-cyan-300 font-semibold">
+                  {pendingConfirm.numero_cuenta_destino} ({pendingConfirm.tipo_cuenta_destino})
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-slate-400">Cuenta origen:</span>
+                <span className="font-mono text-slate-300">{pendingConfirm.cuenta_origen_numero}</span>
+              </div>
+              <div className="border-t border-slate-800/80 pt-2 flex justify-between gap-2">
+                <span className="text-slate-400">Monto a enviar:</span>
+                <span className="font-mono font-bold text-white">{fmt(pendingConfirm.valor)}</span>
+              </div>
+              {pendingConfirm.impuesto > 0 && (
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-400">GMF (4x1000):</span>
+                  <span className="font-mono text-amber-400">+{fmt(pendingConfirm.impuesto)}</span>
+                </div>
+              )}
+              <div className="flex justify-between gap-2 text-sm font-bold pt-1 border-t border-slate-800">
+                <span className="text-slate-200">Total a debitar:</span>
+                <span className="font-mono text-emerald-400">{fmt(pendingConfirm.total_debitar)}</span>
+              </div>
+              {pendingConfirm.concepto && (
+                <div className="pt-1 text-[11px] text-slate-400">
+                  Concepto: <span className="text-slate-200">{pendingConfirm.concepto}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={() => {
+                setPendingConfirm(null);
+                toast.info("Transferencia cancelada.");
+              }}
+              className="flex-1 border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800 hover:text-white"
+            >
+              <X className="h-4 w-4 mr-1.5" />
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={loading}
+              onClick={handleConfirmarTransferencia}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold"
+            >
+              {loading ? <RefreshCw className="h-4 w-4 animate-spin mr-1.5" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />}
+              Sí, Confirmar Envío
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

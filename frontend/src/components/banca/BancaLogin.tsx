@@ -133,11 +133,11 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b13] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[#070b13] flex flex-col items-center justify-center p-4 py-6">
       {/* ======================================================== */}
       {/* BARRA SUPERIOR ESTILO NEQUI (CLAVE DINÁMICA & AYUDA)     */}
       {/* ======================================================== */}
-      <div className="w-full max-w-sm mb-4 flex items-center justify-between gap-2">
+      <div className={`w-full ${tab === "registro" ? "max-w-md" : "max-w-sm"} mb-4 flex items-center justify-between gap-2 transition-all`}>
         {/* PÍLDORA CLAVE DINÁMICA CON CONTADOR */}
         <button
           type="button"
@@ -167,7 +167,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
       </div>
 
       {/* CONTENEDOR PRINCIPAL */}
-      <div className="w-full max-w-sm rounded-3xl border border-[#1b2b4a] bg-[#091222] p-6 sm:p-7 shadow-2xl relative overflow-hidden text-slate-100">
+      <div className={`w-full ${tab === "registro" ? "max-w-md" : "max-w-sm"} rounded-3xl border border-[#1b2b4a] bg-[#091222] p-6 sm:p-7 shadow-2xl relative overflow-hidden text-slate-100 transition-all`}>
         <div aria-hidden className="pointer-events-none absolute inset-0 hero-sheen" />
 
         <div className="relative">
@@ -303,7 +303,7 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
 
           {/* VISTA 2: REGISTRO PÚBLICO CON TODOS LOS DATOS */}
           {tab === "registro" && (
-            <form onSubmit={handleRegistroSubmit} className="mt-4 space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+            <form onSubmit={handleRegistroSubmit} autoComplete="off" className="mt-4 space-y-2.5">
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <Label className="text-[11px] text-slate-300">Tipo Doc</Label>
@@ -320,6 +320,8 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                 <div className="col-span-2">
                   <Label className="text-[11px] text-slate-300">Número de Documento *</Label>
                   <Input
+                    name="reg_documento"
+                    autoComplete="off"
                     value={regData.numero_documento}
                     onChange={(e) => setRegData({ ...regData, numero_documento: e.target.value })}
                     placeholder="Ej: 1020304050"
@@ -357,6 +359,8 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   <Label className="text-[11px] text-slate-300">Correo Electrónico *</Label>
                   <Input
                     type="email"
+                    name="reg_email"
+                    autoComplete="email"
                     value={regData.correo}
                     onChange={(e) => setRegData({ ...regData, correo: e.target.value })}
                     placeholder="nombre@ejemplo.com"
@@ -367,8 +371,12 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                 <div>
                   <Label className="text-[11px] text-slate-300">Teléfono Móvil</Label>
                   <Input
+                    type="tel"
+                    name="reg_telefono"
+                    autoComplete="tel"
+                    inputMode="numeric"
                     value={regData.telefono}
-                    onChange={(e) => setRegData({ ...regData, telefono: e.target.value })}
+                    onChange={(e) => setRegData({ ...regData, telefono: e.target.value.replace(/\D/g, "") })}
                     placeholder="Ej: 3001234567"
                     className="mt-1 font-mono text-xs bg-slate-900 border-slate-700"
                   />
@@ -422,6 +430,8 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   <Label className="text-[11px] text-slate-300">Contraseña Web *</Label>
                   <Input
                     type={showRegPass ? "text" : "password"}
+                    name="reg_password"
+                    autoComplete="new-password"
                     value={regData.password}
                     onChange={(e) => setRegData({ ...regData, password: e.target.value })}
                     placeholder="Mín. 8 (Mayús+Min+Num)"
@@ -433,6 +443,8 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                   <Label className="text-[11px] text-slate-300">Confirmar Clave *</Label>
                   <Input
                     type={showRegPass ? "text" : "password"}
+                    name="reg_password_confirm"
+                    autoComplete="new-password"
                     value={regData.password_confirm}
                     onChange={(e) => setRegData({ ...regData, password_confirm: e.target.value })}
                     placeholder="Confirme su contraseña"
@@ -446,6 +458,9 @@ export function BancaLogin({ onLogin, loading }: BancaLoginProps) {
                 <Label className="text-[11px] text-slate-300">PIN de 4 Dígitos para Cajero ATM *</Label>
                 <Input
                   type="password"
+                  name="reg_pin"
+                  autoComplete="off"
+                  inputMode="numeric"
                   maxLength={4}
                   value={regData.pin_cajero}
                   onChange={(e) => setRegData({ ...regData, pin_cajero: e.target.value.replace(/\D/g, "") })}

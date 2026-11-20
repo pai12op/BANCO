@@ -22,6 +22,41 @@ async function obtenerMovimientos(cuentaId, usuarioId) {
     return data;
 }
 
+async function obtenerNotificaciones(usuarioId) {
+    return cuentaRepo.getNotificacionesUsuario(usuarioId);
+}
+
+async function marcarNotificacionesLeidas(usuarioId) {
+    await cuentaRepo.marcarNotificacionesLeidas(usuarioId);
+}
+
+async function consultarDestinatarioTransferencia({ cuenta_origen_id, numero_cuenta_destino }) {
+    if (!numero_cuenta_destino) {
+        throw new AppError('Debe ingresar el número de cuenta de destino.', 400);
+    }
+    const destinoLimpio = String(numero_cuenta_destino).trim().replace(/\D/g, '');
+    if (!destinoLimpio) {
+        throw new AppError('El número de cuenta de destino no es válido.', 400);
+    }
+
+    const cuentaDestino = await cuentaRepo.findDestinatarioPorCuenta(destinoLimpio);
+    if (!cuentaDestino) {
+        throw new AppError('La cuenta de destino no existe en el sistema bancario.', 404);
+    }
+    if (cuenta_origen_id && Number(cuenta_origen_id) === Number(cuentaDestino.id)) {
+        throw new AppError('No puede realizar una transferencia a la misma cuenta de origen.', 400);
+    }
+    if (cuentaDestino.estado_nombre !== 'ACTIVA') {
+        throw new AppError('La cuenta de destino se encuentra inactiva o bloqueada.', 403);
+    }
+
+    return {
+        numero_cuenta: cuentaDestino.numero_cuenta,
+        tipo_cuenta: cuentaDestino.tipo_cuenta,
+        titular: `${cuentaDestino.nombres} ${cuentaDestino.apellidos}`.trim(),
+    };
+}
+
 async function ejecutarTransferencia({ usuarioId, cuenta_origen_id, numero_cuenta_destino, valor, concepto, descripcion }) {
     const valorNum = parsePositiveAmount(valor, 'El valor de la transferencia debe ser mayor a cero ($0).');
 
@@ -147,6 +182,9 @@ async function solicitarOtpRetiro({ usuarioId, cuenta_id, numero_cuenta }) {
 module.exports = {
     obtenerResumen,
     obtenerMovimientos,
+    obtenerNotificaciones,
+    marcarNotificacionesLeidas,
+    consultarDestinatarioTransferencia,
     ejecutarTransferencia,
     actualizarPerfilTelefono,
     cambiarPasswordAutenticado,

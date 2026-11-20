@@ -41,12 +41,55 @@ async function getMovimientosCuenta(cuentaId, usuarioId) {
     return { cuenta: verif[0], movimientos };
 }
 
+async function findDestinatarioPorCuenta(numeroCuenta) {
+    const rows = await executePrepared(
+        `SELECT c.id, c.usuario_id, c.numero_cuenta, tc.nombre AS tipo_cuenta, ec.nombre AS estado_nombre,
+                u.nombres, u.apellidos
+         FROM cuentas c
+         JOIN tipos_cuenta tc ON c.tipo_id = tc.id
+         JOIN estados_cuenta ec ON c.estado_id = ec.id
+         JOIN usuarios u ON c.usuario_id = u.id
+         WHERE c.numero_cuenta = ?
+         LIMIT 1`,
+        [numeroCuenta]
+    );
+    return rows[0] || null;
+}
+
+async function getNotificacionesUsuario(usuarioId, limit = 25) {
+    const maxRows = Math.min(Math.max(Number(limit) || 25, 1), 50);
+    const notificaciones = await executePrepared(
+        `SELECT id, tipo, titulo, detalle, leida, creada_en
+         FROM notificaciones
+         WHERE usuario_id = ?
+         ORDER BY id DESC
+         LIMIT ${maxRows}`,
+        [usuarioId]
+    );
+    const [countRow] = await executePrepared(
+        `SELECT COUNT(*) AS unread_count FROM notificaciones WHERE usuario_id = ? AND leida = 0`,
+        [usuarioId]
+    );
+    return {
+        notificaciones,
+        unread_count: Number(countRow?.unread_count) || 0,
+    };
+}
+
+async function marcarNotificacionesLeidas(usuarioId) {
+    await executePrepared(
+        `UPDATE notificaciones SET leida = 1 WHERE usuario_id = ? AND leida = 0`,
+        [usuarioId]
+    );
+}
+
 async function transferirEntreCuentas({ usuarioId, cuenta_origen_id, numero_cuenta_destino, valor, concepto }) {
     return withTransaction(async (exec) => {
         const origenes = await exec(
-            `SELECT c.id, c.numero_cuenta, c.saldo, ec.nombre AS estado_nombre
+            `SELECT c.id, c.numero_cuenta, c.saldo, ec.nombre AS estado_nombre, uo.nombres AS origen_nombres, uo.apellidos AS origen_apellidos
              FROM cuentas c
              JOIN estados_cuenta ec ON c.estado_id = ec.id
+             JOIN usuarios uo ON c.usuario_id = uo.id
              WHERE c.id = ? AND c.usuario_id = ?
              FOR UPDATE`,
             [cuenta_origen_id, usuarioId]
@@ -66,7 +109,7 @@ async function transferirEntreCuentas({ usuarioId, cuenta_origen_id, numero_cuen
         }
 
         const destinos = await exec(
-            `SELECT c.id, c.numero_cuenta, c.saldo, ec.nombre AS estado_nombre, u.nombres, u.apellidos
+            `SELECT c.id, c.usuario_id AS destino_usuario_id, c.numero_cuenta, c.saldo, ec.nombre AS estado_nombre, u.nombres, u.apellidos
              FROM cuentas c
              JOIN estados_cuenta ec ON c.estado_id = ec.id
              JOIN usuarios u ON c.usuario_id = u.id
@@ -116,6 +159,33 @@ async function transferirEntreCuentas({ usuarioId, cuenta_origen_id, numero_cuen
             `INSERT INTO movimientos (operacion_id, cuenta_id, sentido, saldo_resultante)
              VALUES (?, ?, 'CREDITO', ?)`,
             [operacionId, cuentaDestino.id, nuevoSaldoDestino]
+        );
+
+        const valorFmt = Number(valor).toLocaleString('es-CO');
+        const titularOrigen = `${cuentaOrigen.origen_nombres} ${cuentaOrigen.origen_apellidos}`.trim();
+        const titularDestino = `${cuentaDestino.nombres} ${cuentaDestino.apellidos}`.trim();
+        const notaConcepto = concepto && concepto.trim() ? ` · "${concepto.trim().slice(0, 80)}"` : '';
+
+        // Notificar al destinatario sobre la transacción recibida
+        await exec(
+            `INSERT INTO notificaciones (usuario_id, tipo, titulo, detalle, leida)
+             VALUES (?, 'TRANSFERENCIA_RECIBIDA', ?, ?, 0)`,
+            [
+                cuentaDestino.destino_usuario_id,
+                '¡Transferencia recibida!',
+                `Recibiste $${valorFmt} COP de ${titularOrigen} en tu cuenta ${cuentaDestino.numero_cuenta} (Op. #${operacionId})${notaConcepto}.`.slice(0, 280),
+            ]
+        );
+
+        // Registrar también en el historial de notificaciones del remitente (ya vista por quien la ejecutó)
+        await exec(
+            `INSERT INTO notificaciones (usuario_id, tipo, titulo, detalle, leida)
+             VALUES (?, 'TRANSFERENCIA_ENVIADA', ?, ?, 1)`,
+            [
+                usuarioId,
+                'Transferencia exitosa',
+                `Enviaste $${valorFmt} COP a ${titularDestino} (${cuentaDestino.numero_cuenta}) · Op. #${operacionId}.`.slice(0, 280),
+            ]
         );
 
         return {
@@ -288,6 +358,9 @@ async function findCuentaActivaParaOtp(usuarioId, cuenta_id, numero_cuenta) {
 module.exports = {
     getResumenUsuario,
     getMovimientosCuenta,
+    findDestinatarioPorCuenta,
+    getNotificacionesUsuario,
+    marcarNotificacionesLeidas,
     transferirEntreCuentas,
     actualizarTelefonoUsuario,
     findCredencialesCambioPassword,

@@ -27,6 +27,42 @@ async function getMovimientos(req, res) {
     }
 }
 
+async function getNotificaciones(req, res) {
+    try {
+        const cliente = getClienteSession(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const data = await bancaService.obtenerNotificaciones(cliente.id);
+        return res.json(data);
+    } catch (error) {
+        return handleControllerError(res, error, 'usuarioController.getNotificaciones', 'Error al consultar notificaciones.');
+    }
+}
+
+async function marcarNotificacionesLeidas(req, res) {
+    try {
+        const cliente = getClienteSession(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        await bancaService.marcarNotificacionesLeidas(cliente.id);
+        return res.json({ exito: true });
+    } catch (error) {
+        return handleControllerError(res, error, 'usuarioController.marcarNotificacionesLeidas', 'Error al actualizar notificaciones.');
+    }
+}
+
+async function consultarDestinatario(req, res) {
+    try {
+        const cliente = getClienteSession(req);
+        if (!cliente) return res.status(401).json({ error: 'No autorizado' });
+        const info = await bancaService.consultarDestinatarioTransferencia({
+            cuenta_origen_id: req.query.cuenta_origen_id || cliente.cuenta_principal_id,
+            numero_cuenta_destino: req.query.numero_cuenta,
+        });
+        return res.json(info);
+    } catch (error) {
+        return handleControllerError(res, error, 'usuarioController.consultarDestinatario', 'No se pudo verificar la cuenta destino.');
+    }
+}
+
 async function transferir(req, res) {
     try {
         const cliente = getClienteSession(req);
@@ -150,6 +186,9 @@ async function solicitarCodigoRetiro(req, res) {
 module.exports = {
     getResumen,
     getMovimientos,
+    getNotificaciones,
+    marcarNotificacionesLeidas,
+    consultarDestinatario,
     transferir,
     actualizarPerfil,
     cambiarPassword,
